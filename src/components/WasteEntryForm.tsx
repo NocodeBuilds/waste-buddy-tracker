@@ -4,16 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WASTE_TYPES, WasteEntry } from "@/lib/wasteTypes";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
   onAdd: (entry: Omit<WasteEntry, "id" | "disposed">) => void;
+  onClose?: () => void;
 }
 
-export default function WasteEntryForm({ onAdd }: Props) {
+export default function WasteEntryForm({ onAdd, onClose }: Props) {
   const [wtgId, setWtgId] = useState("");
   const [wasteTypeId, setWasteTypeId] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -42,62 +42,51 @@ export default function WasteEntryForm({ onAdd }: Props) {
     setWasteTypeId("");
     setQuantity("");
     setNotes("");
+    onClose?.();
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Plus className="h-5 w-5 text-accent" />
-          Log Waste Generation
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="wtg">WTG ID *</Label>
-            <Input id="wtg" placeholder="e.g. WTG-01" value={wtgId} onChange={(e) => setWtgId(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Activity Type *</Label>
-            <Select value={activityType} onValueChange={(v) => setActivityType(v as "breakdown" | "preventive")}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="breakdown">Breakdown Maintenance</SelectItem>
-                <SelectItem value="preventive">Preventive Maintenance</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Waste Type *</Label>
-            <Select value={wasteTypeId} onValueChange={setWasteTypeId}>
-              <SelectTrigger><SelectValue placeholder="Select waste type" /></SelectTrigger>
-              <SelectContent>
-                {WASTE_TYPES.map((w) => (
-                  <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="qty">Quantity ({selectedWaste?.unit || "unit"}) *</Label>
-            <Input id="qty" type="number" min="0" step="0.01" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="date">Date Generated *</Label>
-            <Input id="date" type="date" value={generatedDate} onChange={(e) => setGeneratedDate(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea id="notes" placeholder="Optional notes..." value={notes} onChange={(e) => setNotes(e.target.value)} className="h-10" />
-          </div>
-          <div className="sm:col-span-2 lg:col-span-3">
-            <Button type="submit" className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
-              <Plus className="h-4 w-4 mr-2" /> Record Waste Entry
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="wtg">WTG ID *</Label>
+        <Input id="wtg" placeholder="e.g. WTG-01" value={wtgId} onChange={(e) => setWtgId(e.target.value)} />
+      </div>
+      <div className="space-y-2">
+        <Label>Activity Type *</Label>
+        <Select value={activityType} onValueChange={(v) => setActivityType(v as "breakdown" | "preventive")}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="breakdown">Breakdown Maintenance</SelectItem>
+            <SelectItem value="preventive">Preventive Maintenance</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label>Waste Type *</Label>
+        <Select value={wasteTypeId} onValueChange={setWasteTypeId}>
+          <SelectTrigger><SelectValue placeholder="Select waste type" /></SelectTrigger>
+          <SelectContent>
+            {WASTE_TYPES.map((w) => (
+              <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="qty">Quantity ({selectedWaste?.unit || "unit"}) *</Label>
+        <Input id="qty" type="number" min="0" step="0.01" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="date">Date Generated *</Label>
+        <Input id="date" type="date" value={generatedDate} onChange={(e) => setGeneratedDate(e.target.value)} />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea id="notes" placeholder="Optional notes..." value={notes} onChange={(e) => setNotes(e.target.value)} className="h-20" />
+      </div>
+      <Button type="submit" className="w-full">
+        <Plus className="h-4 w-4 mr-2" /> Record Waste Entry
+      </Button>
+    </form>
   );
 }
