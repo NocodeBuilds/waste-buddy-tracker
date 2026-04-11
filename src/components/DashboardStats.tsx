@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS } from "@/lib/wasteTypes";
+import { WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS, getStatus } from "@/lib/wasteTypes";
 import { Package, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface Props {
   entries: WasteEntry[];
@@ -15,48 +16,87 @@ export default function DashboardStats({ entries }: Props) {
     return d >= 70 && d < DISPOSAL_LIMIT_DAYS;
   });
 
-  const wasteTypeSummary = WASTE_TYPES.map((wt) => {
-    const items = active.filter((e) => e.wasteTypeId === wt.id);
-    const total = items.reduce((s, e) => s + e.quantity, 0);
-    return { ...wt, total, count: items.length };
-  }).filter((w) => w.count > 0);
-
   const stats = [
-    { label: "Total in Storage", value: active.length, icon: Package, color: "text-primary" },
-    { label: "Overdue (≥90 days)", value: overdue.length, icon: AlertTriangle, color: "text-overdue" },
-    { label: "Warning (70-89 days)", value: warning.length, icon: Clock, color: "text-warning" },
+    { label: "In Storage", value: active.length, icon: Package, color: "text-primary" },
+    { label: "Overdue", value: overdue.length, icon: AlertTriangle, color: "text-overdue" },
+    { label: "Warning", value: warning.length, icon: Clock, color: "text-warning" },
     { label: "Disposed", value: disposed.length, icon: CheckCircle, color: "text-success" },
   ];
 
+  // Group active entries by waste type with details
+  const wasteDetails = WASTE_TYPES.map((wt) => {
+    const items = active.filter((e) => e.wasteTypeId === wt.id);
+    const totalQty = items.reduce((s, e) => s + e.quantity, 0);
+    const maxDays = items.length > 0 ? Math.max(...items.map((e) => getDaysStored(e.generatedDate))) : 0;
+    const overdueCount = items.filter((e) => getStatus(e) === "overdue").length;
+    const warningCount = items.filter((e) => getStatus(e) === "warning").length;
+    return { ...wt, totalQty, count: items.length, maxDays, overdueCount, warningCount };
+  }).filter((w) => w.count > 0);
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Summary stats */}
+      <div className="grid grid-cols-2 gap-3">
         {stats.map((s) => (
           <Card key={s.label}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <s.icon className={`h-8 w-8 ${s.color}`} />
-              <div>
-                <p className="text-2xl font-bold">{s.value}</p>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
+            <CardContent className="p-3 flex items-center gap-2">
+              <s.icon className={`h-6 w-6 ${s.color} shrink-0`} />
+              <div className="min-w-0">
+                <p className="text-xl font-bold leading-tight">{s.value}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{s.label}</p>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
-      {wasteTypeSummary.length > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">Current Storage by Waste Type</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-              {wasteTypeSummary.map((w) => (
-                <div key={w.id} className="bg-secondary rounded-lg p-3 text-center">
-                  <p className="text-lg font-bold">{w.total} <span className="text-xs font-normal text-muted-foreground">{w.unit}</span></p>
-                  <p className="text-xs text-muted-foreground mt-1 leading-tight">{w.name}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+
+      {/* Detailed waste type breakdown */}
+      {wasteDetails.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
+            Storage Details by Waste Type
+          </h3>
+          <div className="space-y-2">
+            {wasteDetails.map((w) => (
+              <Card key={w.id} className={w.overdueCount > 0 ? "border-overdue/40" : w.warningCount > 0 ? "border-warning/40" : ""}>
+                <CardContent className="p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold leading-tight truncate">{w.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{w.category}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-lg font-bold leading-tight">
+                        {w.totalQty} <span className="text-xs font-normal text-muted-foreground">{w.unit}</span>
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">{w.count} entries</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className={`text-xs font-medium ${w.maxDays >= DISPOSAL_LIMIT_DAYS ? "text-overdue" : w.maxDays >= 70 ? "text-warning" : "text-muted-foreground"}`}>
+                      Max: {w.maxDays} days
+                    </span>
+                    {w.overdueCount > 0 && (
+                      <Badge className="bg-overdue text-overdue-foreground text-[10px] px-1.5 py-0">
+                        {w.overdueCount} overdue
+                      </Badge>
+                    )}
+                    {w.warningCount > 0 && (
+                      <Badge className="bg-warning text-warning-foreground text-[10px] px-1.5 py-0">
+                        {w.warningCount} warning
+                      </Badge>
+                    )}
+                    {w.overdueCount === 0 && w.warningCount === 0 && (
+                      <Badge className="bg-success/20 text-success border border-success/30 text-[10px] px-1.5 py-0">
+                        All safe
+                      </Badge>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
