@@ -18,16 +18,31 @@ export const WASTE_TYPES: WasteType[] = [
   { id: "empty-containers", name: "Empty Chemical Containers", unit: "nos", category: "Solid" },
 ];
 
+export type WasteCategory = "hazardous" | "non_hazardous";
+export type ActivityType = "breakdown" | "preventive";
+
 export interface WasteEntry {
   id: string;
-  wtgId: string;
-  wasteTypeId: string;
+  site_id: string;
+  wtg_id: string;
+  waste_type_id: string;
+  waste_category: WasteCategory;
   quantity: number;
-  generatedDate: string; // ISO date
-  activityType: "breakdown" | "preventive";
-  disposed: boolean;
-  disposedDate?: string;
-  notes?: string;
+  generated_date: string;
+  activity_type: ActivityType;
+  notes?: string | null;
+  disposal_batch_id?: string | null;
+  created_by?: string | null;
+  created_at?: string;
+}
+
+export interface DisposalBatch {
+  id: string;
+  site_id: string;
+  disposed_date: string;
+  disposed_by?: string | null;
+  notes?: string | null;
+  created_at?: string;
 }
 
 export const DISPOSAL_LIMIT_DAYS = 90;
@@ -39,9 +54,13 @@ export function getDaysStored(generatedDate: string): number {
 }
 
 export function getStatus(entry: WasteEntry): "safe" | "warning" | "overdue" {
-  if (entry.disposed) return "safe";
-  const days = getDaysStored(entry.generatedDate);
+  if (entry.disposal_batch_id) return "safe";
+  const days = getDaysStored(entry.generated_date);
   if (days >= DISPOSAL_LIMIT_DAYS) return "overdue";
   if (days >= 70) return "warning";
   return "safe";
+}
+
+export function isDisposed(entry: WasteEntry): boolean {
+  return !!entry.disposal_batch_id;
 }
