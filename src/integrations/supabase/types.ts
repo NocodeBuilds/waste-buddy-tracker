@@ -14,16 +14,240 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      disposal_batches: {
+        Row: {
+          created_at: string
+          disposed_by: string | null
+          disposed_date: string
+          id: string
+          notes: string | null
+          site_id: string
+        }
+        Insert: {
+          created_at?: string
+          disposed_by?: string | null
+          disposed_date: string
+          id?: string
+          notes?: string | null
+          site_id: string
+        }
+        Update: {
+          created_at?: string
+          disposed_by?: string | null
+          disposed_date?: string
+          id?: string
+          notes?: string | null
+          site_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disposal_batches_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sites: {
+        Row: {
+          created_at: string
+          id: string
+          location: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          site_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          site_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          site_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_sites: {
+        Row: {
+          created_at: string
+          id: string
+          site_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          site_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          site_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sites_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waste_entries: {
+        Row: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          created_at: string
+          created_by: string | null
+          disposal_batch_id: string | null
+          generated_date: string
+          id: string
+          notes: string | null
+          quantity: number
+          site_id: string
+          updated_at: string
+          waste_category: Database["public"]["Enums"]["waste_category"]
+          waste_type_id: string
+          wtg_id: string
+        }
+        Insert: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          created_at?: string
+          created_by?: string | null
+          disposal_batch_id?: string | null
+          generated_date: string
+          id?: string
+          notes?: string | null
+          quantity: number
+          site_id: string
+          updated_at?: string
+          waste_category?: Database["public"]["Enums"]["waste_category"]
+          waste_type_id: string
+          wtg_id: string
+        }
+        Update: {
+          activity_type?: Database["public"]["Enums"]["activity_type"]
+          created_at?: string
+          created_by?: string | null
+          disposal_batch_id?: string | null
+          generated_date?: string
+          id?: string
+          notes?: string | null
+          quantity?: number
+          site_id?: string
+          updated_at?: string
+          waste_category?: Database["public"]["Enums"]["waste_category"]
+          waste_type_id?: string
+          wtg_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waste_entries_disposal_batch_id_fkey"
+            columns: ["disposal_batch_id"]
+            isOneToOne: false
+            referencedRelation: "disposal_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waste_entries_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_site_access: {
+        Args: { _site_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_site_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _site_id: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_site_admin_or_manager: {
+        Args: { _site_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_site_ids: { Args: { _user_id: string }; Returns: string[] }
     }
     Enums: {
-      [_ in never]: never
+      activity_type: "breakdown" | "preventive"
+      app_role: "admin" | "manager" | "member"
+      waste_category: "hazardous" | "non_hazardous"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +374,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      activity_type: ["breakdown", "preventive"],
+      app_role: ["admin", "manager", "member"],
+      waste_category: ["hazardous", "non_hazardous"],
+    },
   },
 } as const
