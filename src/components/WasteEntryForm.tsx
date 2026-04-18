@@ -4,45 +4,65 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { WASTE_TYPES, WasteEntry } from "@/lib/wasteTypes";
-import { Plus } from "lucide-react";
+import { WASTE_TYPES, WasteCategory, ActivityType } from "@/lib/wasteTypes";
+import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+interface NewEntry {
+  wtg_id: string;
+  waste_type_id: string;
+  waste_category: WasteCategory;
+  quantity: number;
+  generated_date: string;
+  activity_type: ActivityType;
+  notes?: string;
+}
+
 interface Props {
-  onAdd: (entry: Omit<WasteEntry, "id" | "disposed">) => void;
+  onAdd: (entry: NewEntry) => Promise<void>;
   onClose?: () => void;
 }
 
 export default function WasteEntryForm({ onAdd, onClose }: Props) {
   const [wtgId, setWtgId] = useState("");
+  const [wasteCategory, setWasteCategory] = useState<WasteCategory>("hazardous");
   const [wasteTypeId, setWasteTypeId] = useState("");
   const [quantity, setQuantity] = useState("");
   const [generatedDate, setGeneratedDate] = useState(new Date().toISOString().split("T")[0]);
-  const [activityType, setActivityType] = useState<"breakdown" | "preventive">("preventive");
+  const [activityType, setActivityType] = useState<ActivityType>("preventive");
   const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const selectedWaste = WASTE_TYPES.find((w) => w.id === wasteTypeId);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wtgId || !wasteTypeId || !quantity || Number(quantity) <= 0) {
       toast.error("Please fill all required fields with valid values");
       return;
     }
-    onAdd({
-      wtgId: wtgId.toUpperCase(),
-      wasteTypeId,
-      quantity: Number(quantity),
-      generatedDate,
-      activityType,
-      notes: notes || undefined,
-    });
-    toast.success("Waste entry recorded successfully");
-    setWtgId("");
-    setWasteTypeId("");
-    setQuantity("");
-    setNotes("");
-    onClose?.();
+    setSubmitting(true);
+    try {
+      await onAdd({
+        wtg_id: wtgId.toUpperCase(),
+        waste_type_id: wasteTypeId,
+        waste_category: wasteCategory,
+        quantity: Number(quantity),
+        generated_date: generatedDate,
+        activity_type: activityType,
+        notes: notes || undefined,
+      });
+      toast.success("Waste entry recorded");
+      setWtgId("");
+      setWasteTypeId("");
+      setQuantity("");
+      setNotes("");
+      onClose?.();
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to save");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -52,8 +72,18 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         <Input id="wtg" placeholder="e.g. WTG-01" value={wtgId} onChange={(e) => setWtgId(e.target.value)} />
       </div>
       <div className="space-y-2">
+        <Label>Waste Category *</Label>
+        <Select value={wasteCategory} onValueChange={(v) => setWasteCategory(v as WasteCategory)}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="hazardous">Hazardous</SelectItem>
+            <SelectItem value="non_hazardous">Non-Hazardous</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
         <Label>Activity Type *</Label>
-        <Select value={activityType} onValueChange={(v) => setActivityType(v as "breakdown" | "preventive")}>
+        <Select value={activityType} onValueChange={(v) => setActivityType(v as ActivityType)}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="breakdown">Breakdown Maintenance</SelectItem>
@@ -84,8 +114,9 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         <Label htmlFor="notes">Notes</Label>
         <Textarea id="notes" placeholder="Optional notes..." value={notes} onChange={(e) => setNotes(e.target.value)} className="h-20" />
       </div>
-      <Button type="submit" className="w-full">
-        <Plus className="h-4 w-4 mr-2" /> Record Waste Entry
+      <Button type="submit" className="w-full" disabled={submitting}>
+        {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+        Record Waste Entry
       </Button>
     </form>
   );

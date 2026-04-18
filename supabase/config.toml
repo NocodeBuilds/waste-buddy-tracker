@@ -1,0 +1,7 @@
+project_id = "hymcwjnnokdsdjokdfur"
+
+[functions.invite-user]
+verify_jwt = false
+
+[functions.bootstrap-admin]
+verify_jwt = false

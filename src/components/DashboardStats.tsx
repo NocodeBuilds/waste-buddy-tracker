@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS, getStatus } from "@/lib/wasteTypes";
-import { Package, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS, getStatus, isDisposed } from "@/lib/wasteTypes";
+import { Package, AlertTriangle, CheckCircle, Clock, Droplets, Recycle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Props {
@@ -8,11 +8,11 @@ interface Props {
 }
 
 export default function DashboardStats({ entries }: Props) {
-  const active = entries.filter((e) => !e.disposed);
-  const disposed = entries.filter((e) => e.disposed);
-  const overdue = active.filter((e) => getDaysStored(e.generatedDate) >= DISPOSAL_LIMIT_DAYS);
+  const active = entries.filter((e) => !isDisposed(e));
+  const disposed = entries.filter((e) => isDisposed(e));
+  const overdue = active.filter((e) => getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS);
   const warning = active.filter((e) => {
-    const d = getDaysStored(e.generatedDate);
+    const d = getDaysStored(e.generated_date);
     return d >= 70 && d < DISPOSAL_LIMIT_DAYS;
   });
 
@@ -23,15 +23,20 @@ export default function DashboardStats({ entries }: Props) {
     { label: "Disposed", value: disposed.length, icon: CheckCircle, color: "text-success" },
   ];
 
-  // Group active entries by waste type with details
-  const wasteDetails = WASTE_TYPES.map((wt) => {
-    const items = active.filter((e) => e.wasteTypeId === wt.id);
-    const totalQty = items.reduce((s, e) => s + e.quantity, 0);
-    const maxDays = items.length > 0 ? Math.max(...items.map((e) => getDaysStored(e.generatedDate))) : 0;
+  // Cumulative by waste type (active only)
+  const cumulative = WASTE_TYPES.map((wt) => {
+    const items = active.filter((e) => e.waste_type_id === wt.id);
+    const totalQty = items.reduce((s, e) => s + Number(e.quantity), 0);
+    const maxDays = items.length > 0 ? Math.max(...items.map((e) => getDaysStored(e.generated_date))) : 0;
     const overdueCount = items.filter((e) => getStatus(e) === "overdue").length;
     const warningCount = items.filter((e) => getStatus(e) === "warning").length;
-    return { ...wt, totalQty, count: items.length, maxDays, overdueCount, warningCount };
+    const hazardous = items.some((e) => e.waste_category === "hazardous");
+    return { ...wt, totalQty, count: items.length, maxDays, overdueCount, warningCount, hazardous };
   }).filter((w) => w.count > 0);
+
+  // Cumulative by category
+  const hazardousTotal = active.filter((e) => e.waste_category === "hazardous").length;
+  const nonHazardousTotal = active.filter((e) => e.waste_category === "non_hazardous").length;
 
   return (
     <div className="space-y-4">
@@ -50,14 +55,38 @@ export default function DashboardStats({ entries }: Props) {
         ))}
       </div>
 
-      {/* Detailed waste type breakdown */}
-      {wasteDetails.length > 0 && (
+      {/* Category split */}
+      {(hazardousTotal + nonHazardousTotal) > 0 && (
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="border-overdue/30">
+            <CardContent className="p-3 flex items-center gap-2">
+              <Droplets className="h-6 w-6 text-overdue shrink-0" />
+              <div>
+                <p className="text-xl font-bold">{hazardousTotal}</p>
+                <p className="text-[10px] text-muted-foreground">Hazardous</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-success/30">
+            <CardContent className="p-3 flex items-center gap-2">
+              <Recycle className="h-6 w-6 text-success shrink-0" />
+              <div>
+                <p className="text-xl font-bold">{nonHazardousTotal}</p>
+                <p className="text-[10px] text-muted-foreground">Non-Hazardous</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Cumulative available waste */}
+      {cumulative.length > 0 && (
         <div className="space-y-2">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
-            Storage Details by Waste Type
+            Cumulative Available Waste
           </h3>
           <div className="space-y-2">
-            {wasteDetails.map((w) => (
+            {cumulative.map((w) => (
               <Card key={w.id} className={w.overdueCount > 0 ? "border-overdue/40" : w.warningCount > 0 ? "border-warning/40" : ""}>
                 <CardContent className="p-3">
                   <div className="flex items-start justify-between gap-2">
@@ -66,8 +95,8 @@ export default function DashboardStats({ entries }: Props) {
                       <p className="text-xs text-muted-foreground mt-0.5">{w.category}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-lg font-bold leading-tight">
-                        {w.totalQty} <span className="text-xs font-normal text-muted-foreground">{w.unit}</span>
+                      <p className="text-lg font-bold leading-tight text-primary">
+                        {w.totalQty.toFixed(2).replace(/\.00$/, "")} <span className="text-xs font-normal text-muted-foreground">{w.unit}</span>
                       </p>
                       <p className="text-[10px] text-muted-foreground">{w.count} entries</p>
                     </div>
