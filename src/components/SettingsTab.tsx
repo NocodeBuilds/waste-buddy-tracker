@@ -24,11 +24,14 @@ interface SiteMember {
 
 export default function SettingsTab({ entries }: Props) {
   const { user, signOut } = useAuth();
-  const { currentSite, isAdmin, sites, refresh } = useSite();
+  const { currentSite, isAdmin, sites, refresh, setCurrentSite } = useSite();
   const [members, setMembers] = useState<SiteMember[]>([]);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"admin" | "manager" | "member">("member");
   const [inviting, setInviting] = useState(false);
+  const [newSiteName, setNewSiteName] = useState("");
+  const [newSiteLocation, setNewSiteLocation] = useState("");
+  const [creatingSite, setCreatingSite] = useState(false);
 
   const loadMembers = async () => {
     if (!currentSite) return;
@@ -101,6 +104,27 @@ export default function SettingsTab({ entries }: Props) {
     loadMembers();
   };
 
+  const handleCreateSite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSiteName.trim()) return;
+    setCreatingSite(true);
+    const { data, error } = await supabase
+      .from("sites")
+      .insert({ name: newSiteName.trim(), location: newSiteLocation.trim() || null })
+      .select()
+      .single();
+    setCreatingSite(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(`Site "${data.name}" created — you're the admin`);
+    setNewSiteName("");
+    setNewSiteLocation("");
+    await refresh();
+    if (data) setCurrentSite({ id: data.id, name: data.name, location: data.location });
+  };
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-bold flex items-center gap-2">
@@ -124,23 +148,52 @@ export default function SettingsTab({ entries }: Props) {
       </Card>
 
       {/* Sites */}
-      {sites.length > 0 && (
-        <Card>
-          <CardContent className="p-4 space-y-2">
-            <h3 className="text-sm font-semibold flex items-center gap-2">
-              <Building2 className="h-4 w-4" /> My Sites ({sites.length})
-            </h3>
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <Building2 className="h-4 w-4" /> My Sites ({sites.length})
+          </h3>
+          {sites.length > 0 && (
             <ul className="text-xs space-y-1">
               {sites.map((s) => (
                 <li key={s.id} className="flex justify-between">
-                  <span>{s.name}</span>
+                  <span className={s.id === currentSite?.id ? "font-semibold" : ""}>{s.name}</span>
                   {s.location && <span className="text-muted-foreground">{s.location}</span>}
                 </li>
               ))}
             </ul>
-          </CardContent>
-        </Card>
-      )}
+          )}
+          <form onSubmit={handleCreateSite} className="space-y-2 border-t pt-3">
+            <h4 className="text-xs font-semibold">Create new site</h4>
+            <div className="space-y-1.5">
+              <Label htmlFor="new-site-name" className="text-xs">Name</Label>
+              <Input
+                id="new-site-name"
+                value={newSiteName}
+                onChange={(e) => setNewSiteName(e.target.value)}
+                placeholder="e.g. North Wind Farm"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="new-site-loc" className="text-xs">Location (optional)</Label>
+              <Input
+                id="new-site-loc"
+                value={newSiteLocation}
+                onChange={(e) => setNewSiteLocation(e.target.value)}
+                placeholder="e.g. Tamil Nadu, IN"
+              />
+            </div>
+            <Button type="submit" size="sm" className="w-full gap-2" disabled={creatingSite}>
+              {creatingSite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Building2 className="h-4 w-4" />}
+              Create site
+            </Button>
+            <p className="text-[11px] text-muted-foreground">
+              You'll be the admin of any site you create.
+            </p>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* Admin: invite users */}
       {isAdmin && currentSite && (
