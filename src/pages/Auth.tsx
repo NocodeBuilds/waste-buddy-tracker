@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Leaf, ArrowLeft, Loader2, Shield } from "lucide-react";
+import { Leaf, Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 const schema = z.object({
@@ -92,13 +92,7 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/40">
-      <header className="px-4 py-4 max-w-md mx-auto w-full">
-        <Link to="/" className="text-sm text-muted-foreground inline-flex items-center gap-1 hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Back
-        </Link>
-      </header>
-
-      <div className="flex-1 flex items-center justify-center px-4 pb-10">
+      <div className="flex-1 flex items-center justify-center px-4 py-10">
         <Card className="w-full max-w-md shadow-lg">
           <CardContent className="p-6 space-y-5">
             <div className="text-center space-y-1">

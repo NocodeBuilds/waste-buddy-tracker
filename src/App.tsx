@@ -1,12 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SiteProvider } from "@/contexts/SiteContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import Welcome from "./pages/Welcome";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Index from "./pages/Index.tsx";
@@ -23,7 +22,7 @@ const App = () => (
         <AuthProvider>
           <SiteProvider>
             <Routes>
-              <Route path="/" element={<Welcome />} />
+              <Route path="/" element={<Navigate to="/auth" replace />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route
