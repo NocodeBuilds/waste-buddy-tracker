@@ -106,16 +106,21 @@ export default function SettingsTab({ entries }: Props) {
 
   const handleCreateSite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSiteName.trim()) return;
+    const name = newSiteName.trim();
+    if (!name) return toast.error("Site name is required");
+    if (name.length > 80) return toast.error("Site name too long (max 80 chars)");
     setCreatingSite(true);
     const { data, error } = await supabase
       .from("sites")
-      .insert({ name: newSiteName.trim(), location: newSiteLocation.trim() || null })
+      .insert({ name, location: newSiteLocation.trim() || null })
       .select()
       .single();
     setCreatingSite(false);
     if (error) {
-      toast.error(error.message);
+      const detail = [error.message, (error as any).details, (error as any).hint]
+        .filter(Boolean)
+        .join(" — ");
+      toast.error(detail || "Could not create site");
       return;
     }
     toast.success(`Site "${data.name}" created — you're the admin`);
