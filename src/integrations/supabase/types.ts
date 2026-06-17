@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          row_id: string | null
+          site_id: string | null
+          snapshot: Json | null
+          table_name: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          row_id?: string | null
+          site_id?: string | null
+          snapshot?: Json | null
+          table_name: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          row_id?: string | null
+          site_id?: string | null
+          snapshot?: Json | null
+          table_name?: string
+        }
+        Relationships: []
+      }
       disposal_batches: {
         Row: {
           created_at: string
@@ -238,6 +271,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_any_admin: { Args: { _user_id: string }; Returns: boolean }
       is_site_admin_or_manager: {
         Args: { _site_id: string; _user_id: string }
         Returns: boolean

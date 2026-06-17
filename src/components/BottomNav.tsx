@@ -1,22 +1,32 @@
-import { Home, List, BarChart3, Settings, Plus } from "lucide-react";
+import { Home, List, BarChart3, Settings, Plus, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type TabId = "home" | "inventory" | "analytics" | "settings";
+export type TabId = "home" | "inventory" | "analytics" | "settings" | "admin";
 
 interface Props {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
   onAddClick: () => void;
+  isAdmin?: boolean;
 }
 
-const tabs: { id: TabId; label: string; icon: typeof Home }[] = [
+const baseTabs: { id: TabId; label: string; icon: typeof Home }[] = [
   { id: "home", label: "Home", icon: Home },
   { id: "inventory", label: "Inventory", icon: List },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
-export default function BottomNav({ activeTab, onTabChange, onAddClick }: Props) {
+export default function BottomNav({ activeTab, onTabChange, onAddClick, isAdmin }: Props) {
+  const tabs = isAdmin
+    ? [
+        baseTabs[0],
+        baseTabs[1],
+        baseTabs[2],
+        { id: "admin" as TabId, label: "Admin", icon: Shield },
+      ]
+    : baseTabs;
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border safe-area-bottom">
       <div className="flex items-end justify-around px-2 pt-1 pb-2">
@@ -35,10 +45,7 @@ export default function BottomNav({ activeTab, onTabChange, onAddClick }: Props)
         ))}
 
         {/* Center FAB */}
-        <button
-          onClick={onAddClick}
-          className="flex flex-col items-center -mt-4"
-        >
+        <button onClick={onAddClick} className="flex flex-col items-center -mt-4">
           <div className="bg-accent text-accent-foreground rounded-full p-3 shadow-lg shadow-accent/30">
             <Plus className="h-6 w-6" />
           </div>

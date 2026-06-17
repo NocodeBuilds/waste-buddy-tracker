@@ -7,7 +7,9 @@ import WasteInventoryTable from "@/components/WasteInventoryTable";
 import AlertsPanel from "@/components/AlertsPanel";
 import AnalyticsTab from "@/components/AnalyticsTab";
 import SettingsTab from "@/components/SettingsTab";
+import AdminTab from "@/components/AdminTab";
 import BottomNav, { TabId } from "@/components/BottomNav";
+
 import SiteSwitcher from "@/components/SiteSwitcher";
 import { Leaf, ArrowLeft, Loader2, Building2 } from "lucide-react";
 import {
@@ -23,7 +25,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
-  const { currentSite, sites, loading: siteLoading } = useSite();
+  const { currentSite, sites, loading: siteLoading, isAdmin } = useSite();
   const { signOut } = useAuth();
   const { entries, batches, isLoading, addEntry, deleteEntry, createDisposalBatch } = useWasteEntries();
   const [activeTab, setActiveTab] = useState<TabId>("home");
@@ -86,12 +88,14 @@ const Index = () => {
             )}
             {activeTab === "analytics" && <AnalyticsTab entries={entries} batches={batches} />}
             {activeTab === "settings" && <SettingsTab entries={entries} />}
+            {activeTab === "admin" && <AdminTab />}
           </>
         )}
       </main>
 
       {/* Bottom Navigation */}
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} onAddClick={() => setDrawerOpen(true)} />
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} onAddClick={() => setDrawerOpen(true)} isAdmin={isAdmin} />
+
 
       {/* Waste Entry Drawer */}
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
