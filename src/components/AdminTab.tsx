@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Shield, Users, Building2, FileText, History, Loader2, UserPlus, Trash2, UserMinus,
+  Shield, Users, Building2, FileText, History, Loader2, UserPlus, Trash2, UserMinus, LogOut,
 } from "lucide-react";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,7 +35,8 @@ interface AuditRow {
 
 export default function AdminTab() {
   const { currentSite, sites, isAdmin, refresh } = useSite();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+
   const [tab, setTab] = useState("users");
 
   if (!isAdmin || !currentSite) {
@@ -73,9 +75,20 @@ export default function AdminTab() {
           <AuditPanel />
         </TabsContent>
       </Tabs>
+
+      <Card>
+        <CardContent className="p-4 space-y-2">
+          <h3 className="text-sm font-semibold">Account</h3>
+          <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+          <Button variant="outline" size="sm" className="w-full gap-2" onClick={signOut}>
+            <LogOut className="h-4 w-4" /> Sign out
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
 
 // ─────────────── Users
 function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: string; callerId: string }) {
