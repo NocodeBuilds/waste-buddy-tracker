@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Leaf, Loader2 } from "lucide-react";
+import { Leaf, Loader2, Recycle } from "lucide-react";
 import { toast } from "sonner";
 
 const schema = z.object({
