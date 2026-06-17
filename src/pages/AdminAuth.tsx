@@ -49,14 +49,19 @@ export default function AdminAuth() {
       password,
       options: { emailRedirectTo: `${window.location.origin}/app` },
     });
-    if (suErr && !suErr.message.toLowerCase().includes("already")) {
+    const alreadyExists = suErr && suErr.message.toLowerCase().includes("already");
+    if (suErr && !alreadyExists) {
       setSubmitting(false);
       return toast.error(suErr.message);
     }
     const { error: siErr } = await supabase.auth.signInWithPassword({ email, password });
     if (siErr) {
       setSubmitting(false);
-      return toast.error(siErr.message);
+      return toast.error(
+        alreadyExists
+          ? "This email already has an account but the password doesn't match. Use the correct password or a new email."
+          : siErr.message
+      );
     }
     const { error: bErr, data } = await supabase.functions.invoke("bootstrap-admin", {});
     setSubmitting(false);
@@ -66,6 +71,7 @@ export default function AdminAuth() {
     toast.success("You're the site admin. Welcome!");
     navigate("/app");
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-gradient-to-b from-background to-secondary/40">
