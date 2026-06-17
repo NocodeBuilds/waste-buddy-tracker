@@ -59,8 +59,16 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/40">
+      <header className="px-4 pt-5 flex items-center justify-between max-w-md mx-auto w-full">
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-semibold tracking-wide border border-primary/20">
+          <Recycle className="h-3.5 w-3.5" aria-hidden="true" />
+          <span>Renew</span>
+        </div>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Hazardous Waste</span>
+      </header>
       <div className="flex-1 flex items-center justify-center px-4 py-10">
         <Card className="w-full max-w-md shadow-lg">
+
           <CardContent className="p-6 space-y-5">
             <div className="text-center space-y-1">
               <div className="bg-primary text-primary-foreground rounded-xl p-3 w-fit mx-auto mb-2">
