@@ -30,6 +30,7 @@ export interface WasteEntry {
   quantity: number;
   generated_date: string;
   activity_type: ActivityType;
+  location?: string | null;
   notes?: string | null;
   disposal_batch_id?: string | null;
   created_by?: string | null;
