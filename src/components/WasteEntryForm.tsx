@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { WASTE_TYPES, WasteCategory, ActivityType } from "@/lib/wasteTypes";
+import { useSiteLocations } from "@/hooks/useSiteLocations";
 import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -15,6 +16,7 @@ interface NewEntry {
   quantity: number;
   generated_date: string;
   activity_type: ActivityType;
+  location?: string;
   notes?: string;
 }
 
@@ -24,20 +26,27 @@ interface Props {
 }
 
 export default function WasteEntryForm({ onAdd, onClose }: Props) {
+  const { data: locations = [], isLoading: locLoading } = useSiteLocations();
   const [wtgId, setWtgId] = useState("");
   const [wasteCategory, setWasteCategory] = useState<WasteCategory>("hazardous");
   const [wasteTypeId, setWasteTypeId] = useState("");
   const [quantity, setQuantity] = useState("");
   const [generatedDate, setGeneratedDate] = useState(new Date().toISOString().split("T")[0]);
   const [activityType, setActivityType] = useState<ActivityType>("preventive");
+  const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const { siteCodes, commonCodes } = useMemo(() => ({
+    siteCodes: locations.filter((l) => !l.is_common),
+    commonCodes: locations.filter((l) => l.is_common),
+  }), [locations]);
 
   const selectedWaste = WASTE_TYPES.find((w) => w.id === wasteTypeId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!wtgId || !wasteTypeId || !quantity || Number(quantity) <= 0) {
+    if (!wtgId || !wasteTypeId || !quantity || Number(quantity) <= 0 || !location) {
       toast.error("Please fill all required fields with valid values");
       return;
     }
@@ -50,12 +59,14 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         quantity: Number(quantity),
         generated_date: generatedDate,
         activity_type: activityType,
+        location,
         notes: notes || undefined,
       });
       toast.success("Waste entry recorded");
       setWtgId("");
       setWasteTypeId("");
       setQuantity("");
+      setLocation("");
       setNotes("");
       onClose?.();
     } catch (err: any) {
@@ -67,6 +78,37 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label>Location *</Label>
+        <Select value={location} onValueChange={setLocation}>
+          <SelectTrigger>
+            <SelectValue placeholder={locLoading ? "Loading..." : "Select location"} />
+          </SelectTrigger>
+          <SelectContent className="max-h-72">
+            {siteCodes.length > 0 && (
+              <SelectGroup>
+                <SelectLabel>Turbine / Site codes</SelectLabel>
+                {siteCodes.map((l) => (
+                  <SelectItem key={l.id} value={l.code}>{l.code}</SelectItem>
+                ))}
+              </SelectGroup>
+            )}
+            {commonCodes.length > 0 && (
+              <SelectGroup>
+                <SelectLabel>Common areas</SelectLabel>
+                {commonCodes.map((l) => (
+                  <SelectItem key={l.id} value={l.code}>{l.code}</SelectItem>
+                ))}
+              </SelectGroup>
+            )}
+            {locations.length === 0 && !locLoading && (
+              <div className="p-2 text-xs text-muted-foreground">
+                No locations configured. Ask an admin to add some.
+              </div>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
       <div className="space-y-2">
         <Label htmlFor="wtg">WTG ID *</Label>
         <Input id="wtg" placeholder="e.g. WTG-01" value={wtgId} onChange={(e) => setWtgId(e.target.value)} />

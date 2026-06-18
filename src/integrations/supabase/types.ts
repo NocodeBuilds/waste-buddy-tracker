@@ -106,6 +106,47 @@ export type Database = {
         }
         Relationships: []
       }
+      site_locations: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_common: boolean
+          label: string | null
+          site_id: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_common?: boolean
+          label?: string | null
+          site_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_common?: boolean
+          label?: string | null
+          site_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_locations_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sites: {
         Row: {
           created_at: string
@@ -199,6 +240,7 @@ export type Database = {
           disposal_batch_id: string | null
           generated_date: string
           id: string
+          location: string | null
           notes: string | null
           quantity: number
           site_id: string
@@ -214,6 +256,7 @@ export type Database = {
           disposal_batch_id?: string | null
           generated_date: string
           id?: string
+          location?: string | null
           notes?: string | null
           quantity: number
           site_id: string
@@ -229,6 +272,7 @@ export type Database = {
           disposal_batch_id?: string | null
           generated_date?: string
           id?: string
+          location?: string | null
           notes?: string | null
           quantity?: number
           site_id?: string

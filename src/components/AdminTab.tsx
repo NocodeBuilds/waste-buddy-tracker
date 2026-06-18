@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Shield, Users, Building2, FileText, History, Loader2, UserPlus, Trash2, UserMinus, LogOut,
+  Shield, Users, Building2, FileText, History, Loader2, UserPlus, Trash2, UserMinus, LogOut, MapPin, Plus,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -273,17 +273,20 @@ function SitesPanel({ sites, onChanged }: { sites: SiteRow[]; onChanged: () => P
           <h3 className="text-sm font-semibold">Sites ({sites.length})</h3>
           <ul className="divide-y">
             {sites.map((s) => (
-              <li key={s.id} className="py-2 flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-xs font-medium truncate">{s.name}</p>
-                  {s.location && <p className="text-[10px] text-muted-foreground truncate">{s.location}</p>}
+              <li key={s.id} className="py-2 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium truncate">{s.name}</p>
+                    {s.location && <p className="text-[10px] text-muted-foreground truncate">{s.location}</p>}
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <Button size="sm" variant="outline" className="h-7 px-2 text-[10px]" onClick={() => rename(s)}>Rename</Button>
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => remove(s)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-1 shrink-0">
-                  <Button size="sm" variant="outline" className="h-7 px-2 text-[10px]" onClick={() => rename(s)}>Rename</Button>
-                  <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => remove(s)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
+                <LocationsManager siteId={s.id} />
               </li>
             ))}
           </ul>
@@ -301,6 +304,100 @@ function SitesPanel({ sites, onChanged }: { sites: SiteRow[]; onChanged: () => P
           </form>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// ─────────────── Locations sub-panel
+function LocationsManager({ siteId }: { siteId: string }) {
+  const [open, setOpen] = useState(false);
+  const [rows, setRows] = useState<{ id: string; code: string; sort_order: number }[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [newCode, setNewCode] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from("site_locations")
+      .select("id, code, sort_order")
+      .eq("site_id", siteId)
+      .order("sort_order");
+    setRows(data ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => { if (open) load(); }, [open, siteId]);
+
+  const add = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = newCode.trim().toUpperCase();
+    if (!code) return;
+    setBusy(true);
+    const nextOrder = (rows[rows.length - 1]?.sort_order ?? 0) + 1;
+    const { error } = await supabase
+      .from("site_locations")
+      .insert({ site_id: siteId, code, sort_order: nextOrder });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success(`Added ${code}`);
+    setNewCode("");
+    load();
+  };
+
+  const del = async (id: string, code: string) => {
+    if (!confirm(`Delete location "${code}"?`)) return;
+    const { error } = await supabase.from("site_locations").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
+    load();
+  };
+
+  return (
+    <div className="rounded-md border bg-muted/30">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full px-3 py-1.5 text-left text-[11px] font-medium flex items-center justify-between gap-2"
+      >
+        <span className="flex items-center gap-1.5">
+          <MapPin className="h-3.5 w-3.5" />
+          Locations ({rows.length || "—"})
+        </span>
+        <span className="text-[10px] text-muted-foreground">{open ? "Hide" : "Manage"}</span>
+      </button>
+      {open && (
+        <div className="px-3 pb-3 space-y-2">
+          {loading ? (
+            <div className="flex justify-center py-3"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
+          ) : (
+            <div className="flex flex-wrap gap-1">
+              {rows.length === 0 && (
+                <p className="text-[10px] text-muted-foreground py-1">No site-specific locations.</p>
+              )}
+              {rows.map((r) => (
+                <span key={r.id} className="inline-flex items-center gap-1 rounded bg-background border px-1.5 py-0.5 text-[10px] font-mono">
+                  {r.code}
+                  <button onClick={() => del(r.id, r.code)} className="text-destructive hover:opacity-70">
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <form onSubmit={add} className="flex gap-1">
+            <Input
+              value={newCode}
+              onChange={(e) => setNewCode(e.target.value)}
+              placeholder="e.g. KCTRE21"
+              className="h-7 text-xs"
+            />
+            <Button type="submit" size="sm" className="h-7 px-2" disabled={busy}>
+              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+            </Button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
