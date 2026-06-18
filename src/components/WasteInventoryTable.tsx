@@ -3,7 +3,8 @@ import { WasteEntry, WASTE_TYPES, getDaysStored, getStatus, DISPOSAL_LIMIT_DAYS,
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, CheckCircle, Loader2 } from "lucide-react";
+import { Trash2, CheckCircle, Loader2, FileSpreadsheet, FileText } from "lucide-react";
+import { exportInventoryToExcel, exportForm3Pdf } from "@/lib/wasteExports";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -31,7 +32,7 @@ interface Props {
 }
 
 export default function WasteInventoryTable({ entries, batches, onDelete, onCreateDisposal }: Props) {
-  const { isManagerOrAdmin } = useSite();
+  const { isManagerOrAdmin, currentSite } = useSite();
   const [filter, setFilter] = useState<"all" | "active" | "overdue" | "disposed">("active");
   const [disposalDate, setDisposalDate] = useState(new Date().toISOString().split("T")[0]);
   const [disposalNotes, setDisposalNotes] = useState("");
@@ -93,6 +94,24 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onCrea
         </Select>
       </div>
 
+      {/* Export buttons */}
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          variant="outline" size="sm"
+          disabled={activeEntries.length === 0}
+          onClick={() => exportInventoryToExcel(entries, currentSite?.name ?? "Site")}
+        >
+          <FileSpreadsheet className="h-4 w-4 mr-2" /> Export Excel
+        </Button>
+        <Button
+          variant="outline" size="sm"
+          disabled={activeEntries.length === 0}
+          onClick={() => exportForm3Pdf(entries, currentSite?.name ?? "Site")}
+        >
+          <FileText className="h-4 w-4 mr-2" /> Form 3 (PDF)
+        </Button>
+      </div>
+
       {/* Quarterly disposal action */}
       {isManagerOrAdmin && activeEntries.length > 0 && (
         <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -135,6 +154,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onCrea
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead>WTG</TableHead>
+              <TableHead>Location</TableHead>
               <TableHead>Waste Type</TableHead>
               <TableHead>Cat.</TableHead>
               <TableHead>Qty</TableHead>
@@ -146,13 +166,14 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onCrea
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={isManagerOrAdmin ? 8 : 7} className="text-center py-8 text-muted-foreground">No entries found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={isManagerOrAdmin ? 9 : 8} className="text-center py-8 text-muted-foreground">No entries found</TableCell></TableRow>
             ) : (
               filtered.map((entry) => {
                 const days = getDaysStored(entry.generated_date);
                 return (
                   <TableRow key={entry.id} className={getStatus(entry) === "overdue" && !isDisposed(entry) ? "bg-overdue/5" : ""}>
                     <TableCell className="font-mono font-semibold">{entry.wtg_id}</TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">{entry.location ?? "—"}</TableCell>
                     <TableCell className="max-w-[180px] truncate">{getWasteName(entry.waste_type_id)}</TableCell>
                     <TableCell className="text-xs">
                       <Badge variant="outline" className={entry.waste_category === "hazardous" ? "border-overdue/40 text-overdue" : "border-success/40 text-success"}>
