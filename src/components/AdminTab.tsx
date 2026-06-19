@@ -411,7 +411,7 @@ function RecordsPanel({ siteId }: { siteId: string }) {
     setLoading(true);
     const { data } = await supabase
       .from("waste_entries")
-      .select("id, wtg_id, waste_type_id, quantity, generated_date, activity_type, disposal_batch_id, created_at")
+      .select("id, location, waste_type_id, quantity, generated_date, activity_type, disposal_batch_id, created_at")
       .eq("site_id", siteId)
       .order("created_at", { ascending: false })
       .limit(100);

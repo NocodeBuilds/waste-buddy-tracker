@@ -63,7 +63,7 @@ export default function SettingsTab({ entries }: Props) {
 
   const handleExport = () => {
     const csv = [
-      "WTG,Waste Type,Category,Quantity,Activity,Generated,Disposed Batch,Notes",
+      "Location,Waste Type,Category,Quantity,Activity,Generated,Disposed Batch,Notes",
       ...entries.map((e) =>
         [
           e.location,
@@ -262,7 +262,7 @@ export default function SettingsTab({ entries }: Props) {
         <CardContent className="p-4">
           <h3 className="text-sm font-semibold mb-1">About</h3>
           <p className="text-xs text-muted-foreground">
-            Hazardous Waste Tracker v2.0 — Multi-site, role-based waste compliance for WTG maintenance. Disposal limit: 90 days.
+            Hazardous Waste Tracker v2.0 — Multi-site, role-based waste compliance for wind-turbine maintenance. Disposal limit: 90 days.
           </p>
         </CardContent>
       </Card>

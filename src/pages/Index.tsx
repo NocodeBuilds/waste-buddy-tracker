@@ -59,7 +59,7 @@ const Index = () => {
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-base font-bold tracking-tight truncate">Hazardous Waste Tracker</h1>
-            <p className="text-[10px] text-primary-foreground/70">WTG Maintenance — Waste Management</p>
+            <p className="text-[10px] text-primary-foreground/70">Wind Turbine Maintenance — Waste Management</p>
           </div>
           <SiteSwitcher />
         </div>

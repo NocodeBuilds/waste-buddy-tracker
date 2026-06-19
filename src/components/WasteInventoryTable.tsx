@@ -153,7 +153,8 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onCrea
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead>WTG</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead>Activity</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Waste Type</TableHead>
               <TableHead>Cat.</TableHead>
