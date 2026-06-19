@@ -247,7 +247,6 @@ export type Database = {
           updated_at: string
           waste_category: Database["public"]["Enums"]["waste_category"]
           waste_type_id: string
-          wtg_id: string
         }
         Insert: {
           activity_type: Database["public"]["Enums"]["activity_type"]
@@ -263,7 +262,6 @@ export type Database = {
           updated_at?: string
           waste_category?: Database["public"]["Enums"]["waste_category"]
           waste_type_id: string
-          wtg_id: string
         }
         Update: {
           activity_type?: Database["public"]["Enums"]["activity_type"]
@@ -279,7 +277,6 @@ export type Database = {
           updated_at?: string
           waste_category?: Database["public"]["Enums"]["waste_category"]
           waste_type_id?: string
-          wtg_id?: string
         }
         Relationships: [
           {
@@ -303,6 +300,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_exists: { Args: never; Returns: boolean }
       has_site_access: {
         Args: { _site_id: string; _user_id: string }
         Returns: boolean
