@@ -26,7 +26,6 @@ export function exportInventoryToExcel(
   const detail = inStorage.map((e, i) => ({
     "Sl. No.": i + 1,
     "Date Generated": e.generated_date,
-    "Location": e.location,
     "Location": e.location ?? "—",
     "Waste Description": wasteName(e.waste_type_id),
     "Physical Form": wasteCat(e.waste_type_id),
