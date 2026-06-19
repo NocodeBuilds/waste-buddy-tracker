@@ -26,7 +26,6 @@ export function exportInventoryToExcel(
   const detail = inStorage.map((e, i) => ({
     "Sl. No.": i + 1,
     "Date Generated": e.generated_date,
-    "WTG / Turbine ID": e.wtg_id,
     "Location": e.location ?? "—",
     "Waste Description": wasteName(e.waste_type_id),
     "Physical Form": wasteCat(e.waste_type_id),
@@ -125,7 +124,7 @@ export function exportForm3Pdf(entries: WasteEntry[], siteName: string) {
   const body = inStorage.map((e, i) => [
     String(i + 1),
     e.generated_date,
-    `${e.wtg_id}\n(${e.activity_type === "preventive" ? "PM" : "BM"})`,
+    e.activity_type === "preventive" ? "PM" : "BM",
     e.location ?? "—",
     wasteName(e.waste_type_id),
     `${e.waste_category === "hazardous" ? "Haz" : "Non-Haz"} / ${wasteCat(e.waste_type_id)}`,

@@ -32,7 +32,7 @@ export default function AlertsPanel({ entries }: Props) {
           <div key={e.id} className="flex items-start gap-2 bg-overdue/10 p-3 rounded-lg">
             <AlertTriangle className="h-4 w-4 text-overdue mt-0.5 shrink-0" />
             <div className="text-sm">
-              <span className="font-semibold">{e.wtg_id}</span> — {getWasteName(e.waste_type_id)} ({e.quantity} {getUnit(e.waste_type_id)}) stored for <span className="font-bold text-overdue">{getDaysStored(e.generated_date)} days</span>. Exceeded {DISPOSAL_LIMIT_DAYS}-day limit!
+              <span className="font-semibold">{e.location}</span> — {getWasteName(e.waste_type_id)} ({e.quantity} {getUnit(e.waste_type_id)}) stored for <span className="font-bold text-overdue">{getDaysStored(e.generated_date)} days</span>. Exceeded {DISPOSAL_LIMIT_DAYS}-day limit!
             </div>
           </div>
         ))}
@@ -40,7 +40,7 @@ export default function AlertsPanel({ entries }: Props) {
           <div key={e.id} className="flex items-start gap-2 bg-warning/10 p-3 rounded-lg">
             <AlertTriangle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
             <div className="text-sm">
-              <span className="font-semibold">{e.wtg_id}</span> — {getWasteName(e.waste_type_id)} stored for <span className="font-semibold text-warning">{getDaysStored(e.generated_date)} days</span>. Approaching disposal deadline.
+              <span className="font-semibold">{e.location}</span> — {getWasteName(e.waste_type_id)} stored for <span className="font-semibold text-warning">{getDaysStored(e.generated_date)} days</span>. Approaching disposal deadline.
             </div>
           </div>
         ))}

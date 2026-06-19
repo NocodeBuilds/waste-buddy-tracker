@@ -24,7 +24,6 @@ export type ActivityType = "breakdown" | "preventive";
 export interface WasteEntry {
   id: string;
   site_id: string;
-  wtg_id: string;
   waste_type_id: string;
   waste_category: WasteCategory;
   quantity: number;

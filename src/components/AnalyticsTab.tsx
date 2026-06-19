@@ -42,10 +42,10 @@ export default function AnalyticsTab({ entries, batches }: Props) {
   const breakdownEntries = entries.filter((e) => e.activity_type === "breakdown");
   const preventiveEntries = entries.filter((e) => e.activity_type === "preventive");
 
-  // Top WTGs
+  // Top Locations
   const wtgCounts: Record<string, number> = {};
   entries.forEach((e) => {
-    wtgCounts[e.wtg_id] = (wtgCounts[e.wtg_id] || 0) + 1;
+    wtgCounts[e.location] = (wtgCounts[e.location] || 0) + 1;
   });
   const topWtgs = Object.entries(wtgCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
@@ -151,12 +151,12 @@ export default function AnalyticsTab({ entries, batches }: Props) {
         </Card>
       )}
 
-      {/* Top WTGs */}
+      {/* Top Locations */}
       {topWtgs.length > 0 && (
         <Card>
           <CardContent className="p-3">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              Top WTGs by Waste Count
+              Top Locations by Waste Count
             </h3>
             <div className="space-y-2">
               {topWtgs.map(([wtg, count]) => {
