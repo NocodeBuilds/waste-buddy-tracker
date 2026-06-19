@@ -172,7 +172,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onCrea
                 const days = getDaysStored(entry.generated_date);
                 return (
                   <TableRow key={entry.id} className={getStatus(entry) === "overdue" && !isDisposed(entry) ? "bg-overdue/5" : ""}>
-                    <TableCell className="font-mono font-semibold">{entry.wtg_id}</TableCell>
+                    <TableCell className="font-mono font-semibold">{entry.location}</TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{entry.location ?? "—"}</TableCell>
                     <TableCell className="max-w-[180px] truncate">{getWasteName(entry.waste_type_id)}</TableCell>
                     <TableCell className="text-xs">

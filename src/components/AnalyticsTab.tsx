@@ -45,7 +45,7 @@ export default function AnalyticsTab({ entries, batches }: Props) {
   // Top WTGs
   const wtgCounts: Record<string, number> = {};
   entries.forEach((e) => {
-    wtgCounts[e.wtg_id] = (wtgCounts[e.wtg_id] || 0) + 1;
+    wtgCounts[e.location] = (wtgCounts[e.location] || 0) + 1;
   });
   const topWtgs = Object.entries(wtgCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
 

@@ -441,7 +441,7 @@ function RecordsPanel({ siteId }: { siteId: string }) {
             {rows.map((r) => (
               <li key={r.id} className="py-2 flex items-center justify-between gap-2 text-xs">
                 <div className="min-w-0">
-                  <p className="font-medium truncate">{r.wtg_id} · {r.waste_type_id}</p>
+                  <p className="font-medium truncate">{r.location} · {r.waste_type_id}</p>
                   <p className="text-[10px] text-muted-foreground">
                     {r.generated_date} · {r.quantity} · {r.activity_type}
                     {r.disposal_batch_id ? " · disposed" : ""}

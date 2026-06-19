@@ -66,7 +66,7 @@ export default function SettingsTab({ entries }: Props) {
       "WTG,Waste Type,Category,Quantity,Activity,Generated,Disposed Batch,Notes",
       ...entries.map((e) =>
         [
-          e.wtg_id,
+          e.location,
           WASTE_TYPES.find((w) => w.id === e.waste_type_id)?.name ?? e.waste_type_id,
           e.waste_category,
           e.quantity,
