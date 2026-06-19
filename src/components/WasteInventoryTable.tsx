@@ -155,7 +155,6 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onCrea
             <TableRow className="bg-muted/50">
               <TableHead>Location</TableHead>
               <TableHead>Activity</TableHead>
-              <TableHead>Location</TableHead>
               <TableHead>Waste Type</TableHead>
               <TableHead>Cat.</TableHead>
               <TableHead>Qty</TableHead>
@@ -173,8 +172,8 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onCrea
                 const days = getDaysStored(entry.generated_date);
                 return (
                   <TableRow key={entry.id} className={getStatus(entry) === "overdue" && !isDisposed(entry) ? "bg-overdue/5" : ""}>
-                    <TableCell className="font-mono font-semibold">{entry.location}</TableCell>
-                    <TableCell className="text-xs whitespace-nowrap">{entry.location ?? "—"}</TableCell>
+                    <TableCell className="font-mono font-semibold">{entry.location ?? "—"}</TableCell>
+                    <TableCell className="text-xs">{entry.activity_type === "preventive" ? "PM" : "BM"}</TableCell>
                     <TableCell className="max-w-[180px] truncate">{getWasteName(entry.waste_type_id)}</TableCell>
                     <TableCell className="text-xs">
                       <Badge variant="outline" className={entry.waste_category === "hazardous" ? "border-overdue/40 text-overdue" : "border-success/40 text-success"}>
