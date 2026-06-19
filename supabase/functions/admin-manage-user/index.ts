@@ -67,15 +67,17 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (existing) {
         targetId = existing.id;
+        // Existing user — send password reset link so they can update if needed
+        await admin.auth.admin.generateLink({ type: "recovery", email });
       } else {
-        const { data: created, error: cErr } = await admin.auth.admin.createUser({
-          email,
-          email_confirm: true,
-          user_metadata: { full_name: body.full_name ?? email },
-          password: crypto.randomUUID() + "Aa1!",
+        // Send invite email — user clicks link and sets their own password
+        const redirectTo = `${req.headers.get("origin") ?? ""}/reset-password`;
+        const { data: inv, error: invErr } = await admin.auth.admin.inviteUserByEmail(email, {
+          redirectTo,
+          data: { full_name: body.full_name ?? email },
         });
-        if (cErr || !created.user) return json({ error: cErr?.message ?? "Failed to create user" }, 400);
-        targetId = created.user.id;
+        if (invErr || !inv.user) return json({ error: invErr?.message ?? "Invite failed" }, 400);
+        targetId = inv.user.id;
       }
 
       await admin.from("user_sites").upsert(
@@ -86,9 +88,6 @@ Deno.serve(async (req) => {
         { user_id: targetId, site_id, role: body.role },
         { onConflict: "user_id,site_id,role" }
       );
-
-      // send password reset so they can set password
-      await admin.auth.admin.generateLink({ type: "recovery", email });
 
       return json({ ok: true, user_id: targetId });
     }
