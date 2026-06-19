@@ -13,6 +13,7 @@ export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
