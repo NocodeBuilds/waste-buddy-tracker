@@ -10,7 +10,6 @@ import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface NewEntry {
-  wtg_id: string;
   waste_type_id: string;
   waste_category: WasteCategory;
   quantity: number;
@@ -27,7 +26,6 @@ interface Props {
 
 export default function WasteEntryForm({ onAdd, onClose }: Props) {
   const { data: locations = [], isLoading: locLoading } = useSiteLocations();
-  const [wtgId, setWtgId] = useState("");
   const [wasteCategory, setWasteCategory] = useState<WasteCategory>("hazardous");
   const [wasteTypeId, setWasteTypeId] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -46,14 +44,13 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!wtgId || !wasteTypeId || !quantity || Number(quantity) <= 0 || !location) {
+    if (!wasteTypeId || !quantity || Number(quantity) <= 0 || !location) {
       toast.error("Please fill all required fields with valid values");
       return;
     }
     setSubmitting(true);
     try {
       await onAdd({
-        wtg_id: wtgId.toUpperCase(),
         waste_type_id: wasteTypeId,
         waste_category: wasteCategory,
         quantity: Number(quantity),
@@ -63,7 +60,6 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         notes: notes || undefined,
       });
       toast.success("Waste entry recorded");
-      setWtgId("");
       setWasteTypeId("");
       setQuantity("");
       setLocation("");
