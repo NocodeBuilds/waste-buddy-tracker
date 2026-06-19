@@ -106,10 +106,6 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         </Select>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="wtg">WTG ID *</Label>
-        <Input id="wtg" placeholder="e.g. WTG-01" value={wtgId} onChange={(e) => setWtgId(e.target.value)} />
-      </div>
-      <div className="space-y-2">
         <Label>Waste Category *</Label>
         <Select value={wasteCategory} onValueChange={(v) => setWasteCategory(v as WasteCategory)}>
           <SelectTrigger><SelectValue /></SelectTrigger>
