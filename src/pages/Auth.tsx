@@ -23,6 +23,7 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [mode, setMode] = useState<Mode>("login");
 
   if (!loading && session) return <Navigate to="/app" replace />;
