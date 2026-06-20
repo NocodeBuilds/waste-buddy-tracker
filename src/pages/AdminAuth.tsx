@@ -110,7 +110,7 @@ export default function AdminAuth() {
               {mode === "login"
                 ? "Restricted area — administrators only"
                 : mode === "bootstrap"
-                ? "First-time setup: become the admin of Main Site"
+                ? "First-time setup: create your admin account for all sites"
                 : "We'll email you a reset link"}
             </p>
           </div>
@@ -180,13 +180,13 @@ export default function AdminAuth() {
                 Back to admin sign in
               </button>
             )}
-            {mode === "login" && adminExists === false && (
+            {mode === "login" && adminExists !== true && (
               <button
                 type="button"
                 onClick={() => setMode("bootstrap")}
                 className="text-accent hover:underline font-medium"
               >
-                First-time setup (claim admin)
+                First-time setup — Sign up as admin
               </button>
             )}
             <button
