@@ -1,5 +1,4 @@
-// One-time bootstrap: if Main Site has no admins, the caller becomes admin.
-// Lets the first signed-up user gain access without needing pre-seeded credentials.
+// One-time bootstrap: if no admin exists, the caller becomes admin of ALL sites.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -28,39 +27,29 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    // Find main site
-    const { data: site } = await admin
-      .from("sites")
-      .select("id, name")
-      .eq("name", "Main Site")
-      .maybeSingle();
-    if (!site) {
-      return new Response(JSON.stringify({ error: "Main Site missing" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    // Check for existing admins
-    const { data: admins } = await admin
+    // Block if an admin already exists anywhere
+    const { data: existing } = await admin
       .from("user_roles")
       .select("user_id")
-      .eq("site_id", site.id)
       .eq("role", "admin")
       .limit(1);
-
-    if (admins && admins.length > 0) {
-      return new Response(JSON.stringify({ error: "Already initialized" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (existing && existing.length > 0) {
+      return new Response(JSON.stringify({ error: "An admin already exists" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Make caller admin of Main Site
-    await admin.from("user_sites").upsert(
-      { user_id: user.id, site_id: site.id },
-      { onConflict: "user_id,site_id" }
-    );
-    await admin.from("user_roles").upsert(
-      { user_id: user.id, site_id: site.id, role: "admin" },
-      { onConflict: "user_id,site_id,role" }
-    );
+    // Fetch all sites
+    const { data: sites, error: sErr } = await admin.from("sites").select("id");
+    if (sErr || !sites || sites.length === 0) {
+      return new Response(JSON.stringify({ error: "No sites configured" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
-    return new Response(JSON.stringify({ ok: true, site_id: site.id }), {
+    const userSites = sites.map((s) => ({ user_id: user.id, site_id: s.id }));
+    const userRoles = sites.map((s) => ({ user_id: user.id, site_id: s.id, role: "admin" as const }));
+
+    await admin.from("user_sites").upsert(userSites, { onConflict: "user_id,site_id" });
+    await admin.from("user_roles").upsert(userRoles, { onConflict: "user_id,site_id,role" });
+
+    return new Response(JSON.stringify({ ok: true, sites: sites.length }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
