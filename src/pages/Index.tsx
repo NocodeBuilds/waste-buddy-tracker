@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useWasteEntries } from "@/hooks/useWasteEntries";
 import { useSite } from "@/contexts/SiteContext";
 import WasteEntryForm from "@/components/WasteEntryForm";
-import DashboardStats from "@/components/DashboardStats";
+import FuturisticDashboard from "@/components/FuturisticDashboard";
 import WasteInventoryTable from "@/components/WasteInventoryTable";
 import AlertsPanel from "@/components/AlertsPanel";
 import AnalyticsTab from "@/components/AnalyticsTab";
 import SettingsTab from "@/components/SettingsTab";
 import AdminTab from "@/components/AdminTab";
+import RequestSiteAccess from "@/components/RequestSiteAccess";
 import BottomNav, { TabId } from "@/components/BottomNav";
 
 import SiteSwitcher from "@/components/SiteSwitcher";
