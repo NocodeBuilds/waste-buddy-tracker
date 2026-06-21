@@ -63,7 +63,7 @@ const Index = () => {
             {activeTab === "home" && (
               <>
                 <AlertsPanel entries={entries} />
-                <DashboardStats entries={entries} />
+                <FuturisticDashboard entries={entries} />
               </>
             )}
             {activeTab === "inventory" && (
