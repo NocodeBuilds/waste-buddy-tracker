@@ -148,6 +148,45 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    if (body.action === "approve_request") {
+      const { data: reqRow, error: reqErr } = await admin
+        .from("site_access_requests")
+        .select("id, user_id, site_id, status")
+        .eq("id", body.request_id)
+        .maybeSingle();
+      if (reqErr || !reqRow) return json({ error: "Request not found" }, 404);
+      if (reqRow.site_id !== site_id) return json({ error: "Site mismatch" }, 400);
+      if (reqRow.status !== "pending") return json({ error: "Already decided" }, 400);
+
+      const role = body.role ?? "member";
+      await admin.from("user_sites").upsert(
+        { user_id: reqRow.user_id, site_id },
+        { onConflict: "user_id,site_id" }
+      );
+      await admin.from("user_roles").upsert(
+        { user_id: reqRow.user_id, site_id, role },
+        { onConflict: "user_id,site_id,role" }
+      );
+      await admin.from("site_access_requests")
+        .update({ status: "approved", decided_at: new Date().toISOString(), decided_by: user.id })
+        .eq("id", body.request_id);
+      return json({ ok: true });
+    }
+
+    if (body.action === "reject_request") {
+      const { error } = await admin.from("site_access_requests")
+        .update({
+          status: "rejected",
+          decided_at: new Date().toISOString(),
+          decided_by: user.id,
+          note: body.note ?? null,
+        })
+        .eq("id", body.request_id)
+        .eq("site_id", site_id);
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
+    }
+
     return json({ error: "Unknown action" }, 400);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown";
