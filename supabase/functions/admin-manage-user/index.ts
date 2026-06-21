@@ -12,7 +12,9 @@ type Action =
   | { action: "invite"; email: string; site_id: string; role: "admin" | "manager" | "member"; full_name?: string }
   | { action: "assign"; user_id: string; site_id: string; role: "admin" | "manager" | "member" }
   | { action: "revoke_role"; user_id: string; site_id: string; role: "admin" | "manager" | "member" }
-  | { action: "remove_from_site"; user_id: string; site_id: string };
+  | { action: "remove_from_site"; user_id: string; site_id: string }
+  | { action: "approve_request"; request_id: string; site_id: string; role?: "admin" | "manager" | "member" }
+  | { action: "reject_request"; request_id: string; site_id: string; note?: string };
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
