@@ -93,6 +93,7 @@ export default function AdminTab() {
 // ─────────────── Users
 function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: string; callerId: string }) {
   const [members, setMembers] = useState<Member[]>([]);
+  const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role>("member");
@@ -116,6 +117,23 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
       full_name: m.profiles?.full_name ?? null,
       roles: byUser[m.user_id] ?? [],
     })));
+
+    // Pending site-access requests
+    const { data: reqRows } = await supabase
+      .from("site_access_requests")
+      .select("id, user_id, note, created_at, status")
+      .eq("site_id", siteId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+    const reqUserIds = (reqRows ?? []).map((r: any) => r.user_id);
+    let profMap: Record<string, { email: string | null; full_name: string | null }> = {};
+    if (reqUserIds.length) {
+      const { data: ps } = await supabase
+        .from("profiles").select("id, email, full_name").in("id", reqUserIds);
+      (ps ?? []).forEach((p: any) => { profMap[p.id] = { email: p.email, full_name: p.full_name }; });
+    }
+    setRequests((reqRows ?? []).map((r: any) => ({ ...r, profile: profMap[r.user_id] })));
+
     setLoading(false);
   };
 
@@ -143,6 +161,52 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
 
   return (
     <div className="space-y-3">
+      {/* Pending site access requests */}
+      <Card className={requests.length > 0 ? "border-warning/40" : ""}>
+        <CardContent className="p-4 space-y-2">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <UserPlus className="h-4 w-4 text-warning" /> Pending requests ({requests.length})
+          </h3>
+          {requests.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No pending site access requests.</p>
+          ) : (
+            <ul className="divide-y">
+              {requests.map((r) => (
+                <li key={r.id} className="py-2 space-y-1.5">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium truncate">
+                      {r.profile?.full_name ?? r.profile?.email ?? r.user_id}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {r.profile?.email} · {new Date(r.created_at).toLocaleDateString()}
+                    </p>
+                    {r.note && <p className="text-[10px] italic text-muted-foreground truncate">"{r.note}"</p>}
+                  </div>
+                  <div className="flex gap-1">
+                    <Select defaultValue="member" onValueChange={(v) => (r._role = v)}>
+                      <SelectTrigger className="h-7 text-[10px] w-24"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="member">Member</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button size="sm" className="h-7 text-[10px] flex-1" disabled={busy}
+                      onClick={() => call({ action: "approve_request", request_id: r.id, site_id: siteId, role: r._role ?? "member" }, "Approved")}>
+                      Approve
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-7 text-[10px]" disabled={busy}
+                      onClick={() => call({ action: "reject_request", request_id: r.id, site_id: siteId }, "Rejected")}>
+                      Reject
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardContent className="p-4 space-y-3">
           <h3 className="text-sm font-semibold flex items-center gap-2">
@@ -170,6 +234,7 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
           </form>
         </CardContent>
       </Card>
+
 
       <Card>
         <CardContent className="p-4 space-y-2">
