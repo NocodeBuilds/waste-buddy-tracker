@@ -12,7 +12,9 @@ type Action =
   | { action: "invite"; email: string; site_id: string; role: "admin" | "manager" | "member"; full_name?: string }
   | { action: "assign"; user_id: string; site_id: string; role: "admin" | "manager" | "member" }
   | { action: "revoke_role"; user_id: string; site_id: string; role: "admin" | "manager" | "member" }
-  | { action: "remove_from_site"; user_id: string; site_id: string };
+  | { action: "remove_from_site"; user_id: string; site_id: string }
+  | { action: "approve_request"; request_id: string; site_id: string; role?: "admin" | "manager" | "member" }
+  | { action: "reject_request"; request_id: string; site_id: string; note?: string };
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -142,6 +144,45 @@ Deno.serve(async (req) => {
 
       await admin.from("user_roles").delete().eq("user_id", body.user_id).eq("site_id", site_id);
       const { error } = await admin.from("user_sites").delete().eq("user_id", body.user_id).eq("site_id", site_id);
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
+    }
+
+    if (body.action === "approve_request") {
+      const { data: reqRow, error: reqErr } = await admin
+        .from("site_access_requests")
+        .select("id, user_id, site_id, status")
+        .eq("id", body.request_id)
+        .maybeSingle();
+      if (reqErr || !reqRow) return json({ error: "Request not found" }, 404);
+      if (reqRow.site_id !== site_id) return json({ error: "Site mismatch" }, 400);
+      if (reqRow.status !== "pending") return json({ error: "Already decided" }, 400);
+
+      const role = body.role ?? "member";
+      await admin.from("user_sites").upsert(
+        { user_id: reqRow.user_id, site_id },
+        { onConflict: "user_id,site_id" }
+      );
+      await admin.from("user_roles").upsert(
+        { user_id: reqRow.user_id, site_id, role },
+        { onConflict: "user_id,site_id,role" }
+      );
+      await admin.from("site_access_requests")
+        .update({ status: "approved", decided_at: new Date().toISOString(), decided_by: user.id })
+        .eq("id", body.request_id);
+      return json({ ok: true });
+    }
+
+    if (body.action === "reject_request") {
+      const { error } = await admin.from("site_access_requests")
+        .update({
+          status: "rejected",
+          decided_at: new Date().toISOString(),
+          decided_by: user.id,
+          note: body.note ?? null,
+        })
+        .eq("id", body.request_id)
+        .eq("site_id", site_id);
       if (error) return json({ error: error.message }, 400);
       return json({ ok: true });
     }

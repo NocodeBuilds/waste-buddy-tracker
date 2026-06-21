@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useWasteEntries } from "@/hooks/useWasteEntries";
 import { useSite } from "@/contexts/SiteContext";
 import WasteEntryForm from "@/components/WasteEntryForm";
-import DashboardStats from "@/components/DashboardStats";
+import FuturisticDashboard from "@/components/FuturisticDashboard";
 import WasteInventoryTable from "@/components/WasteInventoryTable";
 import AlertsPanel from "@/components/AlertsPanel";
 import AnalyticsTab from "@/components/AnalyticsTab";
 import SettingsTab from "@/components/SettingsTab";
 import AdminTab from "@/components/AdminTab";
+import RequestSiteAccess from "@/components/RequestSiteAccess";
 import BottomNav, { TabId } from "@/components/BottomNav";
 
 import SiteSwitcher from "@/components/SiteSwitcher";
@@ -25,28 +26,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
-  const { currentSite, sites, loading: siteLoading, isAdmin } = useSite();
+  const { currentSite, sites, loading: siteLoading, isAdmin, refresh } = useSite();
   const { signOut } = useAuth();
   const { entries, batches, isLoading, addEntry, deleteEntry, createDisposalBatch } = useWasteEntries();
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // No site assigned
+  // No site assigned → show request-access flow
   if (!siteLoading && sites.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4 bg-background">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-6 text-center space-y-3">
-            <Building2 className="h-10 w-10 mx-auto text-muted-foreground" />
-            <h2 className="text-lg font-bold">No site assigned</h2>
-            <p className="text-sm text-muted-foreground">
-              Your account isn't linked to any site yet. Please contact your administrator.
-            </p>
-            <Button variant="outline" onClick={signOut}>Sign out</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <RequestSiteAccess onApproved={refresh} />;
   }
 
   return (
@@ -75,7 +63,7 @@ const Index = () => {
             {activeTab === "home" && (
               <>
                 <AlertsPanel entries={entries} />
-                <DashboardStats entries={entries} />
+                <FuturisticDashboard entries={entries} />
               </>
             )}
             {activeTab === "inventory" && (
