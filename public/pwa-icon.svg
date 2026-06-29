@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Hazardous Waste Tracker</title>
+  <desc id="desc">Shield icon with a waste drum and compliance checkmark.</desc>
+  <rect width="512" height="512" rx="112" fill="#f8faf7"/>
+  <path d="M256 54 420 112v120c0 104-64 190-164 226C156 422 92 336 92 232V112L256 54Z" fill="#1f6b3a"/>
+  <path d="M256 92 386 138v94c0 82-50 151-130 183-80-32-130-101-130-183v-94l130-46Z" fill="#e7f4ec"/>
+  <path d="M178 197h156l-14 170H192l-14-170Z" fill="#214236"/>
+  <path d="M197 168h118l19 29H178l19-29Z" fill="#2d7a48"/>
+  <path d="M211 231h90M207 282h98M203 333h106" stroke="#8fd19e" stroke-width="18" stroke-linecap="round"/>
+  <path d="m207 286 31 31 78-89" fill="none" stroke="#f8faf7" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
