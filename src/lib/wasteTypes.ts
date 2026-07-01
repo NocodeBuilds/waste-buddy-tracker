@@ -1,24 +1,32 @@
+export type WasteCategory = "hazardous" | "non_hazardous";
+
 export interface WasteType {
   id: string;
   name: string;
   unit: string;
   category: string;
+  wasteCategory: WasteCategory;
 }
 
 export const WASTE_TYPES: WasteType[] = [
-  { id: "oil-cotton", name: "Oil/Grease Soaked Cotton Waste", unit: "kg", category: "Solid" },
-  { id: "waste-oil", name: "Waste Oil", unit: "litres", category: "Liquid" },
-  { id: "waste-grease", name: "Waste Grease", unit: "kg", category: "Semi-Solid" },
-  { id: "plastic-waste", name: "Plastic Waste (Contaminated)", unit: "kg", category: "Solid" },
-  { id: "hu-oil-filter", name: "HU Oil Filter Waste", unit: "nos", category: "Solid" },
-  { id: "gb-oil-filter", name: "GB Oil Filter Waste", unit: "nos", category: "Solid" },
-  { id: "carbon-brush", name: "Carbon Brush Waste", unit: "nos", category: "Solid" },
-  { id: "oil-filters-misc", name: "Misc Oil Filters", unit: "nos", category: "Solid" },
-  { id: "used-batteries", name: "Used Batteries", unit: "nos", category: "Solid" },
-  { id: "empty-containers", name: "Empty Chemical Containers", unit: "nos", category: "Solid" },
+  // Hazardous
+  { id: "oil-cotton", name: "Oil/Grease Soaked Cotton Waste", unit: "kg", category: "Solid", wasteCategory: "hazardous" },
+  { id: "waste-oil", name: "Waste Oil", unit: "litres", category: "Liquid", wasteCategory: "hazardous" },
+  { id: "waste-grease", name: "Waste Grease", unit: "kg", category: "Semi-Solid", wasteCategory: "hazardous" },
+  { id: "plastic-waste", name: "Plastic Waste (Contaminated)", unit: "kg", category: "Solid", wasteCategory: "hazardous" },
+  { id: "hu-oil-filter", name: "HU Oil Filter Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
+  { id: "gb-oil-filter", name: "GB Oil Filter Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
+  { id: "carbon-brush", name: "Carbon Brush Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
+  { id: "oil-filters-misc", name: "Misc Oil Filters", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
+  { id: "used-batteries", name: "Used Batteries", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
+  { id: "empty-containers", name: "Empty Chemical Containers", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
+  // Non-hazardous
+  { id: "paper-waste", name: "Paper Waste", unit: "kg", category: "Solid", wasteCategory: "non_hazardous" },
+  { id: "packaging-waste", name: "Packaging Waste", unit: "kg", category: "Solid", wasteCategory: "non_hazardous" },
+  { id: "wooden-boxes", name: "Wooden Boxes", unit: "nos", category: "Solid", wasteCategory: "non_hazardous" },
+  { id: "plastic-non-contaminated", name: "Plastic Waste (Non-Contaminated)", unit: "kg", category: "Solid", wasteCategory: "non_hazardous" },
+  { id: "non-haz-others", name: "Others (Non-Hazardous)", unit: "kg", category: "Solid", wasteCategory: "non_hazardous" },
 ];
-
-export type WasteCategory = "hazardous" | "non_hazardous";
 export type ActivityType = "breakdown" | "preventive";
 
 export interface WasteEntry {
