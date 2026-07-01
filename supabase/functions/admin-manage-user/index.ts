@@ -31,13 +31,13 @@ Deno.serve(async (req) => {
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return json({ error: "Unauthorized" }, 401);
+    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
+    const token = authHeader.replace("Bearer ", "");
 
-    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user } } = await userClient.auth.getUser();
-    if (!user) return json({ error: "Unauthorized" }, 401);
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims?.sub) return json({ error: "Unauthorized" }, 401);
+    const user = { id: claimsData.claims.sub as string };
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
     const body = (await req.json()) as Action;
