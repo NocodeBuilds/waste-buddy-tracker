@@ -40,7 +40,18 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
     commonCodes: locations.filter((l) => l.is_common),
   }), [locations]);
 
+  const filteredWasteTypes = useMemo(
+    () => WASTE_TYPES.filter((w) => w.wasteCategory === wasteCategory),
+    [wasteCategory]
+  );
+
   const selectedWaste = WASTE_TYPES.find((w) => w.id === wasteTypeId);
+
+  const handleCategoryChange = (v: WasteCategory) => {
+    setWasteCategory(v);
+    setWasteTypeId("");
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +118,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
       </div>
       <div className="space-y-2">
         <Label>Waste Category *</Label>
-        <Select value={wasteCategory} onValueChange={(v) => setWasteCategory(v as WasteCategory)}>
+        <Select value={wasteCategory} onValueChange={(v) => handleCategoryChange(v as WasteCategory)}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="hazardous">Hazardous</SelectItem>
@@ -115,6 +126,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
           </SelectContent>
         </Select>
       </div>
+
       <div className="space-y-2">
         <Label>Activity Type *</Label>
         <Select value={activityType} onValueChange={(v) => setActivityType(v as ActivityType)}>
@@ -130,12 +142,13 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         <Select value={wasteTypeId} onValueChange={setWasteTypeId}>
           <SelectTrigger><SelectValue placeholder="Select waste type" /></SelectTrigger>
           <SelectContent>
-            {WASTE_TYPES.map((w) => (
+            {filteredWasteTypes.map((w) => (
               <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
+
       <div className="space-y-2">
         <Label htmlFor="qty">Quantity ({selectedWaste?.unit || "unit"}) *</Label>
         <Input id="qty" type="number" min="0" step="0.01" value={quantity} onChange={(e) => setQuantity(e.target.value)} />

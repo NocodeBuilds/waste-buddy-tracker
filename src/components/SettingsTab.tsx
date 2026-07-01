@@ -168,35 +168,38 @@ export default function SettingsTab({ entries }: Props) {
               ))}
             </ul>
           )}
-          <form onSubmit={handleCreateSite} className="space-y-2 border-t pt-3">
-            <h4 className="text-xs font-semibold">Create new site</h4>
-            <div className="space-y-1.5">
-              <Label htmlFor="new-site-name" className="text-xs">Name</Label>
-              <Input
-                id="new-site-name"
-                value={newSiteName}
-                onChange={(e) => setNewSiteName(e.target.value)}
-                placeholder="e.g. North Wind Farm"
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="new-site-loc" className="text-xs">Location (optional)</Label>
-              <Input
-                id="new-site-loc"
-                value={newSiteLocation}
-                onChange={(e) => setNewSiteLocation(e.target.value)}
-                placeholder="e.g. Tamil Nadu, IN"
-              />
-            </div>
-            <Button type="submit" size="sm" className="w-full gap-2" disabled={creatingSite}>
-              {creatingSite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Building2 className="h-4 w-4" />}
-              Create site
-            </Button>
-            <p className="text-[11px] text-muted-foreground">
-              You'll be the admin of any site you create.
-            </p>
-          </form>
+          {isAdmin && (
+            <form onSubmit={handleCreateSite} className="space-y-2 border-t pt-3">
+              <h4 className="text-xs font-semibold">Create new site</h4>
+              <div className="space-y-1.5">
+                <Label htmlFor="new-site-name" className="text-xs">Name</Label>
+                <Input
+                  id="new-site-name"
+                  value={newSiteName}
+                  onChange={(e) => setNewSiteName(e.target.value)}
+                  placeholder="e.g. North Wind Farm"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="new-site-loc" className="text-xs">Location (optional)</Label>
+                <Input
+                  id="new-site-loc"
+                  value={newSiteLocation}
+                  onChange={(e) => setNewSiteLocation(e.target.value)}
+                  placeholder="e.g. Tamil Nadu, IN"
+                />
+              </div>
+              <Button type="submit" size="sm" className="w-full gap-2" disabled={creatingSite}>
+                {creatingSite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Building2 className="h-4 w-4" />}
+                Create site
+              </Button>
+              <p className="text-[11px] text-muted-foreground">
+                Admin only. Any site you create is assigned to you as admin.
+              </p>
+            </form>
+          )}
+
         </CardContent>
       </Card>
 
