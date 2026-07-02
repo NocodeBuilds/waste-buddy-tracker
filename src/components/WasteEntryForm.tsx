@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { Textarea } from "@/components/ui/textarea";
 import { WASTE_TYPES, WasteCategory, ActivityType } from "@/lib/wasteTypes";
 import { useSiteLocations } from "@/hooks/useSiteLocations";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Camera, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface NewEntry {
@@ -17,10 +17,11 @@ interface NewEntry {
   activity_type: ActivityType;
   location?: string;
   notes?: string;
+  photos?: File[];
 }
 
 interface Props {
-  onAdd: (entry: NewEntry) => Promise<void>;
+  onAdd: (entry: NewEntry) => Promise<unknown>;
   onClose?: () => void;
 }
 
@@ -33,6 +34,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
   const [activityType, setActivityType] = useState<ActivityType>("preventive");
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
+  const [photos, setPhotos] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   const { siteCodes, commonCodes } = useMemo(() => ({
@@ -69,12 +71,14 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         activity_type: activityType,
         location,
         notes: notes || undefined,
+        photos: photos.length > 0 ? photos : undefined,
       });
       toast.success("Waste entry recorded");
       setWasteTypeId("");
       setQuantity("");
       setLocation("");
       setNotes("");
+      setPhotos([]);
       onClose?.();
     } catch (err: any) {
       toast.error(err.message ?? "Failed to save");
@@ -161,6 +165,51 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         <Label htmlFor="notes">Notes</Label>
         <Textarea id="notes" placeholder="Optional notes..." value={notes} onChange={(e) => setNotes(e.target.value)} className="h-20" />
       </div>
+
+      <div className="space-y-2">
+        <Label>Photo Evidence (optional)</Label>
+        <label
+          htmlFor="photos"
+          className="flex items-center justify-center gap-2 rounded-md border border-dashed border-input px-3 py-4 text-sm text-muted-foreground cursor-pointer hover:bg-muted/40"
+        >
+          <Camera className="h-4 w-4" />
+          Take / attach photo(s)
+        </label>
+        <Input
+          id="photos"
+          type="file"
+          accept="image/*"
+          multiple
+          capture="environment"
+          className="hidden"
+          onChange={(e) => {
+            const files = Array.from(e.target.files ?? []);
+            if (files.length) setPhotos((prev) => [...prev, ...files]);
+            e.target.value = "";
+          }}
+        />
+        {photos.length > 0 && (
+          <div className="grid grid-cols-3 gap-2">
+            {photos.map((f, idx) => {
+              const url = URL.createObjectURL(f);
+              return (
+                <div key={idx} className="relative rounded overflow-hidden border aspect-square">
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setPhotos((prev) => prev.filter((_, i) => i !== idx))}
+                    className="absolute top-1 right-1 bg-background/90 rounded-full p-0.5 shadow"
+                    aria-label="Remove photo"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <Button type="submit" className="w-full" disabled={submitting}>
         {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
         Record Waste Entry
