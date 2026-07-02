@@ -165,6 +165,51 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         <Label htmlFor="notes">Notes</Label>
         <Textarea id="notes" placeholder="Optional notes..." value={notes} onChange={(e) => setNotes(e.target.value)} className="h-20" />
       </div>
+
+      <div className="space-y-2">
+        <Label>Photo Evidence (optional)</Label>
+        <label
+          htmlFor="photos"
+          className="flex items-center justify-center gap-2 rounded-md border border-dashed border-input px-3 py-4 text-sm text-muted-foreground cursor-pointer hover:bg-muted/40"
+        >
+          <Camera className="h-4 w-4" />
+          Take / attach photo(s)
+        </label>
+        <Input
+          id="photos"
+          type="file"
+          accept="image/*"
+          multiple
+          capture="environment"
+          className="hidden"
+          onChange={(e) => {
+            const files = Array.from(e.target.files ?? []);
+            if (files.length) setPhotos((prev) => [...prev, ...files]);
+            e.target.value = "";
+          }}
+        />
+        {photos.length > 0 && (
+          <div className="grid grid-cols-3 gap-2">
+            {photos.map((f, idx) => {
+              const url = URL.createObjectURL(f);
+              return (
+                <div key={idx} className="relative rounded overflow-hidden border aspect-square">
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setPhotos((prev) => prev.filter((_, i) => i !== idx))}
+                    className="absolute top-1 right-1 bg-background/90 rounded-full p-0.5 shadow"
+                    aria-label="Remove photo"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <Button type="submit" className="w-full" disabled={submitting}>
         {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
         Record Waste Entry
