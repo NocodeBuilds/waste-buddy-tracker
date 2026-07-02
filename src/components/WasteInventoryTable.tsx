@@ -192,6 +192,9 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onCrea
                       </span>
                     </TableCell>
                     <TableCell>{statusBadge(entry)}</TableCell>
+                    <TableCell className="text-center">
+                      <EntryPhotosButton entryId={entry.id} count={photoCounts[entry.id] ?? 0} canDelete={isManagerOrAdmin} />
+                    </TableCell>
                     {isManagerOrAdmin && (
                       <TableCell className="text-right">
                         <Button size="sm" variant="ghost" className="text-overdue hover:bg-overdue/10" onClick={() => onDelete(entry.id)}>
