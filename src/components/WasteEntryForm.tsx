@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { Textarea } from "@/components/ui/textarea";
 import { WASTE_TYPES, WasteCategory, ActivityType } from "@/lib/wasteTypes";
 import { useSiteLocations } from "@/hooks/useSiteLocations";
-import { Plus, Loader2, Camera, X } from "lucide-react";
+import { Plus, Loader2, Camera, Image as ImageIcon, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface NewEntry {
