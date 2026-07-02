@@ -164,12 +164,13 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onCrea
               <TableHead>Generated</TableHead>
               <TableHead>Days</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="text-center">Photos</TableHead>
               {isManagerOrAdmin && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={isManagerOrAdmin ? 9 : 8} className="text-center py-8 text-muted-foreground">No entries found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={isManagerOrAdmin ? 10 : 9} className="text-center py-8 text-muted-foreground">No entries found</TableCell></TableRow>
             ) : (
               filtered.map((entry) => {
                 const days = getDaysStored(entry.generated_date);
