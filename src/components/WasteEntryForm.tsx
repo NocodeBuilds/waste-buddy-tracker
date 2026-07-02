@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { Textarea } from "@/components/ui/textarea";
 import { WASTE_TYPES, WasteCategory, ActivityType } from "@/lib/wasteTypes";
 import { useSiteLocations } from "@/hooks/useSiteLocations";
-import { Plus, Loader2, Camera, X } from "lucide-react";
+import { Plus, Loader2, Camera, Image as ImageIcon, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface NewEntry {
@@ -36,6 +36,14 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
   const [notes, setNotes] = useState("");
   const [photos, setPhotos] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length) setPhotos((prev) => [...prev, ...files]);
+    e.target.value = "";
+  };
 
   const { siteCodes, commonCodes } = useMemo(() => ({
     siteCodes: locations.filter((l) => !l.is_common),
@@ -168,25 +176,47 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
 
       <div className="space-y-2">
         <Label>Photo Evidence (optional)</Label>
-        <label
-          htmlFor="photos"
-          className="flex items-center justify-center gap-2 rounded-md border border-dashed border-input px-3 py-4 text-sm text-muted-foreground cursor-pointer hover:bg-muted/40"
-        >
-          <Camera className="h-4 w-4" />
-          Take / attach photo(s)
-        </label>
-        <Input
-          id="photos"
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            onClick={() => cameraInputRef.current?.click()}
+          >
+            <Camera className="h-4 w-4" />
+            Camera
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            onClick={() => galleryInputRef.current?.click()}
+          >
+            <ImageIcon className="h-4 w-4" />
+            Gallery
+          </Button>
+        </div>
+        {/* Camera input: `capture` requires the input to be in the layout on some
+            Android/iOS browsers, so we use sr-only positioning instead of display:none. */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleFiles}
+          className="sr-only"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+        <input
+          ref={galleryInputRef}
           type="file"
           accept="image/*"
           multiple
-          capture="environment"
-          className="hidden"
-          onChange={(e) => {
-            const files = Array.from(e.target.files ?? []);
-            if (files.length) setPhotos((prev) => [...prev, ...files]);
-            e.target.value = "";
-          }}
+          onChange={handleFiles}
+          className="sr-only"
+          aria-hidden="true"
+          tabIndex={-1}
         />
         {photos.length > 0 && (
           <div className="grid grid-cols-3 gap-2">
