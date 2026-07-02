@@ -22,6 +22,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useSite } from "@/contexts/SiteContext";
+import { useEntryPhotoCounts } from "@/hooks/useEntryPhotos";
+import EntryPhotosButton from "./EntryPhotosButton";
 import { toast } from "sonner";
 
 interface Props {
