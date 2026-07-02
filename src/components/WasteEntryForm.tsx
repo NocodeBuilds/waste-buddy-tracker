@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { Textarea } from "@/components/ui/textarea";
 import { WASTE_TYPES, WasteCategory, ActivityType } from "@/lib/wasteTypes";
 import { useSiteLocations } from "@/hooks/useSiteLocations";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Camera, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface NewEntry {
@@ -17,10 +17,11 @@ interface NewEntry {
   activity_type: ActivityType;
   location?: string;
   notes?: string;
+  photos?: File[];
 }
 
 interface Props {
-  onAdd: (entry: NewEntry) => Promise<void>;
+  onAdd: (entry: NewEntry) => Promise<unknown>;
   onClose?: () => void;
 }
 
