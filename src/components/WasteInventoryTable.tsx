@@ -22,6 +22,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useSite } from "@/contexts/SiteContext";
+import { useEntryPhotoCounts } from "@/hooks/useEntryPhotos";
+import EntryPhotosButton from "./EntryPhotosButton";
 import { toast } from "sonner";
 
 interface Props {
@@ -40,6 +42,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onCrea
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const activeEntries = entries.filter((e) => !isDisposed(e));
+  const { data: photoCounts = {} } = useEntryPhotoCounts(entries.map((e) => e.id));
 
   const filtered = entries.filter((e) => {
     if (filter === "active") return !isDisposed(e);
@@ -161,12 +164,13 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onCrea
               <TableHead>Generated</TableHead>
               <TableHead>Days</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="text-center">Photos</TableHead>
               {isManagerOrAdmin && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={isManagerOrAdmin ? 9 : 8} className="text-center py-8 text-muted-foreground">No entries found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={isManagerOrAdmin ? 10 : 9} className="text-center py-8 text-muted-foreground">No entries found</TableCell></TableRow>
             ) : (
               filtered.map((entry) => {
                 const days = getDaysStored(entry.generated_date);
@@ -188,6 +192,9 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onCrea
                       </span>
                     </TableCell>
                     <TableCell>{statusBadge(entry)}</TableCell>
+                    <TableCell className="text-center">
+                      <EntryPhotosButton entryId={entry.id} count={photoCounts[entry.id] ?? 0} canDelete={isManagerOrAdmin} />
+                    </TableCell>
                     {isManagerOrAdmin && (
                       <TableCell className="text-right">
                         <Button size="sm" variant="ghost" className="text-overdue hover:bg-overdue/10" onClick={() => onDelete(entry.id)}>

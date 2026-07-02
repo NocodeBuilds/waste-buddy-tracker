@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { Textarea } from "@/components/ui/textarea";
 import { WASTE_TYPES, WasteCategory, ActivityType } from "@/lib/wasteTypes";
 import { useSiteLocations } from "@/hooks/useSiteLocations";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Camera, Image as ImageIcon, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface NewEntry {
@@ -17,10 +17,11 @@ interface NewEntry {
   activity_type: ActivityType;
   location?: string;
   notes?: string;
+  photos?: File[];
 }
 
 interface Props {
-  onAdd: (entry: NewEntry) => Promise<void>;
+  onAdd: (entry: NewEntry) => Promise<unknown>;
   onClose?: () => void;
 }
 
@@ -33,7 +34,16 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
   const [activityType, setActivityType] = useState<ActivityType>("preventive");
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
+  const [photos, setPhotos] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length) setPhotos((prev) => [...prev, ...files]);
+    e.target.value = "";
+  };
 
   const { siteCodes, commonCodes } = useMemo(() => ({
     siteCodes: locations.filter((l) => !l.is_common),
@@ -69,12 +79,14 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         activity_type: activityType,
         location,
         notes: notes || undefined,
+        photos: photos.length > 0 ? photos : undefined,
       });
       toast.success("Waste entry recorded");
       setWasteTypeId("");
       setQuantity("");
       setLocation("");
       setNotes("");
+      setPhotos([]);
       onClose?.();
     } catch (err: any) {
       toast.error(err.message ?? "Failed to save");
@@ -161,6 +173,73 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         <Label htmlFor="notes">Notes</Label>
         <Textarea id="notes" placeholder="Optional notes..." value={notes} onChange={(e) => setNotes(e.target.value)} className="h-20" />
       </div>
+
+      <div className="space-y-2">
+        <Label>Photo Evidence (optional)</Label>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            onClick={() => cameraInputRef.current?.click()}
+          >
+            <Camera className="h-4 w-4" />
+            Camera
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            onClick={() => galleryInputRef.current?.click()}
+          >
+            <ImageIcon className="h-4 w-4" />
+            Gallery
+          </Button>
+        </div>
+        {/* Camera input: `capture` requires the input to be in the layout on some
+            Android/iOS browsers, so we use sr-only positioning instead of display:none. */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleFiles}
+          className="sr-only"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+        <input
+          ref={galleryInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleFiles}
+          className="sr-only"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+        {photos.length > 0 && (
+          <div className="grid grid-cols-3 gap-2">
+            {photos.map((f, idx) => {
+              const url = URL.createObjectURL(f);
+              return (
+                <div key={idx} className="relative rounded overflow-hidden border aspect-square">
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setPhotos((prev) => prev.filter((_, i) => i !== idx))}
+                    className="absolute top-1 right-1 bg-background/90 rounded-full p-0.5 shadow"
+                    aria-label="Remove photo"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <Button type="submit" className="w-full" disabled={submitting}>
         {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
         Record Waste Entry
