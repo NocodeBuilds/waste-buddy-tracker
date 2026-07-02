@@ -39,16 +39,43 @@ export function useWasteEntries() {
   });
 
   const addEntry = useMutation({
-    mutationFn: async (entry: Omit<WasteEntry, "id" | "site_id" | "created_by" | "disposal_batch_id" | "created_at">) => {
+    mutationFn: async (
+      entry: Omit<WasteEntry, "id" | "site_id" | "created_by" | "disposal_batch_id" | "created_at"> & { photos?: File[] }
+    ) => {
       if (!siteId || !user) throw new Error("No site/user");
-      const { error } = await supabase.from("waste_entries").insert({
-        ...entry,
-        site_id: siteId,
-        created_by: user.id,
-      });
+      const { photos, ...entryFields } = entry;
+
+      const { data: inserted, error } = await supabase
+        .from("waste_entries")
+        .insert({ ...entryFields, site_id: siteId, created_by: user.id })
+        .select("id")
+        .single();
       if (error) throw error;
+      const entryId = inserted.id as string;
+
+      if (photos && photos.length > 0) {
+        for (const file of photos) {
+          const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+          const path = `${siteId}/${entryId}/${crypto.randomUUID()}.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from("waste-photos")
+            .upload(path, file, { contentType: file.type || "image/jpeg", upsert: false });
+          if (upErr) throw upErr;
+          const { error: rowErr } = await supabase.from("waste_entry_photos").insert({
+            waste_entry_id: entryId,
+            site_id: siteId,
+            storage_path: path,
+            uploaded_by: user.id,
+          });
+          if (rowErr) throw rowErr;
+        }
+      }
+      return entryId;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["waste_entries", siteId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["waste_entries", siteId] });
+      qc.invalidateQueries({ queryKey: ["waste_entry_photos"] });
+    },
   });
 
   const deleteEntry = useMutation({
@@ -62,7 +89,6 @@ export function useWasteEntries() {
   const createDisposalBatch = useMutation({
     mutationFn: async (params: { disposed_date: string; notes?: string }) => {
       if (!siteId || !user) throw new Error("No site/user");
-      // Create batch
       const { data: batch, error: bErr } = await supabase
         .from("disposal_batches")
         .insert({
@@ -75,7 +101,6 @@ export function useWasteEntries() {
         .single();
       if (bErr) throw bErr;
 
-      // Mark all active entries with this batch
       const { error: uErr } = await supabase
         .from("waste_entries")
         .update({ disposal_batch_id: batch.id })
