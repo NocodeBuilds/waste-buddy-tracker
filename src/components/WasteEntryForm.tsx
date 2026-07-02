@@ -36,6 +36,14 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
   const [notes, setNotes] = useState("");
   const [photos, setPhotos] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length) setPhotos((prev) => [...prev, ...files]);
+    e.target.value = "";
+  };
 
   const { siteCodes, commonCodes } = useMemo(() => ({
     siteCodes: locations.filter((l) => !l.is_common),
