@@ -176,25 +176,47 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
 
       <div className="space-y-2">
         <Label>Photo Evidence (optional)</Label>
-        <label
-          htmlFor="photos"
-          className="flex items-center justify-center gap-2 rounded-md border border-dashed border-input px-3 py-4 text-sm text-muted-foreground cursor-pointer hover:bg-muted/40"
-        >
-          <Camera className="h-4 w-4" />
-          Take / attach photo(s)
-        </label>
-        <Input
-          id="photos"
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            onClick={() => cameraInputRef.current?.click()}
+          >
+            <Camera className="h-4 w-4" />
+            Camera
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            onClick={() => galleryInputRef.current?.click()}
+          >
+            <ImageIcon className="h-4 w-4" />
+            Gallery
+          </Button>
+        </div>
+        {/* Camera input: `capture` requires the input to be in the layout on some
+            Android/iOS browsers, so we use sr-only positioning instead of display:none. */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleFiles}
+          className="sr-only"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+        <input
+          ref={galleryInputRef}
           type="file"
           accept="image/*"
           multiple
-          capture="environment"
-          className="hidden"
-          onChange={(e) => {
-            const files = Array.from(e.target.files ?? []);
-            if (files.length) setPhotos((prev) => [...prev, ...files]);
-            e.target.value = "";
-          }}
+          onChange={handleFiles}
+          className="sr-only"
+          aria-hidden="true"
+          tabIndex={-1}
         />
         {photos.length > 0 && (
           <div className="grid grid-cols-3 gap-2">
