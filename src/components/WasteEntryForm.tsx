@@ -71,12 +71,14 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         activity_type: activityType,
         location,
         notes: notes || undefined,
+        photos: photos.length > 0 ? photos : undefined,
       });
       toast.success("Waste entry recorded");
       setWasteTypeId("");
       setQuantity("");
       setLocation("");
       setNotes("");
+      setPhotos([]);
       onClose?.();
     } catch (err: any) {
       toast.error(err.message ?? "Failed to save");
