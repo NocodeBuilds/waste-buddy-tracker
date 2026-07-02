@@ -42,6 +42,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onCrea
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const activeEntries = entries.filter((e) => !isDisposed(e));
+  const { data: photoCounts = {} } = useEntryPhotoCounts(entries.map((e) => e.id));
 
   const filtered = entries.filter((e) => {
     if (filter === "active") return !isDisposed(e);
