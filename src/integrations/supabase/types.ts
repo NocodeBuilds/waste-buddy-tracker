@@ -339,6 +339,48 @@ export type Database = {
           },
         ]
       }
+      waste_entry_photos: {
+        Row: {
+          created_at: string
+          id: string
+          site_id: string
+          storage_path: string
+          uploaded_by: string | null
+          waste_entry_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          site_id: string
+          storage_path: string
+          uploaded_by?: string | null
+          waste_entry_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          site_id?: string
+          storage_path?: string
+          uploaded_by?: string | null
+          waste_entry_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waste_entry_photos_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waste_entry_photos_waste_entry_id_fkey"
+            columns: ["waste_entry_id"]
+            isOneToOne: false
+            referencedRelation: "waste_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
