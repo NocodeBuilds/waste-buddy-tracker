@@ -34,6 +34,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
   const [activityType, setActivityType] = useState<ActivityType>("preventive");
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
+  const [photos, setPhotos] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   const { siteCodes, commonCodes } = useMemo(() => ({
