@@ -78,6 +78,7 @@ const Index = () => {
                 entries={entries}
                 batches={batches}
                 onDelete={(id) => deleteEntry.mutateAsync(id)}
+                onEdit={(e) => setEditEntry(e)}
                 onCreateDisposal={(p) => createDisposalBatch.mutateAsync(p)}
               />
             )}
@@ -89,7 +90,13 @@ const Index = () => {
       </main>
 
       {/* Bottom Navigation */}
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} onAddClick={() => setDrawerOpen(true)} isAdmin={isAdmin} />
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} onAddClick={() => setDrawerOpen(true)} isAdmin={isAdmin} overdueCount={overdueCount} />
+
+      <EditWasteDialog
+        entry={editEntry}
+        onClose={() => setEditEntry(null)}
+        onSave={(p) => updateEntry.mutateAsync(p)}
+      />
 
 
       {/* Waste Entry Drawer */}
