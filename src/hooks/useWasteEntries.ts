@@ -78,6 +78,17 @@ export function useWasteEntries() {
     },
   });
 
+  const updateEntry = useMutation({
+    mutationFn: async (
+      params: { id: string } & Partial<Pick<WasteEntry, "waste_type_id" | "waste_category" | "quantity" | "generated_date" | "activity_type" | "location" | "notes">>,
+    ) => {
+      const { id, ...updates } = params;
+      const { error } = await supabase.from("waste_entries").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["waste_entries", siteId] }),
+  });
+
   const deleteEntry = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("waste_entries").delete().eq("id", id);
@@ -119,6 +130,7 @@ export function useWasteEntries() {
     batches: batchesQuery.data ?? [],
     isLoading: entriesQuery.isLoading || batchesQuery.isLoading,
     addEntry,
+    updateEntry,
     deleteEntry,
     createDisposalBatch,
   };
