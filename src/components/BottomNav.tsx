@@ -8,6 +8,7 @@ interface Props {
   onTabChange: (tab: TabId) => void;
   onAddClick: () => void;
   isAdmin?: boolean;
+  overdueCount?: number;
 }
 
 const baseTabs: { id: TabId; label: string; icon: typeof Home }[] = [
@@ -17,7 +18,7 @@ const baseTabs: { id: TabId; label: string; icon: typeof Home }[] = [
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
-export default function BottomNav({ activeTab, onTabChange, onAddClick, isAdmin }: Props) {
+export default function BottomNav({ activeTab, onTabChange, onAddClick, isAdmin, overdueCount = 0 }: Props) {
   const tabs = isAdmin
     ? [
         baseTabs[0],
@@ -35,11 +36,16 @@ export default function BottomNav({ activeTab, onTabChange, onAddClick, isAdmin 
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={cn(
-              "flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg transition-colors min-w-[56px]",
+              "relative flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg transition-colors min-w-[56px]",
               activeTab === tab.id ? "text-accent" : "text-muted-foreground"
             )}
           >
             <tab.icon className="h-5 w-5" />
+            {tab.id === "inventory" && overdueCount > 0 && (
+              <span className="absolute top-0 right-1 min-w-[16px] h-4 px-1 bg-overdue text-overdue-foreground text-[9px] font-bold rounded-full flex items-center justify-center">
+                {overdueCount > 99 ? "99+" : overdueCount}
+              </span>
+            )}
             <span className="text-[10px] font-medium">{tab.label}</span>
           </button>
         ))}

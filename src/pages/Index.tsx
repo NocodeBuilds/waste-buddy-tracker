@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useWasteEntries } from "@/hooks/useWasteEntries";
 import { useSite } from "@/contexts/SiteContext";
 import WasteEntryForm from "@/components/WasteEntryForm";
@@ -10,9 +10,11 @@ import SettingsTab from "@/components/SettingsTab";
 import AdminTab from "@/components/AdminTab";
 import RequestSiteAccess from "@/components/RequestSiteAccess";
 import BottomNav, { TabId } from "@/components/BottomNav";
+import EditWasteDialog from "@/components/EditWasteDialog";
+import { WasteEntry, DISPOSAL_LIMIT_DAYS, getDaysStored, isDisposed } from "@/lib/wasteTypes";
 
 import SiteSwitcher from "@/components/SiteSwitcher";
-import { Leaf, ArrowLeft, Loader2, Building2 } from "lucide-react";
+import { Leaf, ArrowLeft, Loader2 } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -22,15 +24,20 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const { currentSite, sites, loading: siteLoading, isAdmin, refresh } = useSite();
   const { signOut } = useAuth();
-  const { entries, batches, isLoading, addEntry, deleteEntry, createDisposalBatch } = useWasteEntries();
+  const { entries, batches, isLoading, addEntry, updateEntry, deleteEntry, createDisposalBatch } = useWasteEntries();
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editEntry, setEditEntry] = useState<WasteEntry | null>(null);
+
+  const overdueCount = useMemo(
+    () => entries.filter((e) => !isDisposed(e) && getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS).length,
+    [entries],
+  );
 
   // No site assigned → show request-access flow
   if (!siteLoading && sites.length === 0) {
@@ -71,6 +78,7 @@ const Index = () => {
                 entries={entries}
                 batches={batches}
                 onDelete={(id) => deleteEntry.mutateAsync(id)}
+                onEdit={(e) => setEditEntry(e)}
                 onCreateDisposal={(p) => createDisposalBatch.mutateAsync(p)}
               />
             )}
@@ -82,7 +90,13 @@ const Index = () => {
       </main>
 
       {/* Bottom Navigation */}
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} onAddClick={() => setDrawerOpen(true)} isAdmin={isAdmin} />
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} onAddClick={() => setDrawerOpen(true)} isAdmin={isAdmin} overdueCount={overdueCount} />
+
+      <EditWasteDialog
+        entry={editEntry}
+        onClose={() => setEditEntry(null)}
+        onSave={(p) => updateEntry.mutateAsync(p)}
+      />
 
 
       {/* Waste Entry Drawer */}
