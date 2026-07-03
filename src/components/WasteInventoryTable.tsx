@@ -3,8 +3,8 @@ import { WasteEntry, WASTE_TYPES, getDaysStored, getStatus, DISPOSAL_LIMIT_DAYS,
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, CheckCircle, Loader2, FileSpreadsheet, FileText } from "lucide-react";
-import { exportInventoryToExcel, exportForm3Pdf } from "@/lib/wasteExports";
+import { Trash2, CheckCircle, Loader2, FileSpreadsheet, FileText, Pencil, Download } from "lucide-react";
+import { exportInventoryToExcel, exportForm3Pdf, exportDisposalBatchPdf } from "@/lib/wasteExports";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -30,10 +30,11 @@ interface Props {
   entries: WasteEntry[];
   batches: DisposalBatch[];
   onDelete: (id: string) => Promise<void>;
+  onEdit: (entry: WasteEntry) => void;
   onCreateDisposal: (params: { disposed_date: string; notes?: string }) => Promise<void>;
 }
 
-export default function WasteInventoryTable({ entries, batches, onDelete, onCreateDisposal }: Props) {
+export default function WasteInventoryTable({ entries, batches, onDelete, onEdit, onCreateDisposal }: Props) {
   const { isManagerOrAdmin, currentSite } = useSite();
   const [filter, setFilter] = useState<"all" | "active" | "overdue" | "disposed">("active");
   const [disposalDate, setDisposalDate] = useState(new Date().toISOString().split("T")[0]);
@@ -196,8 +197,13 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onCrea
                       <EntryPhotosButton entryId={entry.id} count={photoCounts[entry.id] ?? 0} canDelete={isManagerOrAdmin} />
                     </TableCell>
                     {isManagerOrAdmin && (
-                      <TableCell className="text-right">
-                        <Button size="sm" variant="ghost" className="text-overdue hover:bg-overdue/10" onClick={() => onDelete(entry.id)}>
+                      <TableCell className="text-right whitespace-nowrap">
+                        {!isDisposed(entry) && (
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => onEdit(entry)} aria-label="Edit">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-overdue hover:bg-overdue/10" onClick={() => onDelete(entry.id)} aria-label="Delete">
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </TableCell>
@@ -222,12 +228,22 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onCrea
               <Card key={b.id}>
                 <CardContent className="p-3">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold">{b.disposed_date}</p>
                       <p className="text-xs text-muted-foreground">{inBatch.length} entries disposed</p>
-                      {b.notes && <p className="text-xs text-muted-foreground mt-1 italic">{b.notes}</p>}
+                      {b.notes && <p className="text-xs text-muted-foreground mt-1 italic break-words">{b.notes}</p>}
                     </div>
-                    <CheckCircle className="h-5 w-5 text-success shrink-0" />
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <CheckCircle className="h-5 w-5 text-success" />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => exportDisposalBatchPdf(b, inBatch, currentSite?.name ?? "Site")}
+                      >
+                        <Download className="h-3 w-3" /> Manifest
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
