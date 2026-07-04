@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS, getStatus, isDisposed } from "@/lib/wasteTypes";
-import { Package, AlertTriangle, CheckCircle, Clock, Droplets, Recycle } from "lucide-react";
+import { Package, AlertTriangle, CheckCircle, Clock, Droplets, Recycle, Scale, Beaker, Hash } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Props {
