@@ -15,7 +15,9 @@ export const WASTE_TYPES: WasteType[] = [
   { id: "waste-grease", name: "Waste Grease", unit: "kg", category: "Semi-Solid", wasteCategory: "hazardous" },
   { id: "plastic-waste", name: "Plastic Waste (Contaminated)", unit: "kg", category: "Solid", wasteCategory: "hazardous" },
   { id: "hu-oil-filter", name: "HU Oil Filter Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
-  { id: "gb-oil-filter", name: "GB Oil Filter Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
+  { id: "gb-oil-filter", name: "GB Oil Filter Waste (Online filters)", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
+  { id: "gb-oil-filter-offline", name: "GB Oil Filter Waste (Offline filters)", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
+  { id: "dust-filter-mat", name: "Dust Filter Mat", unit: "kg", category: "Solid", wasteCategory: "hazardous" },
   { id: "carbon-brush", name: "Carbon Brush Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
   { id: "oil-filters-misc", name: "Misc Oil Filters", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
   { id: "used-batteries", name: "Used Batteries", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
@@ -27,7 +29,8 @@ export const WASTE_TYPES: WasteType[] = [
   { id: "plastic-non-contaminated", name: "Plastic Waste (Non-Contaminated)", unit: "kg", category: "Solid", wasteCategory: "non_hazardous" },
   { id: "non-haz-others", name: "Others (Non-Hazardous)", unit: "kg", category: "Solid", wasteCategory: "non_hazardous" },
 ];
-export type ActivityType = "breakdown" | "preventive";
+export type ActivityType = "breakdown" | "preventive" | "5s";
+
 
 export interface WasteEntry {
   id: string;
