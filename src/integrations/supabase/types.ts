@@ -407,7 +407,7 @@ export type Database = {
       user_site_ids: { Args: { _user_id: string }; Returns: string[] }
     }
     Enums: {
-      activity_type: "breakdown" | "preventive"
+      activity_type: "breakdown" | "preventive" | "5s"
       app_role: "admin" | "manager" | "member"
       waste_category: "hazardous" | "non_hazardous"
     }
@@ -537,7 +537,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      activity_type: ["breakdown", "preventive"],
+      activity_type: ["breakdown", "preventive", "5s"],
       app_role: ["admin", "manager", "member"],
       waste_category: ["hazardous", "non_hazardous"],
     },
