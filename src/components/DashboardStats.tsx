@@ -38,6 +38,15 @@ export default function DashboardStats({ entries }: Props) {
   const hazardousTotal = active.filter((e) => e.waste_category === "hazardous").length;
   const nonHazardousTotal = active.filter((e) => e.waste_category === "non_hazardous").length;
 
+  // Totals grouped by measurement unit (kg / litres / nos)
+  const unitTotals = active.reduce<Record<string, number>>((acc, e) => {
+    const wt = WASTE_TYPES.find((w) => w.id === e.waste_type_id);
+    if (!wt) return acc;
+    acc[wt.unit] = (acc[wt.unit] ?? 0) + Number(e.quantity);
+    return acc;
+  }, {});
+  const fmt = (n: number) => n.toFixed(2).replace(/\.00$/, "");
+
   return (
     <div className="space-y-4">
       {/* Summary stats */}
