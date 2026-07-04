@@ -41,6 +41,7 @@ export default function AnalyticsTab({ entries, batches }: Props) {
   // Activity split
   const breakdownEntries = entries.filter((e) => e.activity_type === "breakdown");
   const preventiveEntries = entries.filter((e) => e.activity_type === "preventive");
+  const fiveSEntries = entries.filter((e) => e.activity_type === "5s");
 
   // Top Locations
   const wtgCounts: Record<string, number> = {};
