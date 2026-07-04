@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS, getStatus, isDisposed } from "@/lib/wasteTypes";
-import { Package, AlertTriangle, CheckCircle, Clock, Droplets, Recycle } from "lucide-react";
+import { Package, AlertTriangle, CheckCircle, Clock, Droplets, Recycle, Scale, Beaker, Hash } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Props {
@@ -37,6 +37,15 @@ export default function DashboardStats({ entries }: Props) {
   // Cumulative by category
   const hazardousTotal = active.filter((e) => e.waste_category === "hazardous").length;
   const nonHazardousTotal = active.filter((e) => e.waste_category === "non_hazardous").length;
+
+  // Totals grouped by measurement unit (kg / litres / nos)
+  const unitTotals = active.reduce<Record<string, number>>((acc, e) => {
+    const wt = WASTE_TYPES.find((w) => w.id === e.waste_type_id);
+    if (!wt) return acc;
+    acc[wt.unit] = (acc[wt.unit] ?? 0) + Number(e.quantity);
+    return acc;
+  }, {});
+  const fmt = (n: number) => n.toFixed(2).replace(/\.00$/, "");
 
   return (
     <div className="space-y-4">
@@ -76,6 +85,44 @@ export default function DashboardStats({ entries }: Props) {
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Totals grouped by measurement unit */}
+      {Object.keys(unitTotals).length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
+            Total Quantity by Unit
+          </h3>
+          <div className="grid grid-cols-3 gap-3">
+            <Card>
+              <CardContent className="p-3 flex items-center gap-2">
+                <Scale className="h-5 w-5 text-primary shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-lg font-bold leading-tight">{fmt(unitTotals["kg"] ?? 0)}</p>
+                  <p className="text-[10px] text-muted-foreground">kg (weight)</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 flex items-center gap-2">
+                <Beaker className="h-5 w-5 text-accent shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-lg font-bold leading-tight">{fmt(unitTotals["litres"] ?? 0)}</p>
+                  <p className="text-[10px] text-muted-foreground">L (liquid)</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 flex items-center gap-2">
+                <Hash className="h-5 w-5 text-warning shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-lg font-bold leading-tight">{fmt(unitTotals["nos"] ?? 0)}</p>
+                  <p className="text-[10px] text-muted-foreground">nos (count)</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
 

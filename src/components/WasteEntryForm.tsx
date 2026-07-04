@@ -146,9 +146,11 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
           <SelectContent>
             <SelectItem value="breakdown">Breakdown Maintenance</SelectItem>
             <SelectItem value="preventive">Preventive Maintenance</SelectItem>
+            <SelectItem value="5s">5S Activity</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
       <div className="space-y-2">
         <Label>Waste Type *</Label>
         <Select value={wasteTypeId} onValueChange={setWasteTypeId}>
@@ -162,9 +164,24 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="qty">Quantity ({selectedWaste?.unit || "unit"}) *</Label>
-        <Input id="qty" type="number" min="0" step="0.01" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+        <Label htmlFor="qty">Quantity *</Label>
+        <div className="relative">
+          <Input
+            id="qty"
+            type="number"
+            min="0"
+            step="0.01"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            placeholder={selectedWaste ? `Enter value in ${selectedWaste.unit}` : "Select waste type first"}
+            className="pr-16"
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground pointer-events-none">
+            {selectedWaste?.unit || "unit"}
+          </span>
+        </div>
       </div>
+
       <div className="space-y-2">
         <Label htmlFor="date">Date Generated *</Label>
         <Input id="date" type="date" value={generatedDate} onChange={(e) => setGeneratedDate(e.target.value)} />

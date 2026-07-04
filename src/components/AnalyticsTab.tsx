@@ -41,6 +41,7 @@ export default function AnalyticsTab({ entries, batches }: Props) {
   // Activity split
   const breakdownEntries = entries.filter((e) => e.activity_type === "breakdown");
   const preventiveEntries = entries.filter((e) => e.activity_type === "preventive");
+  const fiveSEntries = entries.filter((e) => e.activity_type === "5s");
 
   // Top Locations
   const wtgCounts: Record<string, number> = {};
@@ -112,7 +113,7 @@ export default function AnalyticsTab({ entries, batches }: Props) {
               <p className="text-xs text-muted-foreground">Non-Hazardous</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3 mt-2 text-center text-xs">
+          <div className="grid grid-cols-3 gap-3 mt-2 text-center text-xs">
             <div>
               <p className="font-bold">{breakdownEntries.length}</p>
               <p className="text-muted-foreground">Breakdown</p>
@@ -120,6 +121,10 @@ export default function AnalyticsTab({ entries, batches }: Props) {
             <div>
               <p className="font-bold">{preventiveEntries.length}</p>
               <p className="text-muted-foreground">Preventive</p>
+            </div>
+            <div>
+              <p className="font-bold">{fiveSEntries.length}</p>
+              <p className="text-muted-foreground">5S</p>
             </div>
           </div>
         </CardContent>

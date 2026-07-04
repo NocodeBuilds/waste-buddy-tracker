@@ -127,6 +127,7 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
               <SelectContent>
                 <SelectItem value="preventive">Preventive Maintenance</SelectItem>
                 <SelectItem value="breakdown">Breakdown Maintenance</SelectItem>
+                <SelectItem value="5s">5S Activity</SelectItem>
               </SelectContent>
             </Select>
           </div>
