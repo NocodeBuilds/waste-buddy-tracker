@@ -146,9 +146,11 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
           <SelectContent>
             <SelectItem value="breakdown">Breakdown Maintenance</SelectItem>
             <SelectItem value="preventive">Preventive Maintenance</SelectItem>
+            <SelectItem value="5s">5S Activity</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
       <div className="space-y-2">
         <Label>Waste Type *</Label>
         <Select value={wasteTypeId} onValueChange={setWasteTypeId}>
