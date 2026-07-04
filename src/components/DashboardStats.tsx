@@ -88,6 +88,44 @@ export default function DashboardStats({ entries }: Props) {
         </div>
       )}
 
+      {/* Totals grouped by measurement unit */}
+      {Object.keys(unitTotals).length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
+            Total Quantity by Unit
+          </h3>
+          <div className="grid grid-cols-3 gap-3">
+            <Card>
+              <CardContent className="p-3 flex items-center gap-2">
+                <Scale className="h-5 w-5 text-primary shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-lg font-bold leading-tight">{fmt(unitTotals["kg"] ?? 0)}</p>
+                  <p className="text-[10px] text-muted-foreground">kg (weight)</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 flex items-center gap-2">
+                <Beaker className="h-5 w-5 text-accent shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-lg font-bold leading-tight">{fmt(unitTotals["litres"] ?? 0)}</p>
+                  <p className="text-[10px] text-muted-foreground">L (liquid)</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 flex items-center gap-2">
+                <Hash className="h-5 w-5 text-warning shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-lg font-bold leading-tight">{fmt(unitTotals["nos"] ?? 0)}</p>
+                  <p className="text-[10px] text-muted-foreground">nos (count)</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
       {/* Cumulative available waste */}
       {cumulative.length > 0 && (
         <div className="space-y-2">
