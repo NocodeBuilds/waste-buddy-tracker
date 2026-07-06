@@ -1,7 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS, isDisposed, DisposalBatch } from "@/lib/wasteTypes";
-import { BarChart3, Calendar, TrendingUp, AlertTriangle } from "lucide-react";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
+import {
+  WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS, isDisposed, DisposalBatch,
+  getMeasureUnit, sumByUnit, fmtNum,
+} from "@/lib/wasteTypes";
+import { BarChart3, Calendar, TrendingUp, AlertTriangle, Scale, Beaker } from "lucide-react";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Legend, CartesianGrid } from "recharts";
 
 interface Props {
   entries: WasteEntry[];
@@ -12,7 +15,7 @@ export default function AnalyticsTab({ entries, batches }: Props) {
   const active = entries.filter((e) => !isDisposed(e));
   const disposed = entries.filter((e) => isDisposed(e));
 
-  // Avg days to disposal (entry.generated_date → batch.disposed_date)
+  // Avg days to disposal
   const batchMap = new Map(batches.map((b) => [b.id, b]));
   const disposedWithDays = disposed
     .map((e) => {
@@ -34,28 +37,51 @@ export default function AnalyticsTab({ entries, batches }: Props) {
   }, null);
   const daysToNextDisposal = oldest === null ? null : Math.max(0, DISPOSAL_LIMIT_DAYS - oldest);
 
-  // Category split
-  const hazardous = active.filter((e) => e.waste_category === "hazardous");
-  const nonHazardous = active.filter((e) => e.waste_category === "non_hazardous");
+  const disposedTotals = sumByUnit(disposed);
 
-  // Activity split
-  const breakdownEntries = entries.filter((e) => e.activity_type === "breakdown");
-  const preventiveEntries = entries.filter((e) => e.activity_type === "preventive");
-  const fiveSEntries = entries.filter((e) => e.activity_type === "5s");
+  // Category (kg only — mixing units is misleading)
+  const solids = active.filter((e) => getMeasureUnit(e.waste_type_id) === "kg");
+  const hazardousKg = solids.filter((e) => e.waste_category === "hazardous")
+    .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+  const nonHazardousKg = solids.filter((e) => e.waste_category === "non_hazardous")
+    .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
 
-  // Top Locations
-  const wtgCounts: Record<string, number> = {};
-  entries.forEach((e) => {
-    wtgCounts[e.location] = (wtgCounts[e.location] || 0) + 1;
+  // Activity split by weight
+  const activityTotals = (["breakdown", "preventive", "5s"] as const).map((a) => {
+    const items = entries.filter((e) => e.activity_type === a);
+    const t = sumByUnit(items);
+    return { activity: a, kg: t.kg, litres: t.litres };
   });
-  const topWtgs = Object.entries(wtgCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
-  // Bar chart data: cumulative qty per waste type (active only)
-  const wasteChartData = WASTE_TYPES.map((wt) => {
-    const items = active.filter((e) => e.waste_type_id === wt.id);
-    const qty = items.reduce((s, e) => s + Number(e.quantity), 0);
-    return { name: wt.name.split(" ").slice(0, 2).join(" "), unit: wt.unit, qty };
-  }).filter((d) => d.qty > 0);
+  // Top Locations by kg
+  const locMap = new Map<string, { kg: number; litres: number }>();
+  entries.forEach((e) => {
+    const m = locMap.get(e.location ?? "—") ?? { kg: 0, litres: 0 };
+    const u = getMeasureUnit(e.waste_type_id);
+    const v = Number(e.weight_kg ?? 0);
+    if (u === "kg") m.kg += v; else m.litres += v;
+    locMap.set(e.location ?? "—", m);
+  });
+  const topWtgs = Array.from(locMap.entries())
+    .sort((a, b) => (b[1].kg + b[1].litres) - (a[1].kg + a[1].litres))
+    .slice(0, 5);
+
+  // Bar chart: cumulative kg per solid waste type
+  const solidChart = WASTE_TYPES
+    .filter((wt) => wt.measureUnit === "kg")
+    .map((wt) => {
+      const items = active.filter((e) => e.waste_type_id === wt.id);
+      const qty = items.reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+      return { name: wt.name.split(" ").slice(0, 2).join(" "), qty: +qty.toFixed(2) };
+    }).filter((d) => d.qty > 0);
+
+  const liquidChart = WASTE_TYPES
+    .filter((wt) => wt.measureUnit === "litres")
+    .map((wt) => {
+      const items = active.filter((e) => e.waste_type_id === wt.id);
+      const qty = items.reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+      return { name: wt.name, qty: +qty.toFixed(2) };
+    }).filter((d) => d.qty > 0);
 
   return (
     <div className="space-y-4">
@@ -84,71 +110,68 @@ export default function AnalyticsTab({ entries, batches }: Props) {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold">{batches.length}</p>
-            <p className="text-[10px] text-muted-foreground">Disposals tracked</p>
+          <CardContent className="p-3 flex items-center gap-2">
+            <Scale className="h-5 w-5 text-primary shrink-0" />
+            <div>
+              <p className="text-xl font-bold">{fmtNum(disposedTotals.kg)}</p>
+              <p className="text-[10px] text-muted-foreground">kg disposed (lifetime)</p>
+            </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold">{entries.length}</p>
-            <p className="text-[10px] text-muted-foreground">Total entries</p>
+          <CardContent className="p-3 flex items-center gap-2">
+            <Beaker className="h-5 w-5 text-accent shrink-0" />
+            <div>
+              <p className="text-xl font-bold">{fmtNum(disposedTotals.litres)}</p>
+              <p className="text-[10px] text-muted-foreground">L disposed (lifetime)</p>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Category breakdown */}
+      {/* Category (kg) */}
       <Card>
         <CardContent className="p-3">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            Active Waste by Category
+            Active Solids by Category
           </h3>
           <div className="grid grid-cols-2 gap-3 text-center">
             <div className="bg-overdue/10 rounded-lg p-3">
-              <p className="text-2xl font-bold text-overdue">{hazardous.length}</p>
+              <p className="text-2xl font-bold text-overdue">{fmtNum(hazardousKg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
               <p className="text-xs text-muted-foreground">Hazardous</p>
             </div>
             <div className="bg-success/10 rounded-lg p-3">
-              <p className="text-2xl font-bold text-success">{nonHazardous.length}</p>
+              <p className="text-2xl font-bold text-success">{fmtNum(nonHazardousKg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
               <p className="text-xs text-muted-foreground">Non-Hazardous</p>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3 mt-2 text-center text-xs">
-            <div>
-              <p className="font-bold">{breakdownEntries.length}</p>
-              <p className="text-muted-foreground">Breakdown</p>
-            </div>
-            <div>
-              <p className="font-bold">{preventiveEntries.length}</p>
-              <p className="text-muted-foreground">Preventive</p>
-            </div>
-            <div>
-              <p className="font-bold">{fiveSEntries.length}</p>
-              <p className="text-muted-foreground">5S</p>
-            </div>
+          <div className="grid grid-cols-3 gap-3 mt-3 text-center text-xs">
+            {activityTotals.map((a) => (
+              <div key={a.activity}>
+                <p className="font-bold">{fmtNum(a.kg)}k · {fmtNum(a.litres)}L</p>
+                <p className="text-muted-foreground capitalize">
+                  {a.activity === "5s" ? "5S" : a.activity}
+                </p>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Bar chart by waste type */}
-      {wasteChartData.length > 0 && (
+      {/* Solids by waste type */}
+      {solidChart.length > 0 && (
         <Card>
           <CardContent className="p-3">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              Cumulative Quantity by Waste Type
+              Cumulative Solids by Waste Type (kg)
             </h3>
-            <ResponsiveContainer width="100%" height={Math.max(180, wasteChartData.length * 32)}>
-              <BarChart data={wasteChartData} layout="vertical" margin={{ left: 0, right: 24 }}>
+            <ResponsiveContainer width="100%" height={Math.max(180, solidChart.length * 32)}>
+              <BarChart data={solidChart} layout="vertical" margin={{ left: 0, right: 24 }}>
                 <XAxis type="number" hide />
                 <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 11 }} />
-                <Tooltip
-                  formatter={(value: number, _name, props) => [`${value} ${props.payload.unit}`, "Qty"]}
-                  contentStyle={{ fontSize: 12 }}
-                />
+                <Tooltip formatter={(v: number) => [`${v} kg`, "Weight"]} contentStyle={{ fontSize: 12 }} />
                 <Bar dataKey="qty" radius={[0, 4, 4, 0]}>
-                  {wasteChartData.map((_, i) => (
-                    <Cell key={i} fill="hsl(var(--primary))" />
-                  ))}
+                  {solidChart.map((_, i) => <Cell key={i} fill="hsl(var(--primary))" />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -156,30 +179,46 @@ export default function AnalyticsTab({ entries, batches }: Props) {
         </Card>
       )}
 
-      {/* Top Locations */}
+      {/* Liquids by waste type */}
+      {liquidChart.length > 0 && (
+        <Card>
+          <CardContent className="p-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Cumulative Liquids by Waste Type (L)
+            </h3>
+            <ResponsiveContainer width="100%" height={Math.max(140, liquidChart.length * 40)}>
+              <BarChart data={liquidChart} layout="vertical" margin={{ left: 0, right: 24 }}>
+                <XAxis type="number" hide />
+                <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 11 }} />
+                <Tooltip formatter={(v: number) => [`${v} L`, "Volume"]} contentStyle={{ fontSize: 12 }} />
+                <Bar dataKey="qty" radius={[0, 4, 4, 0]}>
+                  {liquidChart.map((_, i) => <Cell key={i} fill="hsl(var(--accent))" />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Top Locations (kg + L) */}
       {topWtgs.length > 0 && (
         <Card>
           <CardContent className="p-3">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              Top Locations by Waste Count
+              Top Locations (kg + L)
             </h3>
-            <div className="space-y-2">
-              {topWtgs.map(([wtg, count]) => {
-                const maxCount = topWtgs[0][1];
-                return (
-                  <div key={wtg} className="flex items-center gap-2">
-                    <span className="text-sm font-mono font-semibold w-16 shrink-0">{wtg}</span>
-                    <div className="flex-1 bg-muted rounded-full h-4 overflow-hidden">
-                      <div
-                        className="bg-accent h-full rounded-full transition-all"
-                        style={{ width: `${(count / maxCount) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-sm font-semibold w-8 text-right">{count}</span>
-                  </div>
-                );
-              })}
-            </div>
+            <ResponsiveContainer width="100%" height={Math.max(160, topWtgs.length * 40)}>
+              <BarChart data={topWtgs.map(([loc, v]) => ({ loc, kg: +v.kg.toFixed(2), litres: +v.litres.toFixed(2) }))}
+                layout="vertical" margin={{ left: 0, right: 24 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 10 }} />
+                <YAxis type="category" dataKey="loc" width={70} tick={{ fontSize: 11 }} />
+                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
+                <Bar dataKey="kg" stackId="a" fill="hsl(var(--primary))" />
+                <Bar dataKey="litres" stackId="a" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       )}
@@ -194,11 +233,12 @@ export default function AnalyticsTab({ entries, batches }: Props) {
             <div className="space-y-2">
               {batches.slice(0, 5).map((b) => {
                 const inBatch = entries.filter((e) => e.disposal_batch_id === b.id);
+                const t = sumByUnit(inBatch);
                 return (
                   <div key={b.id} className="flex items-center justify-between text-sm border-b last:border-0 pb-1.5 last:pb-0">
                     <div>
                       <p className="font-medium">{b.disposed_date}</p>
-                      <p className="text-xs text-muted-foreground">{inBatch.length} entries</p>
+                      <p className="text-xs text-muted-foreground">{fmtNum(t.kg)} kg · {fmtNum(t.litres)} L</p>
                     </div>
                   </div>
                 );
