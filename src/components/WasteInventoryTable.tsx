@@ -98,6 +98,20 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
         </Select>
       </div>
 
+      {/* Storage summary — kg + L in current storage */}
+      <Card>
+        <CardContent className="p-3 grid grid-cols-2 gap-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">In Storage (Solids)</p>
+            <p className="text-xl font-bold">{fmtNum(totals.kg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">In Storage (Liquid)</p>
+            <p className="text-xl font-bold">{fmtNum(totals.litres)} <span className="text-xs font-normal text-muted-foreground">L</span></p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Export buttons */}
       <div className="grid grid-cols-2 gap-2">
         <Button
