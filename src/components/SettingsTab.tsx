@@ -63,19 +63,23 @@ export default function SettingsTab({ entries }: Props) {
 
   const handleExport = () => {
     const csv = [
-      "Location,Waste Type,Category,Quantity,Activity,Generated,Disposed Batch,Notes",
-      ...entries.map((e) =>
-        [
+      "Location,Waste Type,Category,Weight,Unit,Count (pcs),Activity,Generated,Disposed Batch,Notes",
+      ...entries.map((e) => {
+        const wt = WASTE_TYPES.find((w) => w.id === e.waste_type_id);
+        const unit = wt?.measureUnit === "litres" ? "L" : "kg";
+        return [
           e.location,
-          WASTE_TYPES.find((w) => w.id === e.waste_type_id)?.name ?? e.waste_type_id,
+          wt?.name ?? e.waste_type_id,
           e.waste_category,
-          e.quantity,
+          e.weight_kg ?? "",
+          unit,
+          e.piece_count ?? "",
           e.activity_type,
           e.generated_date,
           e.disposal_batch_id ?? "",
           (e.notes ?? "").replace(/,/g, ";"),
-        ].join(",")
-      ),
+        ].join(",");
+      }),
     ].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
