@@ -508,7 +508,7 @@ function RecordsPanel({ siteId }: { siteId: string }) {
                 <div className="min-w-0">
                   <p className="font-medium truncate">{r.location} · {r.waste_type_id}</p>
                   <p className="text-[10px] text-muted-foreground">
-                    {r.generated_date} · {r.quantity} · {r.activity_type}
+                    {r.generated_date} · {r.weight_kg ?? r.quantity ?? "—"} · {r.activity_type}
                     {r.disposal_batch_id ? " · disposed" : ""}
                   </p>
                 </div>
