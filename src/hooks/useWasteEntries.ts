@@ -38,16 +38,32 @@ export function useWasteEntries() {
     },
   });
 
+  type NewEntryInput = {
+    waste_type_id: string;
+    waste_category: WasteEntry["waste_category"];
+    weight_kg: number;
+    piece_count?: number | null;
+    generated_date: string;
+    activity_type: WasteEntry["activity_type"];
+    location?: string | null;
+    notes?: string | null;
+    photos?: File[];
+  };
+
   const addEntry = useMutation({
-    mutationFn: async (
-      entry: Omit<WasteEntry, "id" | "site_id" | "created_by" | "disposal_batch_id" | "created_at"> & { photos?: File[] }
-    ) => {
+    mutationFn: async (entry: NewEntryInput) => {
       if (!siteId || !user) throw new Error("No site/user");
       const { photos, ...entryFields } = entry;
 
       const { data: inserted, error } = await supabase
         .from("waste_entries")
-        .insert({ ...entryFields, site_id: siteId, created_by: user.id })
+        .insert({
+          ...entryFields,
+          // Keep legacy `quantity` in sync with weight for older readers.
+          quantity: entryFields.weight_kg,
+          site_id: siteId,
+          created_by: user.id,
+        })
         .select("id")
         .single();
       if (error) throw error;
@@ -80,10 +96,13 @@ export function useWasteEntries() {
 
   const updateEntry = useMutation({
     mutationFn: async (
-      params: { id: string } & Partial<Pick<WasteEntry, "waste_type_id" | "waste_category" | "quantity" | "generated_date" | "activity_type" | "location" | "notes">>,
+      params: { id: string } & Partial<Pick<WasteEntry, "waste_type_id" | "waste_category" | "weight_kg" | "piece_count" | "generated_date" | "activity_type" | "location" | "notes">>,
     ) => {
       const { id, ...updates } = params;
-      const { error } = await supabase.from("waste_entries").update(updates).eq("id", id);
+      const payload: Record<string, unknown> = { ...updates };
+      // Keep legacy `quantity` in sync when weight changes.
+      if (typeof updates.weight_kg === "number") payload.quantity = updates.weight_kg;
+      const { error } = await supabase.from("waste_entries").update(payload).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["waste_entries", siteId] }),
