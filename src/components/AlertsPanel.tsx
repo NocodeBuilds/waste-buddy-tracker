@@ -56,7 +56,7 @@ export default function AlertsPanel({ entries }: Props) {
   if (overdue.length === 0 && warnings.length === 0) return null;
 
   const getWasteName = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.name || id;
-  const getUnit = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.unit || "";
+  const formatQty = (e: WasteEntry) => `${fmtNum(Number(e.weight_kg ?? 0))} ${unitLabel(getMeasureUnit(e.waste_type_id))}`;
 
   const hideAll = () => {
     const next = new Set(dismissed);
