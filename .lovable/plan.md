@@ -1,97 +1,95 @@
+# Plan: Weight-based tracking (Kgs & Litres)
 
-This is a major upgrade: backend (Supabase via Lovable Cloud), auth, multi-site isolation, role-based disposal, green theme, welcome page, plus the dashboard/form/analytics enhancements. Plan is broken into clear phases.
+## Goal
+Move all reporting, aggregation, alerts, and exports to **weight (kg for solids, litres for liquids)**. Count (nos) becomes a secondary field, captured only for items historically counted in pieces, and never used in charts or totals.
 
-## Phase 1 — Backend (Lovable Cloud + Supabase)
+---
 
-Enable Lovable Cloud and create these tables:
+## 1. Data model changes
 
-- `sites` — id, name, location, created_at
-- `profiles` — id (= auth.users.id), full_name, created_at
-- `user_sites` — user_id, site_id (many-to-many; users can belong to multiple sites)
-- `user_roles` — user_id, site_id, role (`admin` | `manager` | `member`) — site-scoped roles via enum `app_role`
-- `waste_entries` — id, site_id, wtg_id, waste_type_id, waste_category (`hazardous` | `non_hazardous`), quantity, generated_date, activity_type, notes, disposal_batch_id (nullable), created_by, created_at
-- `disposal_batches` — id, site_id, disposed_date, disposed_by, notes, created_at
+`waste_entries` table today has one numeric `quantity`. Split it:
 
-**RLS**: All tables enabled. Security-definer function `has_site_access(user_id, site_id)` and `has_site_role(user_id, site_id, role)` to avoid recursion. Policies: users only see/insert rows for sites they belong to. Only `admin`/`manager` roles can create disposal batches.
+- Add `weight_kg NUMERIC` — kg for solid wastes, litres for the liquid (Waste Oil). Required (>0).
+- Add `piece_count INTEGER NULL` — only populated for waste types whose native unit is `nos`.
+- Migrate existing rows: copy current `quantity` → `weight_kg` for every entry (per user's choice). Leave `piece_count` NULL. Keep the old `quantity` column for one release as a fallback, then drop in a follow-up if desired.
+- Update `src/integrations/supabase/types.ts` will auto-regenerate after migration.
 
-Trigger: auto-create `profiles` row on `auth.users` insert.
+## 2. Waste type metadata (`src/lib/wasteTypes.ts`)
 
-## Phase 2 — Auth & Welcome flow
+Add a new field to each type:
 
-New routes:
-- `/` — Welcome page (hero + features overview + Login CTA)
-- `/auth` — Login page (email + password). No public signup (invite-only).
-- `/reset-password` — required by Lovable for password recovery
-- `/app` — protected app shell (current Index moved here)
+- `measureUnit`: `"kg"` or `"litres"` — the unit used for weight (drives dashboards & exports).
+- `countable`: `boolean` — true for the 7 items currently in `nos` (filters, batteries, containers, boxes, carbon brushes). False otherwise.
 
-Auth uses Supabase email/password with `onAuthStateChange` + `getSession` pattern. ProtectedRoute wrapper redirects unauthenticated users to `/auth`.
+Waste Oil → `measureUnit: "litres"`, `countable: false`.
+All others → `measureUnit: "kg"`.
 
-**Invite-only**: signup UI is removed. Admins create users from a new "Users" section in Settings (admin-only) using `supabase.auth.admin.inviteUserByEmail` via an edge function (since admin API requires service role).
+The existing `unit` field stays for backwards-compat but is no longer used for aggregation.
 
-## Phase 3 — Site selection
+## 3. Entry form (`WasteEntryForm.tsx`, `EditWasteDialog.tsx`)
 
-After login, if user belongs to >1 site, show site picker. Selected site stored in a `SiteContext` (React Context + localStorage). All queries filter by `site_id`. Header shows current site with a switcher dropdown.
+- Replace the single Quantity input with a two-column row:
+  - **Left (only when `countable`)**: "Count (pieces)" — integer input.
+  - **Right (always)**: "Weight" — decimal input, suffix shows `kg` or `litres` from `measureUnit`.
+- For liquids and bulk kg items: hide the count field entirely.
+- Validation: `weight_kg > 0` required. `piece_count` optional, integer ≥ 1 when shown.
 
-## Phase 4 — Form enhancements (`WasteEntryForm`)
+## 4. Dashboard rework (`DashboardStats.tsx`, `FuturisticDashboard.tsx`)
 
-- Add **Waste Category** dropdown: Hazardous / Non-Hazardous (required, persisted to DB)
-- Add **back arrow** in drawer header (closes drawer)
-- Form writes to Supabase `waste_entries` scoped to current site
+Restructure into **two sections**:
 
-## Phase 5 — Simplified disposal
+**Section A — Cumulative overview**
+- Card: Total active weight in **kg** (sum of solid `weight_kg`, active only).
+- Card: Total active volume in **litres** (sum of liquid `weight_kg`, active only).
+- Card: Overdue count (entries >90 days) + total overdue kg / L.
+- Card: Warning count (70–90 days) + kg / L.
 
-Remove per-entry "Dispose" buttons. Add a single **"Mark Quarterly Disposal"** action (admin/manager only) on the Inventory tab. It:
-1. Opens confirmation dialog listing all active entries at the site
-2. Creates one `disposal_batches` row
-3. Updates all selected active entries' `disposal_batch_id` in one transaction (via edge function or RPC)
+**Section B — This month**
+- Grouped bar/list: **kg generated this month per waste type** (solid).
+- Grouped bar/list: **litres generated this month** (liquid — Waste Oil).
+- Card: Disposals due this month (kg + L totals, entries hitting 90d within the current month).
 
-Inventory shows disposal batch history below active entries.
+Remove any "Total entries" / count-based tiles.
 
-## Phase 6 — Dashboard cumulative totals
+## 5. Analytics (`AnalyticsTab.tsx`)
 
-New section **"Cumulative Available Waste"**: aggregates active (non-disposed) entries by `waste_type_id`, summed in correct units. Shows e.g. "Waste Oil: 124 L", "Waste Grease: 38 kg", grouped by Hazardous vs Non-Hazardous category. Existing per-type breakdown stays.
+- "Total entries" card → replaced with **Total kg disposed** + **Total L disposed**.
+- Cumulative-by-waste-type bar chart → uses `weight_kg`, y-axis label from `measureUnit`. Drop the `qty × unit` mixed tooltip.
+- Top Locations bar chart → rank by summed `weight_kg` per location, not entry count. Split into two mini-charts (kg / L) OR single chart showing kg only + a small L-only sub-panel.
+- Activity split (Breakdown / Preventive / 5S) → show kg + L totals per activity instead of entry counts.
 
-## Phase 7 — Analytics enhancements
+## 6. Inventory table (`WasteInventoryTable.tsx`)
 
-- Avg days to disposal (computed from `disposal_batches` vs entry generated_date)
-- **Nearby disposal countdown** — days until oldest active entry hits 90d
-- **Disposal history timeline** — list of past batches with date + total qty disposed
-- **Stats by category** — Hazardous vs Non-Hazardous totals + counts
-- **Stats by waste type** — bar chart of cumulative quantity per type (current units shown beside)
-- Top WTGs (kept)
+- Quantity column shows `weight_kg` with `kg`/`L` suffix from waste-type metadata.
+- Add a small secondary line "n pcs" beneath weight only for countable types where `piece_count` is set.
+- Storage summary card at top: "**X kg + Y litres in storage**" (not "N entries").
 
-## Phase 8 — Green theme
+## 7. Alerts (`AlertsPanel.tsx`)
 
-Update `src/index.css` HSL tokens:
-- `--primary`: deep green (`142 50% 25%`)
-- `--accent`: bright leaf green (`142 70% 42%`)
-- `--success`: kept green
-- `--warning`: amber (kept)
-- `--overdue`: red (kept)
-- Background: subtle green-tinted off-white
+- "Available quantity", "due", overdue messages all use kg / L only.
+- Text pattern: "12.5 kg of Waste Grease overdue by 4 days" / "40 L Waste Oil due in 3 days".
 
-Header, FAB, badges, and chart fills inherit new tokens — no per-component color rewrites needed beyond a few accent references.
+## 8. Exports (`src/lib/wasteExports.ts`)
 
-## Phase 9 — Migrate from localStorage
+- Excel: Quantity column → `Weight (kg/L)`. Add a `Count (pcs)` column populated only for countable rows. All summary/pivot totals switch to kg + L.
+- PDF: Same. Header summary row shows kg + L only.
 
-Replace `useWasteStore` with `useWasteEntries` hook using `@tanstack/react-query` + Supabase client. Old localStorage data ignored (fresh start).
+## 9. Migration steps (order)
+
+1. DB migration: add columns, backfill, update RLS if needed (no policy changes expected).
+2. Update `wasteTypes.ts` with metadata.
+3. Update `useWasteEntries.ts` insert/update to write `weight_kg` + `piece_count`.
+4. Refactor form + edit dialog.
+5. Refactor dashboard, analytics, inventory, alerts, exports in one pass.
+6. Manual smoke test: add an entry with count + weight, add a liquid entry, verify dashboard sums, export both files.
+
+---
 
 ## Technical notes
 
-- Roles in separate `user_roles` table (per security rules), enum `app_role`
-- Use `SECURITY DEFINER` functions for all role checks in RLS to prevent recursion
-- Email validation via zod on auth forms
-- First admin: after enabling Cloud, you (the user) sign up once, then we run a one-time SQL to grant you `admin` role on a default site so you can invite others
+- `weight_kg` is the single source of truth for all math. `piece_count` is display-only.
+- Split solid vs liquid at query time using `WASTE_TYPES.find(...).measureUnit`, not a DB column, to keep the migration light. (If preferred we can denormalize `measure_unit` into `waste_entries` later.)
+- No changes to `waste_entry_photos`, `disposal_batches`, `sites`, auth, or roles.
+- Historical rows: existing `quantity` values copied into `weight_kg`; users can edit incorrect ones via the edit dialog.
 
-## Suggested build order
-
-1. Enable Cloud, create schema + RLS + seed default site
-2. Auth pages + ProtectedRoute + welcome page
-3. Site context + site switcher
-4. Migrate waste entries to Supabase + add category field + back arrow
-5. Simplified batch disposal flow
-6. Dashboard cumulative totals + green theme
-7. Analytics upgrades
-8. Admin-only invite flow
-
-This will take several iterations — recommend approving and building in this order, testing each phase before moving on.
+Confirm and I'll implement.
