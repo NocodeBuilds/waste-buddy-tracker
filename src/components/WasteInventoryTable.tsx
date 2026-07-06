@@ -185,7 +185,15 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
                         {entry.waste_category === "hazardous" ? "HAZ" : "NON"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{entry.quantity} {getUnit(entry.waste_type_id)}</TableCell>
+                    <TableCell>
+                      <div className="whitespace-nowrap">
+                        <span className="font-semibold">{fmtNum(Number(entry.weight_kg ?? 0))}</span>{" "}
+                        <span className="text-xs text-muted-foreground">{unitLabel(getMeasureUnit(entry.waste_type_id))}</span>
+                      </div>
+                      {entry.piece_count != null && (
+                        <div className="text-[10px] text-muted-foreground">{entry.piece_count} pcs</div>
+                      )}
+                    </TableCell>
                     <TableCell className="text-sm">{entry.generated_date}</TableCell>
                     <TableCell>
                       <span className={days >= DISPOSAL_LIMIT_DAYS && !isDisposed(entry) ? "text-overdue font-bold" : days >= 70 && !isDisposed(entry) ? "text-warning font-semibold" : ""}>
