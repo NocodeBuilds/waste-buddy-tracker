@@ -59,7 +59,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
   });
 
   const getWasteName = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.name || id;
-  const getUnit = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.unit || "";
+  const totals = sumByUnit(activeEntries);
 
   const statusBadge = (entry: WasteEntry) => {
     if (isDisposed(entry)) return <Badge className="bg-success text-success-foreground">Disposed</Badge>;
