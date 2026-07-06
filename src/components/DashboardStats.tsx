@@ -1,179 +1,180 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS, getStatus, isDisposed } from "@/lib/wasteTypes";
-import { Package, AlertTriangle, CheckCircle, Clock, Droplets, Recycle, Scale, Beaker, Hash } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import {
+  WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS,
+  isDisposed, sumByUnit, getMeasureUnit, fmtNum,
+} from "@/lib/wasteTypes";
+import { Package, AlertTriangle, Clock, Scale, Beaker, CalendarClock } from "lucide-react";
 
 interface Props {
   entries: WasteEntry[];
 }
 
+/** Filter entries generated within the current calendar month. */
+function isThisMonth(dateStr: string): boolean {
+  const d = new Date(dateStr);
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+}
+
+/** Filter active entries whose 90-day disposal deadline falls in the current month. */
+function isDueThisMonth(entry: WasteEntry): boolean {
+  if (isDisposed(entry)) return false;
+  const gen = new Date(entry.generated_date);
+  const due = new Date(gen);
+  due.setDate(due.getDate() + DISPOSAL_LIMIT_DAYS);
+  const now = new Date();
+  return due.getFullYear() === now.getFullYear() && due.getMonth() === now.getMonth();
+}
+
 export default function DashboardStats({ entries }: Props) {
   const active = entries.filter((e) => !isDisposed(e));
-  const disposed = entries.filter((e) => isDisposed(e));
   const overdue = active.filter((e) => getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS);
   const warning = active.filter((e) => {
     const d = getDaysStored(e.generated_date);
     return d >= 70 && d < DISPOSAL_LIMIT_DAYS;
   });
 
-  const stats = [
-    { label: "In Storage", value: active.length, icon: Package, color: "text-primary" },
-    { label: "Overdue", value: overdue.length, icon: AlertTriangle, color: "text-overdue" },
-    { label: "Warning", value: warning.length, icon: Clock, color: "text-warning" },
-    { label: "Disposed", value: disposed.length, icon: CheckCircle, color: "text-success" },
-  ];
+  const activeTotals = sumByUnit(active);
+  const overdueTotals = sumByUnit(overdue);
+  const warningTotals = sumByUnit(warning);
 
-  // Cumulative by waste type (active only)
-  const cumulative = WASTE_TYPES.map((wt) => {
-    const items = active.filter((e) => e.waste_type_id === wt.id);
-    const totalQty = items.reduce((s, e) => s + Number(e.quantity), 0);
-    const maxDays = items.length > 0 ? Math.max(...items.map((e) => getDaysStored(e.generated_date))) : 0;
-    const overdueCount = items.filter((e) => getStatus(e) === "overdue").length;
-    const warningCount = items.filter((e) => getStatus(e) === "warning").length;
-    const hazardous = items.some((e) => e.waste_category === "hazardous");
-    return { ...wt, totalQty, count: items.length, maxDays, overdueCount, warningCount, hazardous };
-  }).filter((w) => w.count > 0);
+  // ── This month: generated per waste type (split by measure unit)
+  const thisMonthEntries = entries.filter((e) => isThisMonth(e.generated_date));
+  const byTypeThisMonth = WASTE_TYPES.map((wt) => {
+    const items = thisMonthEntries.filter((e) => e.waste_type_id === wt.id);
+    const total = items.reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+    return { ...wt, total };
+  }).filter((w) => w.total > 0);
 
-  // Cumulative by category
-  const hazardousTotal = active.filter((e) => e.waste_category === "hazardous").length;
-  const nonHazardousTotal = active.filter((e) => e.waste_category === "non_hazardous").length;
+  const solidsThisMonth = byTypeThisMonth.filter((w) => w.measureUnit === "kg");
+  const liquidsThisMonth = byTypeThisMonth.filter((w) => w.measureUnit === "litres");
 
-  // Totals grouped by measurement unit (kg / litres / nos)
-  const unitTotals = active.reduce<Record<string, number>>((acc, e) => {
-    const wt = WASTE_TYPES.find((w) => w.id === e.waste_type_id);
-    if (!wt) return acc;
-    acc[wt.unit] = (acc[wt.unit] ?? 0) + Number(e.quantity);
-    return acc;
-  }, {});
-  const fmt = (n: number) => n.toFixed(2).replace(/\.00$/, "");
+  const dueThisMonth = active.filter(isDueThisMonth);
+  const dueTotals = sumByUnit(dueThisMonth);
 
   return (
-    <div className="space-y-4">
-      {/* Summary stats */}
-      <div className="grid grid-cols-2 gap-3">
-        {stats.map((s) => (
-          <Card key={s.label}>
-            <CardContent className="p-3 flex items-center gap-2">
-              <s.icon className={`h-6 w-6 ${s.color} shrink-0`} />
-              <div className="min-w-0">
-                <p className="text-xl font-bold leading-tight">{s.value}</p>
-                <p className="text-[10px] text-muted-foreground truncate">{s.label}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Category split */}
-      {(hazardousTotal + nonHazardousTotal) > 0 && (
+    <div className="space-y-6">
+      {/* ═══════════ SECTION A: Cumulative overview ═══════════ */}
+      <section className="space-y-3">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground px-1">
+          Cumulative — In Storage
+        </h2>
         <div className="grid grid-cols-2 gap-3">
-          <Card className="border-overdue/30">
+          <Card>
             <CardContent className="p-3 flex items-center gap-2">
-              <Droplets className="h-6 w-6 text-overdue shrink-0" />
-              <div>
-                <p className="text-xl font-bold">{hazardousTotal}</p>
-                <p className="text-[10px] text-muted-foreground">Hazardous</p>
+              <Scale className="h-6 w-6 text-primary shrink-0" />
+              <div className="min-w-0">
+                <p className="text-2xl font-bold leading-tight">{fmtNum(activeTotals.kg)}</p>
+                <p className="text-[10px] text-muted-foreground">kg of solids in storage</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-success/30">
+          <Card>
             <CardContent className="p-3 flex items-center gap-2">
-              <Recycle className="h-6 w-6 text-success shrink-0" />
-              <div>
-                <p className="text-xl font-bold">{nonHazardousTotal}</p>
-                <p className="text-[10px] text-muted-foreground">Non-Hazardous</p>
+              <Beaker className="h-6 w-6 text-accent shrink-0" />
+              <div className="min-w-0">
+                <p className="text-2xl font-bold leading-tight">{fmtNum(activeTotals.litres)}</p>
+                <p className="text-[10px] text-muted-foreground">L of liquid in storage</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className={overdue.length > 0 ? "border-overdue/40" : ""}>
+            <CardContent className="p-3 flex items-center gap-2">
+              <AlertTriangle className="h-6 w-6 text-overdue shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-bold leading-tight">
+                  {fmtNum(overdueTotals.kg)} kg · {fmtNum(overdueTotals.litres)} L
+                </p>
+                <p className="text-[10px] text-muted-foreground">Overdue (&gt; 90 days)</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className={warning.length > 0 ? "border-warning/40" : ""}>
+            <CardContent className="p-3 flex items-center gap-2">
+              <Clock className="h-6 w-6 text-warning shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-bold leading-tight">
+                  {fmtNum(warningTotals.kg)} kg · {fmtNum(warningTotals.litres)} L
+                </p>
+                <p className="text-[10px] text-muted-foreground">Warning (70–89 days)</p>
               </div>
             </CardContent>
           </Card>
         </div>
-      )}
+      </section>
 
-      {/* Totals grouped by measurement unit */}
-      {Object.keys(unitTotals).length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
-            Total Quantity by Unit
-          </h3>
-          <div className="grid grid-cols-3 gap-3">
-            <Card>
-              <CardContent className="p-3 flex items-center gap-2">
-                <Scale className="h-5 w-5 text-primary shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-lg font-bold leading-tight">{fmt(unitTotals["kg"] ?? 0)}</p>
-                  <p className="text-[10px] text-muted-foreground">kg (weight)</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3 flex items-center gap-2">
-                <Beaker className="h-5 w-5 text-accent shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-lg font-bold leading-tight">{fmt(unitTotals["litres"] ?? 0)}</p>
-                  <p className="text-[10px] text-muted-foreground">L (liquid)</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3 flex items-center gap-2">
-                <Hash className="h-5 w-5 text-warning shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-lg font-bold leading-tight">{fmt(unitTotals["nos"] ?? 0)}</p>
-                  <p className="text-[10px] text-muted-foreground">nos (count)</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
+      {/* ═══════════ SECTION B: This month ═══════════ */}
+      <section className="space-y-3">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground px-1">
+          This Month
+        </h2>
 
-      {/* Cumulative available waste */}
-      {cumulative.length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
-            Cumulative Available Waste
-          </h3>
-          <div className="space-y-2">
-            {cumulative.map((w) => (
-              <Card key={w.id} className={w.overdueCount > 0 ? "border-overdue/40" : w.warningCount > 0 ? "border-warning/40" : ""}>
-                <CardContent className="p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold leading-tight truncate">{w.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{w.category}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-lg font-bold leading-tight text-primary">
-                        {w.totalQty.toFixed(2).replace(/\.00$/, "")} <span className="text-xs font-normal text-muted-foreground">{w.unit}</span>
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">{w.count} entries</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className={`text-xs font-medium ${w.maxDays >= DISPOSAL_LIMIT_DAYS ? "text-overdue" : w.maxDays >= 70 ? "text-warning" : "text-muted-foreground"}`}>
-                      Max: {w.maxDays} days
-                    </span>
-                    {w.overdueCount > 0 && (
-                      <Badge className="bg-overdue text-overdue-foreground text-[10px] px-1.5 py-0">
-                        {w.overdueCount} overdue
-                      </Badge>
-                    )}
-                    {w.warningCount > 0 && (
-                      <Badge className="bg-warning text-warning-foreground text-[10px] px-1.5 py-0">
-                        {w.warningCount} warning
-                      </Badge>
-                    )}
-                    {w.overdueCount === 0 && w.warningCount === 0 && (
-                      <Badge className="bg-success/20 text-success border border-success/30 text-[10px] px-1.5 py-0">
-                        All safe
-                      </Badge>
-                    )}
-                  </div>
+        <Card>
+          <CardContent className="p-3 flex items-center gap-2">
+            <CalendarClock className="h-6 w-6 text-primary shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm font-bold leading-tight">
+                {fmtNum(dueTotals.kg)} kg · {fmtNum(dueTotals.litres)} L
+              </p>
+              <p className="text-[10px] text-muted-foreground">Disposal due this month</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {solidsThisMonth.length === 0 && liquidsThisMonth.length === 0 ? (
+          <Card>
+            <CardContent className="p-4 text-center text-xs text-muted-foreground flex flex-col items-center gap-1">
+              <Package className="h-5 w-5 opacity-40" />
+              No waste generated this month yet.
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {solidsThisMonth.length > 0 && (
+              <Card>
+                <CardContent className="p-3 space-y-2">
+                  <h3 className="text-xs font-semibold text-muted-foreground">
+                    Solids generated this month (kg)
+                  </h3>
+                  {solidsThisMonth.map((w) => {
+                    const max = Math.max(...solidsThisMonth.map((x) => x.total));
+                    return (
+                      <div key={w.id} className="flex items-center gap-2">
+                        <span className="text-xs flex-1 truncate">{w.name}</span>
+                        <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
+                          <div className="bg-primary h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
+                        </div>
+                        <span className="text-xs font-mono font-semibold w-16 text-right">{fmtNum(w.total)} kg</span>
+                      </div>
+                    );
+                  })}
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        </div>
-      )}
+            )}
+            {liquidsThisMonth.length > 0 && (
+              <Card>
+                <CardContent className="p-3 space-y-2">
+                  <h3 className="text-xs font-semibold text-muted-foreground">
+                    Liquids generated this month (L)
+                  </h3>
+                  {liquidsThisMonth.map((w) => {
+                    const max = Math.max(...liquidsThisMonth.map((x) => x.total));
+                    return (
+                      <div key={w.id} className="flex items-center gap-2">
+                        <span className="text-xs flex-1 truncate">{w.name}</span>
+                        <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
+                          <div className="bg-accent h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
+                        </div>
+                        <span className="text-xs font-mono font-semibold w-16 text-right">{fmtNum(w.total)} L</span>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+      </section>
     </div>
   );
 }
