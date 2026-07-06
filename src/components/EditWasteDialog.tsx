@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { WASTE_TYPES, WasteCategory, WasteEntry, ActivityType } from "@/lib/wasteTypes";
+import { WASTE_TYPES, WasteCategory, WasteEntry, ActivityType, unitLabel } from "@/lib/wasteTypes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,8 @@ interface Props {
     id: string;
     waste_type_id: string;
     waste_category: WasteCategory;
-    quantity: number;
+    weight_kg: number;
+    piece_count?: number | null;
     generated_date: string;
     activity_type: ActivityType;
     location?: string | null;
@@ -27,7 +28,8 @@ interface Props {
 export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
   const [category, setCategory] = useState<WasteCategory>("hazardous");
   const [typeId, setTypeId] = useState("");
-  const [qty, setQty] = useState("");
+  const [weight, setWeight] = useState("");
+  const [pieceCount, setPieceCount] = useState("");
   const [date, setDate] = useState("");
   const [activity, setActivity] = useState<ActivityType>("preventive");
   const [location, setLocation] = useState("");
@@ -38,7 +40,8 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
     if (!entry) return;
     setCategory(entry.waste_category);
     setTypeId(entry.waste_type_id);
-    setQty(String(entry.quantity));
+    setWeight(String(entry.weight_kg ?? entry.quantity ?? ""));
+    setPieceCount(entry.piece_count != null ? String(entry.piece_count) : "");
     setDate(entry.generated_date);
     setActivity(entry.activity_type);
     setLocation(entry.location ?? "");
@@ -46,11 +49,14 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
   }, [entry]);
 
   const types = WASTE_TYPES.filter((w) => w.wasteCategory === category);
+  const selected = WASTE_TYPES.find((w) => w.id === typeId);
+  const weightUnit = selected ? unitLabel(selected.measureUnit) : "kg";
+  const showCount = !!selected?.countable;
 
   const submit = async () => {
     if (!entry) return;
-    const q = parseFloat(qty);
-    if (!typeId || !q || !date) {
+    const w = parseFloat(weight);
+    if (!typeId || !w || w <= 0 || !date) {
       toast.error("Fill all required fields");
       return;
     }
@@ -60,7 +66,8 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
         id: entry.id,
         waste_type_id: typeId,
         waste_category: category,
-        quantity: q,
+        weight_kg: w,
+        piece_count: showCount && pieceCount ? Number(pieceCount) : null,
         generated_date: date,
         activity_type: activity,
         location: location || null,
@@ -105,18 +112,24 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
               <SelectTrigger><SelectValue placeholder="Select waste type" /></SelectTrigger>
               <SelectContent>
                 {types.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>{t.name} ({t.unit})</SelectItem>
+                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className={`grid gap-2 ${showCount ? "grid-cols-3" : "grid-cols-2"}`}>
+            {showCount && (
+              <div className="space-y-1.5">
+                <Label>Count (pcs)</Label>
+                <Input type="number" min="1" step="1" value={pieceCount} onChange={(e) => setPieceCount(e.target.value)} />
+              </div>
+            )}
             <div className="space-y-1.5">
-              <Label>Quantity</Label>
-              <Input type="number" step="0.01" value={qty} onChange={(e) => setQty(e.target.value)} />
+              <Label>Weight ({weightUnit})</Label>
+              <Input type="number" step="0.01" min="0" value={weight} onChange={(e) => setWeight(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label>Generated Date</Label>
+              <Label>Generated</Label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
           </div>

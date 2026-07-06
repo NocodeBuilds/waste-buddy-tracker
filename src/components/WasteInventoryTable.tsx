@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { WasteEntry, WASTE_TYPES, getDaysStored, getStatus, DISPOSAL_LIMIT_DAYS, isDisposed, DisposalBatch } from "@/lib/wasteTypes";
+import { WasteEntry, WASTE_TYPES, getDaysStored, getStatus, DISPOSAL_LIMIT_DAYS, isDisposed, DisposalBatch, getMeasureUnit, unitLabel, sumByUnit, fmtNum } from "@/lib/wasteTypes";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +59,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
   });
 
   const getWasteName = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.name || id;
-  const getUnit = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.unit || "";
+  const totals = sumByUnit(activeEntries);
 
   const statusBadge = (entry: WasteEntry) => {
     if (isDisposed(entry)) return <Badge className="bg-success text-success-foreground">Disposed</Badge>;
@@ -97,6 +97,20 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
           </SelectContent>
         </Select>
       </div>
+
+      {/* Storage summary — kg + L in current storage */}
+      <Card>
+        <CardContent className="p-3 grid grid-cols-2 gap-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">In Storage (Solids)</p>
+            <p className="text-xl font-bold">{fmtNum(totals.kg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">In Storage (Liquid)</p>
+            <p className="text-xl font-bold">{fmtNum(totals.litres)} <span className="text-xs font-normal text-muted-foreground">L</span></p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Export buttons */}
       <div className="grid grid-cols-2 gap-2">
@@ -185,7 +199,15 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
                         {entry.waste_category === "hazardous" ? "HAZ" : "NON"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{entry.quantity} {getUnit(entry.waste_type_id)}</TableCell>
+                    <TableCell>
+                      <div className="whitespace-nowrap">
+                        <span className="font-semibold">{fmtNum(Number(entry.weight_kg ?? 0))}</span>{" "}
+                        <span className="text-xs text-muted-foreground">{unitLabel(getMeasureUnit(entry.waste_type_id))}</span>
+                      </div>
+                      {entry.piece_count != null && (
+                        <div className="text-[10px] text-muted-foreground">{entry.piece_count} pcs</div>
+                      )}
+                    </TableCell>
                     <TableCell className="text-sm">{entry.generated_date}</TableCell>
                     <TableCell>
                       <span className={days >= DISPOSAL_LIMIT_DAYS && !isDisposed(entry) ? "text-overdue font-bold" : days >= 70 && !isDisposed(entry) ? "text-warning font-semibold" : ""}>
