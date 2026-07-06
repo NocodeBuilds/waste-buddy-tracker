@@ -99,8 +99,7 @@ export function useWasteEntries() {
       params: { id: string } & Partial<Pick<WasteEntry, "waste_type_id" | "waste_category" | "weight_kg" | "piece_count" | "generated_date" | "activity_type" | "location" | "notes">>,
     ) => {
       const { id, ...updates } = params;
-      const payload: Record<string, unknown> = { ...updates };
-      // Keep legacy `quantity` in sync when weight changes.
+      const payload: typeof updates & { quantity?: number } = { ...updates };
       if (typeof updates.weight_kg === "number") payload.quantity = updates.weight_kg;
       const { error } = await supabase.from("waste_entries").update(payload).eq("id", id);
       if (error) throw error;
