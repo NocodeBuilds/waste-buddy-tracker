@@ -146,6 +146,10 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
                 </div>
               );
             })}
+          </CardContent>
+        </Card>
+      )}
+
 
       {/* Export buttons */}
       <div className="grid grid-cols-2 gap-2">
