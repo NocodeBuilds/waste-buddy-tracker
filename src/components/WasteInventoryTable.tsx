@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { WasteEntry, WASTE_TYPES, getDaysStored, getStatus, DISPOSAL_LIMIT_DAYS, isDisposed, DisposalBatch, getMeasureUnit, unitLabel, sumByUnit, fmtNum } from "@/lib/wasteTypes";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, CheckCircle, Loader2, FileSpreadsheet, FileText, Pencil, Download } from "lucide-react";
+import { Trash2, CheckCircle, Loader2, FileSpreadsheet, FileText, Pencil, Download, Scale } from "lucide-react";
 import { exportInventoryToExcel, exportForm3Pdf, exportDisposalBatchPdf } from "@/lib/wasteExports";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
@@ -60,6 +60,15 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
 
   const getWasteName = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.name || id;
   const totals = sumByUnit(activeEntries);
+
+  // Weight/volume grouped by waste type across active storage.
+  const byType = useMemo(() => {
+    return WASTE_TYPES.map((wt) => {
+      const items = activeEntries.filter((e) => e.waste_type_id === wt.id);
+      const total = items.reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+      return { ...wt, total };
+    }).filter((w) => w.total > 0).sort((a, b) => b.total - a.total);
+  }, [activeEntries]);
 
   const statusBadge = (entry: WasteEntry) => {
     if (isDisposed(entry)) return <Badge className="bg-success text-success-foreground">Disposed</Badge>;
