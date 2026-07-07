@@ -121,6 +121,32 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
         </CardContent>
       </Card>
 
+      {/* Weight / volume by waste type (in storage) */}
+      {byType.length > 0 && (
+        <Card>
+          <CardContent className="p-3 space-y-2">
+            <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+              <Scale className="h-3.5 w-3.5" /> In storage by waste type
+            </h3>
+            {byType.map((w) => {
+              const max = Math.max(...byType.map((x) => x.total));
+              const suffix = w.measureUnit === "litres" ? "L" : "kg";
+              const barColor = w.measureUnit === "litres"
+                ? "bg-accent"
+                : w.wasteCategory === "hazardous" ? "bg-overdue" : "bg-success";
+              return (
+                <div key={w.id} className="flex items-center gap-2">
+                  <span className="text-xs flex-1 truncate">{w.name}</span>
+                  <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
+                    <div className={`${barColor} h-full rounded-full`} style={{ width: `${(w.total / max) * 100}%` }} />
+                  </div>
+                  <span className="text-xs font-mono font-semibold w-20 text-right">
+                    {fmtNum(w.total)} {suffix}
+                  </span>
+                </div>
+              );
+            })}
+
       {/* Export buttons */}
       <div className="grid grid-cols-2 gap-2">
         <Button
