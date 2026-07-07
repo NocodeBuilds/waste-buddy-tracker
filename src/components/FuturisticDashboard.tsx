@@ -65,57 +65,8 @@ export default function FuturisticDashboard({ entries }: Props) {
     ].filter((d) => d.value > 0);
   }, [active]);
 
-  // Weight by waste type — solids (kg) only.
-  const solidTypeData = useMemo(() => {
-    return WASTE_TYPES
-      .filter((wt) => wt.measureUnit === "kg")
-      .map((wt, i) => {
-        const items = active.filter((e) => e.waste_type_id === wt.id);
-        const qty = items.reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
-        return {
-          name: wt.name.length > 18 ? wt.name.slice(0, 16) + "…" : wt.name,
-          fullName: wt.name,
-          qty: +qty.toFixed(2),
-          color: PIE_PALETTE[i % PIE_PALETTE.length],
-        };
-      })
-      .filter((d) => d.qty > 0)
-      .sort((a, b) => b.qty - a.qty);
-  }, [active]);
+  // (Weight-by-type moved to Inventory; Top Locations & Liquid volume-by-type removed per product spec)
 
-  // Liquids (litres) — separate chart.
-  const liquidTypeData = useMemo(() => {
-    return WASTE_TYPES
-      .filter((wt) => wt.measureUnit === "litres")
-      .map((wt, i) => {
-        const items = active.filter((e) => e.waste_type_id === wt.id);
-        const qty = items.reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
-        return {
-          name: wt.name,
-          qty: +qty.toFixed(2),
-          color: PIE_PALETTE[(i + 3) % PIE_PALETTE.length],
-        };
-      })
-      .filter((d) => d.qty > 0);
-  }, [active]);
-
-  // Top locations by kg (solids only).
-  const locationData = useMemo(() => {
-    const map = new Map<string, { kg: number; litres: number; maxDays: number }>();
-    active.forEach((e) => {
-      const loc = e.location || "Unspecified";
-      const m = map.get(loc) ?? { kg: 0, litres: 0, maxDays: 0 };
-      const u = getMeasureUnit(e.waste_type_id);
-      const v = Number(e.weight_kg ?? 0);
-      if (u === "kg") m.kg += v; else m.litres += v;
-      m.maxDays = Math.max(m.maxDays, getDaysStored(e.generated_date));
-      map.set(loc, m);
-    });
-    return Array.from(map.entries())
-      .map(([loc, v]) => ({ loc, ...v, kg: +v.kg.toFixed(2), litres: +v.litres.toFixed(2) }))
-      .sort((a, b) => (b.kg + b.litres) - (a.kg + a.litres))
-      .slice(0, 10);
-  }, [active]);
 
   // Aging buckets by total weight per unit.
   const agingData = useMemo(() => {
