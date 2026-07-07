@@ -13,7 +13,7 @@ import {
 } from "@/lib/wasteTypes";
 import DashboardStats from "./DashboardStats";
 import {
-  AlertTriangle, Clock, Activity, Zap, Droplets, MapPin,
+  AlertTriangle, Clock, Activity, Droplets,
 } from "lucide-react";
 
 interface Props { entries: WasteEntry[]; }
@@ -219,77 +219,6 @@ export default function FuturisticDashboard({ entries }: Props) {
           </CardContent>
         </Card>
       </div>
-
-      {/* Solid weight by waste type (kg) */}
-      {solidTypeData.length > 0 && (
-        <Card className="border-border/50 bg-card/70 backdrop-blur">
-          <CardContent className="p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-              <Zap className="h-3.5 w-3.5" /> Weight by Waste Type (kg)
-            </h3>
-            <ResponsiveContainer width="100%" height={Math.max(180, solidTypeData.length * 28)}>
-              <BarChart data={solidTypeData} layout="vertical" margin={{ top: 5, right: 20, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                <YAxis dataKey="name" type="category" width={110}
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                <Tooltip contentStyle={tooltipStyle}
-                  formatter={(v: any, _n, p: any) => [`${v} kg`, p.payload.fullName]} />
-                <Bar dataKey="qty" radius={[0, 6, 6, 0]}>
-                  {solidTypeData.map((d, i) => <Cell key={i} fill={d.color} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Liquid volume by waste type (L) */}
-      {liquidTypeData.length > 0 && (
-        <Card className="border-border/50 bg-card/70 backdrop-blur">
-          <CardContent className="p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-              <Droplets className="h-3.5 w-3.5" /> Volume by Waste Type (L)
-            </h3>
-            <ResponsiveContainer width="100%" height={Math.max(140, liquidTypeData.length * 40)}>
-              <BarChart data={liquidTypeData} layout="vertical" margin={{ top: 5, right: 20, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                <YAxis dataKey="name" type="category" width={110}
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => [`${v} L`, ""]} />
-                <Bar dataKey="qty" radius={[0, 6, 6, 0]}>
-                  {liquidTypeData.map((d, i) => <Cell key={i} fill={d.color} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* By location */}
-      {locationData.length > 0 && (
-        <Card className="border-border/50 bg-card/70 backdrop-blur">
-          <CardContent className="p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5" /> Top Locations (kg + L)
-            </h3>
-            <ResponsiveContainer width="100%" height={Math.max(180, locationData.length * 32)}>
-              <BarChart data={locationData} layout="vertical" margin={{ top: 5, right: 20, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                <YAxis dataKey="loc" type="category" width={80}
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                <Tooltip contentStyle={tooltipStyle}
-                  formatter={(v: any, name: any, p: any) => [`${v} ${name === "kg" ? "kg" : "L"} · max ${p.payload.maxDays}d`, name]} />
-                <Legend wrapperStyle={{ fontSize: 10 }} />
-                <Bar dataKey="kg" stackId="a" fill={COLORS.primary} radius={[0, 0, 0, 0]} />
-                <Bar dataKey="litres" stackId="a" fill={COLORS.accent} radius={[0, 6, 6, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Generation trend */}
       <Card className="border-border/50 bg-card/70 backdrop-blur">
