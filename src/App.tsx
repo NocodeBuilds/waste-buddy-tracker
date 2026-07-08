@@ -11,6 +11,7 @@ import AdminAuth from "./pages/AdminAuth";
 import ResetPassword from "./pages/ResetPassword";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import InstallPrompt from "@/components/InstallPrompt";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <InstallPrompt />
       <BrowserRouter>
         <AuthProvider>
           <SiteProvider>

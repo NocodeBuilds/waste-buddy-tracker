@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS, isDisposed } from "@/lib/wasteTypes";
+import { WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS, isDisposed, getMeasureUnit, unitLabel, fmtNum } from "@/lib/wasteTypes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Bell, X, EyeOff } from "lucide-react";
@@ -56,7 +56,7 @@ export default function AlertsPanel({ entries }: Props) {
   if (overdue.length === 0 && warnings.length === 0) return null;
 
   const getWasteName = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.name || id;
-  const getUnit = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.unit || "";
+  const formatQty = (e: WasteEntry) => `${fmtNum(Number(e.weight_kg ?? 0))} ${unitLabel(getMeasureUnit(e.waste_type_id))}`;
 
   const hideAll = () => {
     const next = new Set(dismissed);
@@ -85,7 +85,7 @@ export default function AlertsPanel({ entries }: Props) {
           <div key={e.id} className="flex items-start gap-2 bg-overdue/10 p-3 rounded-lg">
             <AlertTriangle className="h-4 w-4 text-overdue mt-0.5 shrink-0" />
             <div className="text-sm flex-1">
-              <span className="font-semibold">{e.location}</span> — {getWasteName(e.waste_type_id)} ({e.quantity} {getUnit(e.waste_type_id)}) stored for <span className="font-bold text-overdue">{getDaysStored(e.generated_date)} days</span>. Exceeded {DISPOSAL_LIMIT_DAYS}-day limit!
+              <span className="font-semibold">{e.location}</span> — {getWasteName(e.waste_type_id)} ({formatQty(e)}) stored for <span className="font-bold text-overdue">{getDaysStored(e.generated_date)} days</span>. Exceeded {DISPOSAL_LIMIT_DAYS}-day limit!
             </div>
             <Button
               variant="ghost"

@@ -286,11 +286,13 @@ export type Database = {
           id: string
           location: string | null
           notes: string | null
-          quantity: number
+          piece_count: number | null
+          quantity: number | null
           site_id: string
           updated_at: string
           waste_category: Database["public"]["Enums"]["waste_category"]
           waste_type_id: string
+          weight_kg: number
         }
         Insert: {
           activity_type: Database["public"]["Enums"]["activity_type"]
@@ -301,11 +303,13 @@ export type Database = {
           id?: string
           location?: string | null
           notes?: string | null
-          quantity: number
+          piece_count?: number | null
+          quantity?: number | null
           site_id: string
           updated_at?: string
           waste_category?: Database["public"]["Enums"]["waste_category"]
           waste_type_id: string
+          weight_kg?: number
         }
         Update: {
           activity_type?: Database["public"]["Enums"]["activity_type"]
@@ -316,11 +320,13 @@ export type Database = {
           id?: string
           location?: string | null
           notes?: string | null
-          quantity?: number
+          piece_count?: number | null
+          quantity?: number | null
           site_id?: string
           updated_at?: string
           waste_category?: Database["public"]["Enums"]["waste_category"]
           waste_type_id?: string
+          weight_kg?: number
         }
         Relationships: [
           {
@@ -407,7 +413,7 @@ export type Database = {
       user_site_ids: { Args: { _user_id: string }; Returns: string[] }
     }
     Enums: {
-      activity_type: "breakdown" | "preventive"
+      activity_type: "breakdown" | "preventive" | "5s"
       app_role: "admin" | "manager" | "member"
       waste_category: "hazardous" | "non_hazardous"
     }
@@ -537,7 +543,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      activity_type: ["breakdown", "preventive"],
+      activity_type: ["breakdown", "preventive", "5s"],
       app_role: ["admin", "manager", "member"],
       waste_category: ["hazardous", "non_hazardous"],
     },

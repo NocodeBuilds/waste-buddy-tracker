@@ -101,20 +101,31 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
 
   const load = async () => {
     setLoading(true);
-    const { data: ms } = await supabase
-      .from("user_sites")
-      .select("user_id, profiles!inner(email, full_name)")
-      .eq("site_id", siteId);
-    const { data: rs } = await supabase
-      .from("user_roles")
-      .select("user_id, role")
-      .eq("site_id", siteId);
+    // Fetch memberships and roles for this site in parallel.
+    const [{ data: ms }, { data: rs }] = await Promise.all([
+      supabase.from("user_sites").select("user_id").eq("site_id", siteId),
+      supabase.from("user_roles").select("user_id, role").eq("site_id", siteId),
+    ]);
+    const userIds = Array.from(new Set([
+      ...(ms ?? []).map((m: any) => m.user_id),
+      ...(rs ?? []).map((r: any) => r.user_id),
+    ]));
+    // Fetch profiles separately — join via profiles!inner drops rows when RLS
+    // filters the profile row (PostgREST embed does not backfill).
+    let profMap: Record<string, { email: string | null; full_name: string | null }> = {};
+    if (userIds.length) {
+      const { data: ps } = await supabase
+        .from("profiles").select("id, email, full_name").in("id", userIds);
+      (ps ?? []).forEach((p: any) => {
+        profMap[p.id] = { email: p.email, full_name: p.full_name };
+      });
+    }
     const byUser: Record<string, Role[]> = {};
     (rs ?? []).forEach((r: any) => { byUser[r.user_id] = [...(byUser[r.user_id] ?? []), r.role]; });
     setMembers((ms ?? []).map((m: any) => ({
       user_id: m.user_id,
-      email: m.profiles?.email ?? null,
-      full_name: m.profiles?.full_name ?? null,
+      email: profMap[m.user_id]?.email ?? null,
+      full_name: profMap[m.user_id]?.full_name ?? null,
       roles: byUser[m.user_id] ?? [],
     })));
 
@@ -125,14 +136,19 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
       .eq("site_id", siteId)
       .eq("status", "pending")
       .order("created_at", { ascending: false });
-    const reqUserIds = (reqRows ?? []).map((r: any) => r.user_id);
-    let profMap: Record<string, { email: string | null; full_name: string | null }> = {};
-    if (reqUserIds.length) {
-      const { data: ps } = await supabase
-        .from("profiles").select("id, email, full_name").in("id", reqUserIds);
-      (ps ?? []).forEach((p: any) => { profMap[p.id] = { email: p.email, full_name: p.full_name }; });
-    }
     setRequests((reqRows ?? []).map((r: any) => ({ ...r, profile: profMap[r.user_id] })));
+
+    // Backfill any requester profiles we didn't fetch above.
+    const missing = (reqRows ?? [])
+      .map((r: any) => r.user_id)
+      .filter((id: string) => !profMap[id]);
+    if (missing.length) {
+      const { data: ps2 } = await supabase
+        .from("profiles").select("id, email, full_name").in("id", missing);
+      const extra: Record<string, any> = {};
+      (ps2 ?? []).forEach((p: any) => { extra[p.id] = { email: p.email, full_name: p.full_name }; });
+      setRequests((reqRows ?? []).map((r: any) => ({ ...r, profile: profMap[r.user_id] ?? extra[r.user_id] })));
+    }
 
     setLoading(false);
   };
@@ -508,7 +524,7 @@ function RecordsPanel({ siteId }: { siteId: string }) {
                 <div className="min-w-0">
                   <p className="font-medium truncate">{r.location} · {r.waste_type_id}</p>
                   <p className="text-[10px] text-muted-foreground">
-                    {r.generated_date} · {r.quantity} · {r.activity_type}
+                    {r.generated_date} · {r.weight_kg ?? r.quantity ?? "—"} · {r.activity_type}
                     {r.disposal_batch_id ? " · disposed" : ""}
                   </p>
                 </div>

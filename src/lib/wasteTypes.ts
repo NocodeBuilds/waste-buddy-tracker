@@ -1,40 +1,54 @@
 export type WasteCategory = "hazardous" | "non_hazardous";
+export type MeasureUnit = "kg" | "litres";
 
 export interface WasteType {
   id: string;
   name: string;
+  /** Legacy display unit — kept for backwards compat only. Use `measureUnit` for aggregation. */
   unit: string;
   category: string;
   wasteCategory: WasteCategory;
+  /** Unit used for the primary weight measurement (kg for solids, litres for liquids). */
+  measureUnit: MeasureUnit;
+  /** When true, the entry form also captures a piece count (nos). Never used in totals. */
+  countable: boolean;
 }
 
 export const WASTE_TYPES: WasteType[] = [
   // Hazardous
-  { id: "oil-cotton", name: "Oil/Grease Soaked Cotton Waste", unit: "kg", category: "Solid", wasteCategory: "hazardous" },
-  { id: "waste-oil", name: "Waste Oil", unit: "litres", category: "Liquid", wasteCategory: "hazardous" },
-  { id: "waste-grease", name: "Waste Grease", unit: "kg", category: "Semi-Solid", wasteCategory: "hazardous" },
-  { id: "plastic-waste", name: "Plastic Waste (Contaminated)", unit: "kg", category: "Solid", wasteCategory: "hazardous" },
-  { id: "hu-oil-filter", name: "HU Oil Filter Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
-  { id: "gb-oil-filter", name: "GB Oil Filter Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
-  { id: "carbon-brush", name: "Carbon Brush Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
-  { id: "oil-filters-misc", name: "Misc Oil Filters", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
-  { id: "used-batteries", name: "Used Batteries", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
-  { id: "empty-containers", name: "Empty Chemical Containers", unit: "nos", category: "Solid", wasteCategory: "hazardous" },
+  { id: "oil-cotton", name: "Oil/Grease Soaked Cotton Waste", unit: "kg", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: false },
+  { id: "waste-oil", name: "Waste Oil", unit: "litres", category: "Liquid", wasteCategory: "hazardous", measureUnit: "litres", countable: false },
+  { id: "waste-grease", name: "Waste Grease", unit: "kg", category: "Semi-Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: false },
+  { id: "plastic-waste", name: "Plastic Waste (Contaminated)", unit: "kg", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: false },
+  { id: "hu-oil-filter", name: "HU Oil Filter Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
+  { id: "gb-oil-filter", name: "GB Oil Filter Waste (Online filters)", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
+  { id: "gb-oil-filter-offline", name: "GB Oil Filter Waste (Offline filters)", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
+  { id: "dust-filter-mat", name: "Dust Filter Mat", unit: "kg", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: false },
+  { id: "carbon-brush", name: "Carbon Brush Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
+  { id: "oil-filters-misc", name: "Misc Oil Filters", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
+  { id: "used-batteries", name: "Used Batteries", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
+  { id: "empty-containers", name: "Empty Chemical Containers", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
   // Non-hazardous
-  { id: "paper-waste", name: "Paper Waste", unit: "kg", category: "Solid", wasteCategory: "non_hazardous" },
-  { id: "packaging-waste", name: "Packaging Waste", unit: "kg", category: "Solid", wasteCategory: "non_hazardous" },
-  { id: "wooden-boxes", name: "Wooden Boxes", unit: "nos", category: "Solid", wasteCategory: "non_hazardous" },
-  { id: "plastic-non-contaminated", name: "Plastic Waste (Non-Contaminated)", unit: "kg", category: "Solid", wasteCategory: "non_hazardous" },
-  { id: "non-haz-others", name: "Others (Non-Hazardous)", unit: "kg", category: "Solid", wasteCategory: "non_hazardous" },
+  { id: "paper-waste", name: "Paper Waste", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false },
+  { id: "packaging-waste", name: "Packaging Waste", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false },
+  { id: "wooden-boxes", name: "Wooden Boxes", unit: "nos", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: true },
+  { id: "plastic-non-contaminated", name: "Plastic Waste (Non-Contaminated)", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false },
+  { id: "non-haz-others", name: "Others (Non-Hazardous)", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false },
 ];
-export type ActivityType = "breakdown" | "preventive";
+
+export type ActivityType = "breakdown" | "preventive" | "5s";
 
 export interface WasteEntry {
   id: string;
   site_id: string;
   waste_type_id: string;
   waste_category: WasteCategory;
-  quantity: number;
+  /** Legacy — retained for old rows. New code uses `weight_kg`. */
+  quantity?: number | null;
+  /** Primary measurement: kg for solids, litres for liquids. */
+  weight_kg: number;
+  /** Optional piece count for items measured in nos (filters, batteries, etc.). Display only. */
+  piece_count?: number | null;
   generated_date: string;
   activity_type: ActivityType;
   location?: string | null;
@@ -71,4 +85,30 @@ export function getStatus(entry: WasteEntry): "safe" | "warning" | "overdue" {
 
 export function isDisposed(entry: WasteEntry): boolean {
   return !!entry.disposal_batch_id;
+}
+
+/** Look up the measurement unit (kg/litres) for a waste type id. Defaults to kg. */
+export function getMeasureUnit(wasteTypeId: string): MeasureUnit {
+  return WASTE_TYPES.find((w) => w.id === wasteTypeId)?.measureUnit ?? "kg";
+}
+
+/** Human-friendly unit suffix ("kg" or "L"). */
+export function unitLabel(u: MeasureUnit): string {
+  return u === "litres" ? "L" : "kg";
+}
+
+/** Sum weight for entries, split by measurement unit. */
+export function sumByUnit(entries: WasteEntry[]): { kg: number; litres: number } {
+  let kg = 0, litres = 0;
+  for (const e of entries) {
+    const u = getMeasureUnit(e.waste_type_id);
+    const v = Number(e.weight_kg ?? 0);
+    if (u === "litres") litres += v; else kg += v;
+  }
+  return { kg, litres };
+}
+
+/** Format a number with up to 2 decimals, trimming trailing zeros. */
+export function fmtNum(n: number): string {
+  return (Math.round(n * 100) / 100).toString();
 }

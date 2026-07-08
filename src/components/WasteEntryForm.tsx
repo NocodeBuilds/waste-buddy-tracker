@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { WASTE_TYPES, WasteCategory, ActivityType } from "@/lib/wasteTypes";
+import { WASTE_TYPES, WasteCategory, ActivityType, unitLabel } from "@/lib/wasteTypes";
 import { useSiteLocations } from "@/hooks/useSiteLocations";
 import { Plus, Loader2, Camera, Image as ImageIcon, X } from "lucide-react";
 import { toast } from "sonner";
@@ -12,7 +12,8 @@ import { toast } from "sonner";
 interface NewEntry {
   waste_type_id: string;
   waste_category: WasteCategory;
-  quantity: number;
+  weight_kg: number;
+  piece_count?: number | null;
   generated_date: string;
   activity_type: ActivityType;
   location?: string;
@@ -29,7 +30,8 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
   const { data: locations = [], isLoading: locLoading } = useSiteLocations();
   const [wasteCategory, setWasteCategory] = useState<WasteCategory>("hazardous");
   const [wasteTypeId, setWasteTypeId] = useState("");
-  const [quantity, setQuantity] = useState("");
+  const [weight, setWeight] = useState("");
+  const [pieceCount, setPieceCount] = useState("");
   const [generatedDate, setGeneratedDate] = useState(new Date().toISOString().split("T")[0]);
   const [activityType, setActivityType] = useState<ActivityType>("preventive");
   const [location, setLocation] = useState("");
@@ -56,17 +58,23 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
   );
 
   const selectedWaste = WASTE_TYPES.find((w) => w.id === wasteTypeId);
+  const weightUnit = selectedWaste ? unitLabel(selectedWaste.measureUnit) : "kg";
+  const showCount = !!selectedWaste?.countable;
 
   const handleCategoryChange = (v: WasteCategory) => {
     setWasteCategory(v);
     setWasteTypeId("");
+    setPieceCount("");
   };
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!wasteTypeId || !quantity || Number(quantity) <= 0 || !location) {
+    if (!wasteTypeId || !weight || Number(weight) <= 0 || !location) {
       toast.error("Please fill all required fields with valid values");
+      return;
+    }
+    if (showCount && pieceCount && (!Number.isInteger(Number(pieceCount)) || Number(pieceCount) < 1)) {
+      toast.error("Piece count must be a whole number");
       return;
     }
     setSubmitting(true);
@@ -74,7 +82,8 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
       await onAdd({
         waste_type_id: wasteTypeId,
         waste_category: wasteCategory,
-        quantity: Number(quantity),
+        weight_kg: Number(weight),
+        piece_count: showCount && pieceCount ? Number(pieceCount) : null,
         generated_date: generatedDate,
         activity_type: activityType,
         location,
@@ -83,7 +92,8 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
       });
       toast.success("Waste entry recorded");
       setWasteTypeId("");
-      setQuantity("");
+      setWeight("");
+      setPieceCount("");
       setLocation("");
       setNotes("");
       setPhotos([]);
@@ -146,9 +156,11 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
           <SelectContent>
             <SelectItem value="breakdown">Breakdown Maintenance</SelectItem>
             <SelectItem value="preventive">Preventive Maintenance</SelectItem>
+            <SelectItem value="5s">5S Activity</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
       <div className="space-y-2">
         <Label>Waste Type *</Label>
         <Select value={wasteTypeId} onValueChange={setWasteTypeId}>
@@ -161,10 +173,47 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="qty">Quantity ({selectedWaste?.unit || "unit"}) *</Label>
-        <Input id="qty" type="number" min="0" step="0.01" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+      <div className={`grid gap-3 ${showCount ? "grid-cols-2" : "grid-cols-1"}`}>
+        {showCount && (
+          <div className="space-y-2">
+            <Label htmlFor="count">Count (pcs)</Label>
+            <div className="relative">
+              <Input
+                id="count"
+                type="number"
+                min="1"
+                step="1"
+                value={pieceCount}
+                onChange={(e) => setPieceCount(e.target.value)}
+                placeholder="e.g. 4"
+                className="pr-12"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground pointer-events-none">
+                nos
+              </span>
+            </div>
+          </div>
+        )}
+        <div className="space-y-2">
+          <Label htmlFor="weight">Weight *</Label>
+          <div className="relative">
+            <Input
+              id="weight"
+              type="number"
+              min="0"
+              step="0.01"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              placeholder={selectedWaste ? `Enter ${weightUnit}` : "Select waste type"}
+              className="pr-12"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground pointer-events-none">
+              {weightUnit}
+            </span>
+          </div>
+        </div>
       </div>
+
       <div className="space-y-2">
         <Label htmlFor="date">Date Generated *</Label>
         <Input id="date" type="date" value={generatedDate} onChange={(e) => setGeneratedDate(e.target.value)} />
@@ -196,8 +245,6 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
             Gallery
           </Button>
         </div>
-        {/* Camera input: `capture` requires the input to be in the layout on some
-            Android/iOS browsers, so we use sr-only positioning instead of display:none. */}
         <input
           ref={cameraInputRef}
           type="file"
