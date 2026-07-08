@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS, isDisposed, getMeasureUnit, unitLabel, fmtNum } from "@/lib/wasteTypes";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Bell, X, EyeOff } from "lucide-react";
+import DashboardCard from "./dashboard/DashboardCard";
 
 interface Props {
   entries: WasteEntry[];
@@ -65,12 +65,12 @@ export default function AlertsPanel({ entries }: Props) {
   };
 
   return (
-    <Card className="border-overdue/30">
-      <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
-        <CardTitle className="flex items-center gap-2 text-overdue text-base">
+    <DashboardCard variant="alert">
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-semibold flex items-center gap-2 text-overdue">
           <Bell className="h-5 w-5" />
           Disposal Alerts
-        </CardTitle>
+        </h3>
         <Button
           variant="ghost"
           size="sm"
@@ -79,8 +79,8 @@ export default function AlertsPanel({ entries }: Props) {
         >
           <EyeOff className="h-3.5 w-3.5" /> Hide all
         </Button>
-      </CardHeader>
-      <CardContent className="space-y-2">
+      </div>
+      <div className="space-y-2">
         {overdue.map((e) => (
           <div key={e.id} className="flex items-start gap-2 bg-overdue/10 p-3 rounded-lg">
             <AlertTriangle className="h-4 w-4 text-overdue mt-0.5 shrink-0" />
@@ -115,7 +115,7 @@ export default function AlertsPanel({ entries }: Props) {
             </Button>
           </div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </DashboardCard>
   );
 }
