@@ -3,7 +3,7 @@ import DashboardCard from "./dashboard/DashboardCard";
 import { Badge } from "@/components/ui/badge";
 import {
   WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS, getStatus, isDisposed,
-  unitLabel, fmtNum,
+  getMeasureUnit, unitLabel, fmtNum,
 } from "@/lib/wasteTypes";
 import DashboardStats from "./DashboardStats";
 import {

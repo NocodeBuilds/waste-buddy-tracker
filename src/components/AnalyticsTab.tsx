@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import DashboardCard from "./dashboard/DashboardCard";
 import {
   WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS, isDisposed, DisposalBatch,
