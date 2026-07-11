@@ -1,4 +1,4 @@
-export type WasteCategory = "hazardous" | "non_hazardous";
+export type WasteCategory = "hazardous" | "non_hazardous" | "e_waste";
 export type MeasureUnit = "kg" | "litres";
 
 export interface WasteType {
@@ -26,7 +26,6 @@ export const WASTE_TYPES: WasteType[] = [
   { id: "dust-filter-mat", name: "Dust Filter Mat", unit: "kg", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: false },
   { id: "carbon-brush", name: "Carbon Brush Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
   { id: "oil-filters-misc", name: "Misc Oil Filters", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
-  { id: "used-batteries", name: "Used Batteries", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
   { id: "empty-containers", name: "Empty Chemical Containers", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
   // Non-hazardous
   { id: "paper-waste", name: "Paper Waste", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false },
@@ -34,6 +33,16 @@ export const WASTE_TYPES: WasteType[] = [
   { id: "wooden-boxes", name: "Wooden Boxes", unit: "nos", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: true },
   { id: "plastic-non-contaminated", name: "Plastic Waste (Non-Contaminated)", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false },
   { id: "non-haz-others", name: "Others (Non-Hazardous)", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false },
+  // E-waste
+  { id: "used-batteries", name: "Used Batteries", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
+  { id: "e-waste-circuit-boards", name: "Circuit Boards", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
+  { id: "e-waste-general", name: "Electronic Waste", unit: "kg", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: false },
+  { id: "e-waste-igbts", name: "IGBTs", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
+  { id: "e-waste-diodes", name: "Diodes", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
+  { id: "e-waste-thyristors", name: "Thyristors", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
+  { id: "e-waste-resistors", name: "Resistors", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
+  { id: "e-waste-capacitors", name: "Capacitors", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
+  { id: "e-waste-others", name: "E-waste Others", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
 ];
 
 export type ActivityType = "breakdown" | "preventive" | "5s";

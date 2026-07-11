@@ -5,8 +5,8 @@ import {
   isDisposed, getMeasureUnit, fmtNum,
 } from "@/lib/wasteTypes";
 import {
-  Package, AlertTriangle, Clock, Scale, Beaker, CalendarClock,
-  ShieldAlert, Leaf,
+  Package, AlertTriangle, Clock, Beaker,
+  ShieldAlert, Leaf, Trash2,
 } from "lucide-react";
 
 interface Props {
@@ -19,18 +19,14 @@ function isThisMonth(dateStr: string): boolean {
   return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
 }
 
-function isDueThisMonth(entry: WasteEntry): boolean {
-  if (isDisposed(entry)) return false;
-  const gen = new Date(entry.generated_date);
-  const due = new Date(gen);
-  due.setDate(due.getDate() + DISPOSAL_LIMIT_DAYS);
-  const now = new Date();
-  return due.getFullYear() === now.getFullYear() && due.getMonth() === now.getMonth();
-}
-
 /** Sum weight_kg for entries matching predicate. */
 function sumWeight(entries: WasteEntry[]): number {
   return entries.reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+}
+
+/** Sum weight for a specific waste type id. */
+function sumWeightByType(entries: WasteEntry[], typeId: string): number {
+  return sumWeight(entries.filter((e) => e.waste_type_id === typeId));
 }
 
 /** Split entries into { hazKg, nonHazKg, litres } using measureUnit + waste_category. */
@@ -42,6 +38,11 @@ function splitByCatAndUnit(entries: WasteEntry[]) {
     nonHazKg: sumWeight(solids.filter((e) => e.waste_category === "non_hazardous")),
     litres: sumWeight(liquids),
   };
+}
+
+/** Sum weight for e-waste entries. */
+function eWasteWeight(entries: WasteEntry[]): number {
+  return sumWeight(entries.filter((e) => e.waste_category === "e_waste"));
 }
 
 export default function DashboardStats({ entries }: Props) {
@@ -60,9 +61,6 @@ export default function DashboardStats({ entries }: Props) {
   const thisMonthEntries = entries.filter((e) => isThisMonth(e.generated_date));
   const monthSplit = splitByCatAndUnit(thisMonthEntries);
 
-  const dueThisMonth = active.filter(isDueThisMonth);
-  const dueSplit = splitByCatAndUnit(dueThisMonth);
-
   // Per waste-type breakdown of solids this month, split haz vs non-haz
   const solidsThisMonth = WASTE_TYPES
     .filter((wt) => wt.measureUnit === "kg")
@@ -75,8 +73,11 @@ export default function DashboardStats({ entries }: Props) {
   const hazSolids = solidsThisMonth.filter((w) => w.wasteCategory === "hazardous");
   const nonHazSolids = solidsThisMonth.filter((w) => w.wasteCategory === "non_hazardous");
 
-  const liquidsThisMonth = WASTE_TYPES
-    .filter((wt) => wt.measureUnit === "litres")
+
+  const eWasteKg = eWasteWeight(active);
+
+  const eWasteThisMonth = WASTE_TYPES
+    .filter((wt) => wt.wasteCategory === "e_waste")
     .map((wt) => {
       const items = thisMonthEntries.filter((e) => e.waste_type_id === wt.id);
       return { ...wt, total: sumWeight(items) };
@@ -120,10 +121,10 @@ export default function DashboardStats({ entries }: Props) {
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-2">
-              <Scale className="h-5 w-5 text-primary shrink-0" />
+              <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
               <div className="min-w-0">
-                <p className="text-2xl font-bold leading-tight">{fmtNum(cumul.hazKg + cumul.nonHazKg)}</p>
-                <p className="text-[10px] text-muted-foreground">kg total solids</p>
+                <p className="text-2xl font-bold leading-tight">{fmtNum(eWasteKg)}</p>
+                <p className="text-[10px] text-muted-foreground">kg e-waste in storage</p>
               </div>
             </CardContent>
           </Card>
@@ -188,18 +189,16 @@ export default function DashboardStats({ entries }: Props) {
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-2">
-              <CalendarClock className="h-5 w-5 text-primary shrink-0" />
+              <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
               <div className="min-w-0">
-                <p className="text-xl font-bold leading-tight">
-                  {fmtNum(dueSplit.hazKg + dueSplit.nonHazKg)} kg · {fmtNum(dueSplit.litres)} L
-                </p>
-                <p className="text-[10px] text-muted-foreground">Disposal due this month</p>
+                <p className="text-2xl font-bold leading-tight">{fmtNum(eWasteWeight(thisMonthEntries))}</p>
+                <p className="text-[10px] text-muted-foreground">kg e-waste generated</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {hazSolids.length === 0 && nonHazSolids.length === 0 && liquidsThisMonth.length === 0 ? (
+        {hazSolids.length === 0 && nonHazSolids.length === 0 && eWasteThisMonth.length === 0 ? (
           <Card>
             <CardContent className="p-4 text-center text-xs text-muted-foreground flex flex-col items-center gap-1">
               <Package className="h-5 w-5 opacity-40" />
@@ -248,21 +247,21 @@ export default function DashboardStats({ entries }: Props) {
                 })}
               </DashboardCard>
             )}
-            {liquidsThisMonth.length > 0 && (
+            {eWasteThisMonth.length > 0 && (
               <DashboardCard>
                 <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                  <Beaker className="h-3.5 w-3.5 text-accent" />
-                  Liquids this month (L)
+                  <Trash2 className="h-3.5 w-3.5 text-orange-500" />
+                  E-waste this month (kg)
                 </h3>
-                {liquidsThisMonth.map((w) => {
-                  const max = Math.max(...liquidsThisMonth.map((x) => x.total));
+                {eWasteThisMonth.map((w) => {
+                  const max = Math.max(...eWasteThisMonth.map((x) => x.total));
                   return (
                     <div key={w.id} className="flex items-center gap-2">
                       <span className="text-xs flex-1 truncate">{w.name}</span>
                       <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
-                        <div className="bg-accent h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
+                        <div className="bg-orange-500 h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
                       </div>
-                      <span className="text-xs font-mono font-semibold w-16 text-right">{fmtNum(w.total)} L</span>
+                      <span className="text-xs font-mono font-semibold w-16 text-right">{fmtNum(w.total)} kg</span>
                     </div>
                   );
                 })}

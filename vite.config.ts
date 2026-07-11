@@ -6,6 +6,9 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  preview: {
+    port: 4173,
+  },
   server: {
     host: "::",
     port: 8080,
@@ -16,7 +19,8 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
-    VitePWA({
+    mode === "production" &&
+      VitePWA({
       registerType: "autoUpdate",
       injectRegister: null,
       filename: "sw.js",
