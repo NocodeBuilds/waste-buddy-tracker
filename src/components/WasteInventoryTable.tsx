@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { WasteEntry, WASTE_TYPES, getDaysStored, getStatus, DISPOSAL_LIMIT_DAYS, isDisposed, DisposalBatch, getMeasureUnit, unitLabel, sumByUnit, fmtNum } from "@/lib/wasteTypes";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, CheckCircle, Loader2, FileSpreadsheet, FileText, Pencil, Download } from "lucide-react";
+import { Trash2, CheckCircle, Loader2, FileSpreadsheet, FileText, Pencil, Download, Scale } from "lucide-react";
 import { exportInventoryToExcel, exportForm3Pdf, exportDisposalBatchPdf } from "@/lib/wasteExports";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import DashboardCard from "./dashboard/DashboardCard";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +61,15 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
   const getWasteName = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.name || id;
   const totals = sumByUnit(activeEntries);
 
+  // Weight/volume grouped by waste type across active storage.
+  const byType = useMemo(() => {
+    return WASTE_TYPES.map((wt) => {
+      const items = activeEntries.filter((e) => e.waste_type_id === wt.id);
+      const total = items.reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+      return { ...wt, total };
+    }).filter((w) => w.total > 0).sort((a, b) => b.total - a.total);
+  }, [activeEntries]);
+
   const statusBadge = (entry: WasteEntry) => {
     if (isDisposed(entry)) return <Badge className="bg-success text-success-foreground">Disposed</Badge>;
     const status = getStatus(entry);
@@ -99,18 +108,47 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
       </div>
 
       {/* Storage summary — kg + L in current storage */}
-      <DashboardCard>
-        <div className="grid grid-cols-2 gap-3">
+      <Card>
+        <CardContent className="p-3 grid grid-cols-2 gap-3">
           <div>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">In Storage (Solids)</p>
-            <p className="text-xl font-bold leading-tight">{fmtNum(totals.kg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+            <p className="text-xl font-bold">{fmtNum(totals.kg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
           </div>
           <div>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">In Storage (Liquid)</p>
-            <p className="text-xl font-bold leading-tight">{fmtNum(totals.litres)} <span className="text-xs font-normal text-muted-foreground">L</span></p>
+            <p className="text-xl font-bold">{fmtNum(totals.litres)} <span className="text-xs font-normal text-muted-foreground">L</span></p>
           </div>
-        </div>
-      </DashboardCard>
+        </CardContent>
+      </Card>
+
+      {/* Weight / volume by waste type (in storage) */}
+      {byType.length > 0 && (
+        <Card>
+          <CardContent className="p-3 space-y-2">
+            <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+              <Scale className="h-3.5 w-3.5" /> In storage by waste type
+            </h3>
+            {byType.map((w) => {
+              const max = Math.max(...byType.map((x) => x.total));
+              const suffix = w.measureUnit === "litres" ? "L" : "kg";
+              const barColor = w.measureUnit === "litres"
+                ? "bg-accent"
+                : w.wasteCategory === "hazardous" ? "bg-overdue" : "bg-success";
+              return (
+                <div key={w.id} className="flex items-center gap-2">
+                  <span className="text-xs flex-1 truncate">{w.name}</span>
+                  <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
+                    <div className={`${barColor} h-full rounded-full`} style={{ width: `${(w.total / max) * 100}%` }} />
+                  </div>
+                  <span className="text-xs font-mono font-semibold w-20 text-right">
+                    {fmtNum(w.total)} {suffix}
+                  </span>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
 
 
       {/* Export buttons */}
@@ -241,33 +279,35 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
 
       {/* Disposal history */}
       {batches.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-2 pt-2">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
             Disposal History
           </h3>
           {batches.map((b) => {
             const inBatch = entries.filter((e) => e.disposal_batch_id === b.id);
             return (
-              <DashboardCard key={b.id}>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold">{b.disposed_date}</p>
-                    <p className="text-xs text-muted-foreground">{inBatch.length} entries disposed</p>
-                    {b.notes && <p className="text-xs text-muted-foreground mt-1 italic break-words">{b.notes}</p>}
+              <Card key={b.id}>
+                <CardContent className="p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold">{b.disposed_date}</p>
+                      <p className="text-xs text-muted-foreground">{inBatch.length} entries disposed</p>
+                      {b.notes && <p className="text-xs text-muted-foreground mt-1 italic break-words">{b.notes}</p>}
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <CheckCircle className="h-5 w-5 text-success" />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => exportDisposalBatchPdf(b, inBatch, currentSite?.name ?? "Site")}
+                      >
+                        <Download className="h-3 w-3" /> Manifest
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <CheckCircle className="h-5 w-5 text-success" />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs gap-1"
-                      onClick={() => exportDisposalBatchPdf(b, inBatch, currentSite?.name ?? "Site")}
-                    >
-                      <Download className="h-3 w-3" /> Manifest
-                    </Button>
-                  </div>
-                </div>
-              </DashboardCard>
+                </CardContent>
+              </Card>
             );
           })}
         </div>

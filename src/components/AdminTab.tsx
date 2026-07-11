@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import DashboardCard from "./dashboard/DashboardCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,12 +41,11 @@ export default function AdminTab() {
 
   if (!isAdmin || !currentSite) {
     return (
-      <DashboardCard>
-        <div className="flex flex-col items-center gap-2 py-6 text-center text-muted-foreground">
-          <Shield className="h-8 w-8 opacity-40" />
-          <p className="text-sm">You need admin access on the selected site to use this panel.</p>
-        </div>
-      </DashboardCard>
+      <Card>
+        <CardContent className="p-6 text-center text-sm text-muted-foreground">
+          You need admin access on the selected site to use this panel.
+        </CardContent>
+      </Card>
     );
   }
 
@@ -78,13 +76,15 @@ export default function AdminTab() {
         </TabsContent>
       </Tabs>
 
-      <DashboardCard>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Account</h3>
-        <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-        <Button variant="outline" size="sm" className="w-full gap-2" onClick={signOut}>
-          <LogOut className="h-4 w-4" /> Sign out
-        </Button>
-      </DashboardCard>
+      <Card>
+        <CardContent className="p-4 space-y-2">
+          <h3 className="text-sm font-semibold">Account</h3>
+          <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+          <Button variant="outline" size="sm" className="w-full gap-2" onClick={signOut}>
+            <LogOut className="h-4 w-4" /> Sign out
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -178,78 +178,83 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
   return (
     <div className="space-y-3">
       {/* Pending site access requests */}
-      <DashboardCard alert={requests.length > 0}>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <UserPlus className="h-4 w-4 text-warning" /> Pending requests ({requests.length})
-        </h3>
-        {requests.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No pending site access requests.</p>
-        ) : (
-          <ul className="divide-y">
-            {requests.map((r) => (
-              <li key={r.id} className="py-2 space-y-1.5">
-                <div className="min-w-0">
-                  <p className="text-xs font-medium truncate">
-                    {r.profile?.full_name ?? r.profile?.email ?? r.user_id}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground truncate">
-                    {r.profile?.email} · {new Date(r.created_at).toLocaleDateString()}
-                  </p>
-                  {r.note && <p className="text-[10px] italic text-muted-foreground truncate">"{r.note}"</p>}
-                </div>
-                <div className="flex gap-1">
-                  <Select defaultValue="member" onValueChange={(v) => (r._role = v)}>
-                    <SelectTrigger className="h-7 text-[10px] w-24"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="member">Member</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button size="sm" className="h-7 text-[10px] flex-1" disabled={busy}
-                    onClick={() => call({ action: "approve_request", request_id: r.id, site_id: siteId, role: r._role ?? "member" }, "Approved")}>
-                    Approve
-                  </Button>
-                  <Button size="sm" variant="outline" className="h-7 text-[10px]" disabled={busy}
-                    onClick={() => call({ action: "reject_request", request_id: r.id, site_id: siteId }, "Rejected")}>
-                    Reject
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </DashboardCard>
+      <Card className={requests.length > 0 ? "border-warning/40" : ""}>
+        <CardContent className="p-4 space-y-2">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <UserPlus className="h-4 w-4 text-warning" /> Pending requests ({requests.length})
+          </h3>
+          {requests.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No pending site access requests.</p>
+          ) : (
+            <ul className="divide-y">
+              {requests.map((r) => (
+                <li key={r.id} className="py-2 space-y-1.5">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium truncate">
+                      {r.profile?.full_name ?? r.profile?.email ?? r.user_id}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {r.profile?.email} · {new Date(r.created_at).toLocaleDateString()}
+                    </p>
+                    {r.note && <p className="text-[10px] italic text-muted-foreground truncate">"{r.note}"</p>}
+                  </div>
+                  <div className="flex gap-1">
+                    <Select defaultValue="member" onValueChange={(v) => (r._role = v)}>
+                      <SelectTrigger className="h-7 text-[10px] w-24"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="member">Member</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button size="sm" className="h-7 text-[10px] flex-1" disabled={busy}
+                      onClick={() => call({ action: "approve_request", request_id: r.id, site_id: siteId, role: r._role ?? "member" }, "Approved")}>
+                      Approve
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-7 text-[10px]" disabled={busy}
+                      onClick={() => call({ action: "reject_request", request_id: r.id, site_id: siteId }, "Rejected")}>
+                      Reject
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
-      <DashboardCard>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <UserPlus className="h-4 w-4" /> Invite to {siteName}
-        </h3>
-        <form onSubmit={invite} className="space-y-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs">Email</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Role</Label>
-            <Select value={role} onValueChange={(v) => setRole(v as Role)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="member">Member</SelectItem>
-                <SelectItem value="manager">Manager</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Button type="submit" size="sm" className="w-full" disabled={busy}>
-            {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Send invite
-          </Button>
-        </form>
-      </DashboardCard>
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <UserPlus className="h-4 w-4" /> Invite to {siteName}
+          </h3>
+          <form onSubmit={invite} className="space-y-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Email</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Role</Label>
+              <Select value={role} onValueChange={(v) => setRole(v as Role)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="member">Member</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" size="sm" className="w-full" disabled={busy}>
+              {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Send invite
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
 
-      <DashboardCard>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Members ({members.length})</h3>
+      <Card>
+        <CardContent className="p-4 space-y-2">
+          <h3 className="text-sm font-semibold">Members ({members.length})</h3>
           {loading ? (
             <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
           ) : members.length === 0 ? (
@@ -297,7 +302,8 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
               ))}
             </ul>
           )}
-        </DashboardCard>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -343,40 +349,42 @@ function SitesPanel({ sites, onChanged }: { sites: SiteRow[]; onChanged: () => P
 
   return (
     <div className="space-y-3">
-      <DashboardCard>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sites ({sites.length})</h3>
-        <ul className="divide-y">
-          {sites.map((s) => (
-            <li key={s.id} className="py-2 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-xs font-medium truncate">{s.name}</p>
-                  {s.location && <p className="text-[10px] text-muted-foreground truncate">{s.location}</p>}
+      <Card>
+        <CardContent className="p-4 space-y-2">
+          <h3 className="text-sm font-semibold">Sites ({sites.length})</h3>
+          <ul className="divide-y">
+            {sites.map((s) => (
+              <li key={s.id} className="py-2 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium truncate">{s.name}</p>
+                    {s.location && <p className="text-[10px] text-muted-foreground truncate">{s.location}</p>}
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <Button size="sm" variant="outline" className="h-7 px-2 text-[10px]" onClick={() => rename(s)}>Rename</Button>
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => remove(s)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-1 shrink-0">
-                  <Button size="sm" variant="outline" className="h-7 px-2 text-[10px]" onClick={() => rename(s)}>Rename</Button>
-                  <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => remove(s)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-              <LocationsManager siteId={s.id} />
-            </li>
-          ))}
-        </ul>
-      </DashboardCard>
-      <DashboardCard>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <Building2 className="h-4 w-4" /> New site
-        </h3>
-        <form onSubmit={create} className="space-y-3">
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Site name" required />
-          <Input value={loc} onChange={(e) => setLoc(e.target.value)} placeholder="Location (optional)" />
-          <Button type="submit" size="sm" className="w-full" disabled={busy}>
-            {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Create
+                <LocationsManager siteId={s.id} />
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4 space-y-2">
+          <h3 className="text-sm font-semibold flex items-center gap-2"><Building2 className="h-4 w-4" /> New site</h3>
+          <form onSubmit={create} className="space-y-2">
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Site name" required />
+            <Input value={loc} onChange={(e) => setLoc(e.target.value)} placeholder="Location (optional)" />
+            <Button type="submit" size="sm" className="w-full" disabled={busy}>
+              {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Create
             </Button>
           </form>
-      </DashboardCard>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -502,31 +510,33 @@ function RecordsPanel({ siteId }: { siteId: string }) {
   };
 
   return (
-    <DashboardCard>
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Latest waste records ({rows.length})</h3>
-      {loading ? (
-        <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-      ) : rows.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No records yet.</p>
-      ) : (
-        <ul className="divide-y">
-          {rows.map((r) => (
-            <li key={r.id} className="py-2 flex items-center justify-between gap-2 text-xs">
-              <div className="min-w-0">
-                <p className="font-medium truncate">{r.location} · {r.waste_type_id}</p>
-                <p className="text-[10px] text-muted-foreground">
-                  {r.generated_date} · {r.weight_kg ?? r.quantity ?? "—"} · {r.activity_type}
-                  {r.disposal_batch_id ? " · disposed" : ""}
-                </p>
-              </div>
-              <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => del(r.id)}>
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </DashboardCard>
+    <Card>
+      <CardContent className="p-4 space-y-2">
+        <h3 className="text-sm font-semibold">Latest waste records ({rows.length})</h3>
+        {loading ? (
+          <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+        ) : rows.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No records yet.</p>
+        ) : (
+          <ul className="divide-y">
+            {rows.map((r) => (
+              <li key={r.id} className="py-2 flex items-center justify-between gap-2 text-xs">
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{r.location} · {r.waste_type_id}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {r.generated_date} · {r.weight_kg ?? r.quantity ?? "—"} · {r.activity_type}
+                    {r.disposal_batch_id ? " · disposed" : ""}
+                  </p>
+                </div>
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => del(r.id)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -557,31 +567,33 @@ function AuditPanel() {
   }, []);
 
   return (
-    <DashboardCard>
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recent activity ({rows.length})</h3>
-      {loading ? (
-        <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-      ) : rows.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No activity recorded yet.</p>
-      ) : (
-        <ul className="divide-y">
-          {rows.map((r) => (
-            <li key={r.id} className="py-2 text-xs space-y-0.5">
-              <div className="flex justify-between gap-2">
-                <span className="font-medium">
-                  <span className="capitalize">{r.action.toLowerCase()}</span> · {r.table_name}
-                </span>
-                <span className="text-[10px] text-muted-foreground">
-                  {new Date(r.created_at).toLocaleString()}
-                </span>
-              </div>
-              <p className="text-[10px] text-muted-foreground truncate">
-                by {r.actor_id ? (profiles[r.actor_id] ?? r.actor_id.slice(0, 8)) : "system"}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </DashboardCard>
+    <Card>
+      <CardContent className="p-4 space-y-2">
+        <h3 className="text-sm font-semibold">Recent activity ({rows.length})</h3>
+        {loading ? (
+          <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+        ) : rows.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No activity recorded yet.</p>
+        ) : (
+          <ul className="divide-y">
+            {rows.map((r) => (
+              <li key={r.id} className="py-2 text-xs space-y-0.5">
+                <div className="flex justify-between gap-2">
+                  <span className="font-medium">
+                    <span className="capitalize">{r.action.toLowerCase()}</span> · {r.table_name}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {new Date(r.created_at).toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground truncate">
+                  by {r.actor_id ? (profiles[r.actor_id] ?? r.actor_id.slice(0, 8)) : "system"}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   );
 }
