@@ -145,6 +145,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
           <SelectContent>
             <SelectItem value="hazardous">Hazardous</SelectItem>
             <SelectItem value="non_hazardous">Non-Hazardous</SelectItem>
+            <SelectItem value="e_waste">E-waste</SelectItem>
           </SelectContent>
         </Select>
       </div>
