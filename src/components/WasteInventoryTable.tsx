@@ -3,7 +3,7 @@ import { WasteEntry, WASTE_TYPES, getDaysStored, getStatus, DISPOSAL_LIMIT_DAYS,
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, CheckCircle, Loader2, FileSpreadsheet, FileText, Pencil, Download, Scale } from "lucide-react";
+import { Trash2, CheckCircle, Loader2, FileSpreadsheet, FileText, Pencil, Download, Scale, ShieldAlert, Leaf, Beaker } from "lucide-react";
 import { exportInventoryToExcel, exportForm3Pdf, exportDisposalBatchPdf } from "@/lib/wasteExports";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,6 +61,12 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
   const getWasteName = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.name || id;
   const totals = sumByUnit(activeEntries);
 
+  const solids = activeEntries.filter((e) => getMeasureUnit(e.waste_type_id) === "kg");
+  const hazKg = solids.filter((e) => e.waste_category === "hazardous")
+    .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+  const nonHazKg = solids.filter((e) => e.waste_category === "non_hazardous")
+    .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+
   // Weight/volume grouped by waste type across active storage.
   const byType = useMemo(() => {
     return WASTE_TYPES.map((wt) => {
@@ -107,19 +113,52 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
         </Select>
       </div>
 
-      {/* Storage summary — kg + L in current storage */}
-      <Card>
-        <CardContent className="p-3 grid grid-cols-2 gap-3">
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">In Storage (Solids)</p>
-            <p className="text-xl font-bold">{fmtNum(totals.kg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-          </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">In Storage (Liquid)</p>
-            <p className="text-xl font-bold">{fmtNum(totals.litres)} <span className="text-xs font-normal text-muted-foreground">L</span></p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Storage summary — themed cards matching analytics tab */}
+      <div className="space-y-3">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          In storage by Category
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="border-overdue/30 bg-overdue/10">
+            <CardContent className="p-3 flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-overdue shrink-0" />
+              <div className="min-w-0">
+                <p className="text-2xl font-bold leading-tight text-overdue">{fmtNum(hazKg)}</p>
+                <p className="text-[10px] text-muted-foreground">Hazardous</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-success/30 bg-success/10">
+            <CardContent className="p-3 flex items-center gap-2">
+              <Leaf className="h-5 w-5 text-success shrink-0" />
+              <div className="min-w-0">
+                <p className="text-2xl font-bold leading-tight text-success">{fmtNum(nonHazKg)}</p>
+                <p className="text-[10px] text-muted-foreground">Non-Hazardous</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Card>
+            <CardContent className="p-3 flex items-center gap-2">
+              <Beaker className="h-4 w-4 text-accent shrink-0" />
+              <div className="min-w-0">
+                <p className="text-lg font-bold leading-tight">{fmtNum(totals.litres)}</p>
+                <p className="text-[10px] text-muted-foreground">L liquid in storage</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3 flex items-center gap-2">
+              <Trash2 className="h-4 w-4 text-orange-500 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-lg font-bold leading-tight">{fmtNum(solids.filter((e) => e.waste_category === "e_waste").reduce((s, e) => s + Number(e.weight_kg ?? 0), 0))}</p>
+                <p className="text-[10px] text-muted-foreground">kg e-waste in storage</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Weight / volume by waste type (in storage) */}
       {byType.length > 0 && (

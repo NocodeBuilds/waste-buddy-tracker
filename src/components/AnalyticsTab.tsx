@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import DashboardCard from "./dashboard/DashboardCard";
 import {
-  WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS, isDisposed, DisposalBatch,
+  WasteEntry, getDaysStored, DISPOSAL_LIMIT_DAYS, isDisposed, DisposalBatch,
   getMeasureUnit, sumByUnit, fmtNum,
 } from "@/lib/wasteTypes";
 import { BarChart3, Calendar, TrendingUp, AlertTriangle, Scale, Beaker, Droplets, Activity } from "lucide-react";
@@ -122,16 +122,6 @@ export default function AnalyticsTab({ entries, batches }: Props) {
     return weeks;
   }, [entries]);
 
-  // ── In storage by waste type ────────────────────────────────
-
-  const storageByWasteType = useMemo(() => {
-    return WASTE_TYPES.map((wt) => {
-      const items = active.filter((e) => e.waste_type_id === wt.id);
-      const total = items.reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
-      return { ...wt, total };
-    }).filter((w) => w.total > 0).sort((a, b) => b.total - a.total);
-  }, [active]);
-
   // ── Top Locations ────────────────────────────────────────────
 
   const locMap = new Map<string, { kg: number; litres: number }>();
@@ -188,8 +178,8 @@ export default function AnalyticsTab({ entries, batches }: Props) {
         <DashboardCard>
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary shrink-0" />
-            <div>
-              <p className="text-2xl font-bold leading-tight">{avgDays || "—"}</p>
+            <div className="min-w-0">
+              <p className="text-2xl font-bold leading-tight">{avgDays || "—"} <span className="text-xs font-normal text-muted-foreground">days</span></p>
               <p className="text-[10px] text-muted-foreground">Avg days to disposal</p>
             </div>
           </div>
@@ -199,8 +189,8 @@ export default function AnalyticsTab({ entries, batches }: Props) {
             <Calendar
               className={`h-5 w-5 shrink-0 ${daysToNextDisposal !== null && daysToNextDisposal <= 20 ? "text-overdue" : "text-warning"}`}
             />
-            <div>
-              <p className="text-2xl font-bold leading-tight">{daysToNextDisposal ?? "—"}</p>
+            <div className="min-w-0">
+              <p className="text-2xl font-bold leading-tight">{daysToNextDisposal ?? "—"} <span className="text-xs font-normal text-muted-foreground">days</span></p>
               <p className="text-[10px] text-muted-foreground">Days to next disposal</p>
             </div>
           </div>
@@ -208,18 +198,18 @@ export default function AnalyticsTab({ entries, batches }: Props) {
         <DashboardCard>
           <div className="flex items-center gap-2">
             <Scale className="h-5 w-5 text-primary shrink-0" />
-            <div>
-              <p className="text-2xl font-bold leading-tight">{fmtNum(lifetimeTotals.kg)}</p>
-              <p className="text-[10px] text-muted-foreground">kg generated (lifetime)</p>
+            <div className="min-w-0">
+              <p className="text-2xl font-bold leading-tight">{fmtNum(lifetimeTotals.kg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+              <p className="text-[10px] text-muted-foreground">Generated (lifetime)</p>
             </div>
           </div>
         </DashboardCard>
         <DashboardCard>
           <div className="flex items-center gap-2">
             <Beaker className="h-5 w-5 text-accent shrink-0" />
-            <div>
-              <p className="text-2xl font-bold leading-tight">{fmtNum(lifetimeTotals.litres)}</p>
-              <p className="text-[10px] text-muted-foreground">L generated (lifetime)</p>
+            <div className="min-w-0">
+              <p className="text-2xl font-bold leading-tight">{fmtNum(lifetimeTotals.litres)} <span className="text-xs font-normal text-muted-foreground">L</span></p>
+              <p className="text-[10px] text-muted-foreground">Generated (lifetime)</p>
             </div>
           </div>
         </DashboardCard>
@@ -287,37 +277,6 @@ export default function AnalyticsTab({ entries, batches }: Props) {
           </LineChart>
         </ResponsiveContainer>
       </DashboardCard>
-
-      {/* ── In Storage by Waste Type ── */}
-      {storageByWasteType.length > 0 && (
-        <DashboardCard>
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            In Storage by Waste Type
-          </h3>
-          <div className="space-y-2">
-            {storageByWasteType.map((w) => {
-              const max = Math.max(...storageByWasteType.map((x) => x.total));
-              const suffix = w.measureUnit === "litres" ? "L" : "kg";
-              const barColor =
-                w.measureUnit === "litres" ? "bg-accent"
-                  : w.wasteCategory === "e_waste" ? "bg-orange-500"
-                  : w.wasteCategory === "hazardous" ? "bg-overdue"
-                  : "bg-success";
-              return (
-                <div key={w.id} className="flex items-center gap-2">
-                  <span className="text-xs flex-1 truncate">{w.name}</span>
-                  <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
-                    <div className={`${barColor} h-full rounded-full`} style={{ width: `${(w.total / max) * 100}%` }} />
-                  </div>
-                  <span className="text-xs font-mono font-semibold w-20 text-right">
-                    {fmtNum(w.total)} {suffix}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </DashboardCard>
-      )}
 
       {/* ── Top Locations ── */}
       {topLocs.length > 0 && (
