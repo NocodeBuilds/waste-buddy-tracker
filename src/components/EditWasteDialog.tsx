@@ -90,7 +90,7 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Category</Label>
+            <Label>Category</Label>
             <Select
               value={category}
               onValueChange={(v) => {
@@ -107,7 +107,7 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Waste Type</Label>
+            <Label>Waste Type</Label>
             <Select value={typeId} onValueChange={setTypeId}>
               <SelectTrigger><SelectValue placeholder="Select waste type" /></SelectTrigger>
               <SelectContent>
@@ -120,21 +120,21 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
           <div className={`grid gap-2 ${showCount ? "grid-cols-3" : "grid-cols-2"}`}>
             {showCount && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Count (pcs)</Label>
+                <Label>Count (pcs)</Label>
                 <Input type="number" min="1" step="1" value={pieceCount} onChange={(e) => setPieceCount(e.target.value)} />
               </div>
             )}
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Weight ({weightUnit})</Label>
+              <Label>Weight ({weightUnit})</Label>
               <Input type="number" step="0.01" min="0" value={weight} onChange={(e) => setWeight(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Generated</Label>
+              <Label>Generated</Label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Activity</Label>
+            <Label>Activity</Label>
             <Select value={activity} onValueChange={(v) => setActivity(v as ActivityType)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -145,11 +145,11 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Location</Label>
+            <Label>Location</Label>
             <Input value={location} onChange={(e) => setLocation(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Notes</Label>
+            <Label>Notes</Label>
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
           </div>
         </div>
