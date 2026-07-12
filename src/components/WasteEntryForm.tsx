@@ -108,7 +108,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label>Location *</Label>
+        <Label className="text-xs">Location *</Label>
         <Select value={location} onValueChange={setLocation}>
           <SelectTrigger>
             <SelectValue placeholder={locLoading ? "Loading..." : "Select location"} />
@@ -139,7 +139,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         </Select>
       </div>
       <div className="space-y-2">
-        <Label>Waste Category *</Label>
+        <Label className="text-xs">Waste Category *</Label>
         <Select value={wasteCategory} onValueChange={(v) => handleCategoryChange(v as WasteCategory)}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -151,7 +151,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
       </div>
 
       <div className="space-y-2">
-        <Label>Activity Type *</Label>
+        <Label className="text-xs">Activity Type *</Label>
         <Select value={activityType} onValueChange={(v) => setActivityType(v as ActivityType)}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -163,7 +163,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
       </div>
 
       <div className="space-y-2">
-        <Label>Waste Type *</Label>
+        <Label className="text-xs">Waste Type *</Label>
         <Select value={wasteTypeId} onValueChange={setWasteTypeId}>
           <SelectTrigger><SelectValue placeholder="Select waste type" /></SelectTrigger>
           <SelectContent>
@@ -177,7 +177,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
       <div className={`grid gap-3 ${showCount ? "grid-cols-2" : "grid-cols-1"}`}>
         {showCount && (
           <div className="space-y-2">
-            <Label htmlFor="count">Count (pcs)</Label>
+            <Label htmlFor="count" className="text-xs">Count (pcs)</Label>
             <div className="relative">
               <Input
                 id="count"
@@ -196,7 +196,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
           </div>
         )}
         <div className="space-y-2">
-          <Label htmlFor="weight">Weight *</Label>
+          <Label htmlFor="weight" className="text-xs">Weight *</Label>
           <div className="relative">
             <Input
               id="weight"
@@ -216,16 +216,16 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="date">Date Generated *</Label>
+        <Label htmlFor="date" className="text-xs">Date Generated *</Label>
         <Input id="date" type="date" value={generatedDate} onChange={(e) => setGeneratedDate(e.target.value)} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="notes">Notes</Label>
+        <Label htmlFor="notes" className="text-xs">Notes</Label>
         <Textarea id="notes" placeholder="Optional notes..." value={notes} onChange={(e) => setNotes(e.target.value)} className="h-20" />
       </div>
 
       <div className="space-y-2">
-        <Label>Photo Evidence (optional)</Label>
+        <Label className="text-xs">Photo Evidence (optional)</Label>
         <div className="grid grid-cols-2 gap-2">
           <Button
             type="button"
@@ -289,7 +289,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
       </div>
 
       <Button type="submit" className="w-full" disabled={submitting}>
-        {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+        {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <Plus className="h-3.5 w-3.5 mr-2" />}
         Record Waste Entry
       </Button>
     </form>

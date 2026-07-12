@@ -79,69 +79,69 @@ export default function DashboardStats({ entries }: Props) {
     .filter((w) => w.total > 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* ═══════════ SECTION A: Cumulative overview ═══════════ */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Cumulative — In Storage
         </h2>
         <div className="grid grid-cols-2 gap-3">
           <Card className="border-overdue/30">
-            <CardContent className="p-4 flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-overdue shrink-0" />
-              <div className="min-w-0">
-                <p className="text-2xl font-bold leading-tight">{fmtNum(cumul.hazKg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                <p className="text-[10px] text-muted-foreground">hazardous solids</p>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="h-5 w-5 text-overdue shrink-0" />
+                <p className="text-xl font-bold leading-tight">{fmtNum(cumul.hazKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
+              <p className="text-[10px] text-muted-foreground">Hazardous Solids</p>
             </CardContent>
           </Card>
           <Card className="border-success/30">
-            <CardContent className="p-4 flex items-center gap-2">
-              <Leaf className="h-5 w-5 text-success shrink-0" />
-              <div className="min-w-0">
-                <p className="text-2xl font-bold leading-tight">{fmtNum(cumul.nonHazKg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                <p className="text-[10px] text-muted-foreground">non-hazardous solids</p>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <Leaf className="h-5 w-5 text-success shrink-0" />
+                <p className="text-xl font-bold leading-tight">{fmtNum(cumul.nonHazKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
+              <p className="text-[10px] text-muted-foreground">Non-Hazardous Solids</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 flex items-center gap-2">
-              <Beaker className="h-5 w-5 text-accent shrink-0" />
-              <div className="min-w-0">
-                <p className="text-2xl font-bold leading-tight">{fmtNum(cumul.litres)} <span className="text-xs font-normal text-muted-foreground">L</span></p>
-                <p className="text-[10px] text-muted-foreground">liquid in storage</p>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <Beaker className="h-5 w-5 text-accent shrink-0" />
+                <p className="text-xl font-bold leading-tight">{fmtNum(cumul.litres)} <span className="text-[10px] font-normal text-muted-foreground">L</span></p>
               </div>
+              <p className="text-[10px] text-muted-foreground">Liquid in Storage</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-2xl font-bold leading-tight">{fmtNum(eWasteKg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                <p className="text-[10px] text-muted-foreground">e-waste in storage</p>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
+                <p className="text-xl font-bold leading-tight">{fmtNum(eWasteKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
+              <p className="text-[10px] text-muted-foreground">E-Waste in Storage</p>
             </CardContent>
           </Card>
           <Card className={overdue.length > 0 ? "border-overdue/40" : ""}>
-            <CardContent className="p-4 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-overdue shrink-0" />
-              <div className="min-w-0">
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-overdue shrink-0" />
                 <p className="text-xl font-bold leading-tight">
-                  {fmtNum(overdueSplit.hazKg + overdueSplit.nonHazKg)} <span className="text-xs font-normal text-muted-foreground">kg</span> · {fmtNum(overdueSplit.litres)} <span className="text-xs font-normal text-muted-foreground">L</span>
+                  {fmtNum(overdueSplit.hazKg + overdueSplit.nonHazKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span> · {fmtNum(overdueSplit.litres)} <span className="text-[10px] font-normal text-muted-foreground">L</span>
                 </p>
-                <p className="text-[10px] text-muted-foreground">Overdue (&gt; 90 days)</p>
               </div>
+              <p className="text-[10px] text-muted-foreground">Overdue (&gt; 90 days)</p>
             </CardContent>
           </Card>
           <Card className={warning.length > 0 ? "border-warning/40" : ""}>
-            <CardContent className="p-4 flex items-center gap-2">
-              <Clock className="h-5 w-5 text-warning shrink-0" />
-              <div className="min-w-0">
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-warning shrink-0" />
                 <p className="text-xl font-bold leading-tight">
-                  {fmtNum(warningSplit.hazKg + warningSplit.nonHazKg)} <span className="text-xs font-normal text-muted-foreground">kg</span> · {fmtNum(warningSplit.litres)} <span className="text-xs font-normal text-muted-foreground">L</span>
+                  {fmtNum(warningSplit.hazKg + warningSplit.nonHazKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span> · {fmtNum(warningSplit.litres)} <span className="text-[10px] font-normal text-muted-foreground">L</span>
                 </p>
-                <p className="text-[10px] text-muted-foreground">Warning (70–89 days)</p>
               </div>
+              <p className="text-[10px] text-muted-foreground">Warning (70–89 days)</p>
             </CardContent>
           </Card>
         </div>
@@ -149,45 +149,45 @@ export default function DashboardStats({ entries }: Props) {
 
       {/* ═══════════ SECTION B: This month ═══════════ */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           This Month
         </h2>
 
         <div className="grid grid-cols-2 gap-3">
           <Card className="border-overdue/30">
-            <CardContent className="p-4 flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-overdue shrink-0" />
-              <div>
-                <p className="text-2xl font-bold leading-tight">{fmtNum(monthSplit.hazKg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                <p className="text-[10px] text-muted-foreground">hazardous generated</p>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="h-5 w-5 text-overdue shrink-0" />
+                <p className="text-xl font-bold leading-tight">{fmtNum(monthSplit.hazKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
+              <p className="text-[10px] text-muted-foreground">Hazardous Solids Generated</p>
             </CardContent>
           </Card>
           <Card className="border-success/30">
-            <CardContent className="p-4 flex items-center gap-2">
-              <Leaf className="h-5 w-5 text-success shrink-0" />
-              <div>
-                <p className="text-2xl font-bold leading-tight">{fmtNum(monthSplit.nonHazKg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                <p className="text-[10px] text-muted-foreground">non-hazardous generated</p>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <Leaf className="h-5 w-5 text-success shrink-0" />
+                <p className="text-xl font-bold leading-tight">{fmtNum(monthSplit.nonHazKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
+              <p className="text-[10px] text-muted-foreground">Non-Hazardous Solids Generated</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 flex items-center gap-2">
-              <Beaker className="h-5 w-5 text-accent shrink-0" />
-              <div>
-                <p className="text-2xl font-bold leading-tight">{fmtNum(monthSplit.litres)} <span className="text-xs font-normal text-muted-foreground">L</span></p>
-                <p className="text-[10px] text-muted-foreground">liquid generated</p>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <Beaker className="h-5 w-5 text-accent shrink-0" />
+                <p className="text-xl font-bold leading-tight">{fmtNum(monthSplit.litres)} <span className="text-[10px] font-normal text-muted-foreground">L</span></p>
               </div>
+              <p className="text-[10px] text-muted-foreground">Hazardous Liquid Generated</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
-              <div>
-                <p className="text-2xl font-bold leading-tight">{fmtNum(eWasteWeight(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                <p className="text-[10px] text-muted-foreground">e-waste generated</p>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
+                <p className="text-xl font-bold leading-tight">{fmtNum(eWasteWeight(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
+              <p className="text-[10px] text-muted-foreground">E-Waste Generated</p>
             </CardContent>
           </Card>
         </div>
@@ -205,7 +205,7 @@ export default function DashboardStats({ entries }: Props) {
               <DashboardCard>
                 <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
                   <ShieldAlert className="h-3.5 w-3.5 text-overdue" />
-                  Hazardous solids this month (kg)
+                  Hazardous Solids This Month (kg)
                 </h3>
                 {hazSolids.map((w) => {
                   const max = Math.max(...hazSolids.map((x) => x.total));
@@ -225,7 +225,7 @@ export default function DashboardStats({ entries }: Props) {
               <DashboardCard>
                 <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
                   <Leaf className="h-3.5 w-3.5 text-success" />
-                  Non-hazardous solids this month (kg)
+                  Non-Hazardous Solids This Month (kg)
                 </h3>
                 {nonHazSolids.map((w) => {
                   const max = Math.max(...nonHazSolids.map((x) => x.total));
@@ -245,7 +245,7 @@ export default function DashboardStats({ entries }: Props) {
               <DashboardCard>
                 <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
                   <Trash2 className="h-3.5 w-3.5 text-orange-500" />
-                  E-waste this month (kg)
+                  E-Waste This Month (kg)
                 </h3>
                 {eWasteThisMonth.map((w) => {
                   const max = Math.max(...eWasteThisMonth.map((x) => x.total));

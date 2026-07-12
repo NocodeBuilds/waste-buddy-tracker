@@ -77,11 +77,11 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
   }, [activeEntries]);
 
   const statusBadge = (entry: WasteEntry) => {
-    if (isDisposed(entry)) return <Badge className="bg-success text-success-foreground">Disposed</Badge>;
+    if (isDisposed(entry)) return <Badge variant="outline" className="border-success/40 text-success">Disposed</Badge>;
     const status = getStatus(entry);
-    if (status === "overdue") return <Badge className="bg-overdue text-overdue-foreground">Overdue!</Badge>;
-    if (status === "warning") return <Badge className="bg-warning text-warning-foreground">Warning</Badge>;
-    return <Badge className="bg-success/20 text-success border border-success/30">Safe</Badge>;
+    if (status === "overdue") return <Badge variant="outline" className="border-overdue/40 text-overdue">Overdue!</Badge>;
+    if (status === "warning") return <Badge variant="outline" className="border-warning/40 text-warning">Warning</Badge>;
+    return <Badge variant="outline" className="border-success/40 text-success">Safe</Badge>;
   };
 
   const handleDispose = async () => {
@@ -99,9 +99,9 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h3 className="font-semibold text-lg">Waste Inventory</h3>
+        <h3 className="text-lg font-bold flex items-center gap-2">Waste Inventory</h3>
         <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
           <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -120,19 +120,19 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
         </h3>
         <div className="grid grid-cols-2 gap-3">
           <Card className="border-overdue/30 bg-overdue/10">
-            <CardContent className="p-3 flex items-center gap-2">
+            <CardContent className="p-4 flex items-center gap-2">
               <ShieldAlert className="h-5 w-5 text-overdue shrink-0" />
               <div className="min-w-0">
-                <p className="text-2xl font-bold leading-tight text-overdue">{fmtNum(hazKg)}</p>
+                <p className="text-2xl font-bold leading-tight text-overdue">{fmtNum(hazKg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
                 <p className="text-[10px] text-muted-foreground">Hazardous</p>
               </div>
             </CardContent>
           </Card>
           <Card className="border-success/30 bg-success/10">
-            <CardContent className="p-3 flex items-center gap-2">
+            <CardContent className="p-4 flex items-center gap-2">
               <Leaf className="h-5 w-5 text-success shrink-0" />
               <div className="min-w-0">
-                <p className="text-2xl font-bold leading-tight text-success">{fmtNum(nonHazKg)}</p>
+                <p className="text-2xl font-bold leading-tight text-success">{fmtNum(nonHazKg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
                 <p className="text-[10px] text-muted-foreground">Non-Hazardous</p>
               </div>
             </CardContent>
@@ -140,20 +140,20 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Card>
-            <CardContent className="p-3 flex items-center gap-2">
-              <Beaker className="h-4 w-4 text-accent shrink-0" />
+            <CardContent className="p-4 flex items-center gap-2">
+              <Beaker className="h-5 w-5 text-accent shrink-0" />
               <div className="min-w-0">
-                <p className="text-lg font-bold leading-tight">{fmtNum(totals.litres)}</p>
-                <p className="text-[10px] text-muted-foreground">L liquid in storage</p>
+                <p className="text-2xl font-bold leading-tight">{fmtNum(totals.litres)} <span className="text-xs font-normal text-muted-foreground">L</span></p>
+                <p className="text-[10px] text-muted-foreground">Liquid in storage</p>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3 flex items-center gap-2">
-              <Trash2 className="h-4 w-4 text-orange-500 shrink-0" />
+            <CardContent className="p-4 flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
               <div className="min-w-0">
-                <p className="text-lg font-bold leading-tight">{fmtNum(solids.filter((e) => e.waste_category === "e_waste").reduce((s, e) => s + Number(e.weight_kg ?? 0), 0))}</p>
-                <p className="text-[10px] text-muted-foreground">kg e-waste in storage</p>
+                <p className="text-2xl font-bold leading-tight">{fmtNum(solids.filter((e) => e.waste_category === "e_waste").reduce((s, e) => s + Number(e.weight_kg ?? 0), 0))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+                <p className="text-[10px] text-muted-foreground">E-waste in storage</p>
               </div>
             </CardContent>
           </Card>
@@ -163,7 +163,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
       {/* Weight / volume by waste type (in storage) */}
       {byType.length > 0 && (
         <Card>
-          <CardContent className="p-3 space-y-2">
+          <CardContent className="p-4 space-y-2">
             <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
               <Scale className="h-3.5 w-3.5" /> In storage by waste type
             </h3>
@@ -249,16 +249,16 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead>Location</TableHead>
-              <TableHead>Activity</TableHead>
-              <TableHead>Waste Type</TableHead>
-              <TableHead>Cat.</TableHead>
-              <TableHead>Qty</TableHead>
-              <TableHead>Generated</TableHead>
-              <TableHead>Days</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-center">Photos</TableHead>
-              {isManagerOrAdmin && <TableHead className="text-right">Actions</TableHead>}
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Location</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Activity</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Waste Type</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Cat.</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Qty</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Generated</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Days</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Status</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-center">Photos</TableHead>
+              {isManagerOrAdmin && <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -326,7 +326,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
             const inBatch = entries.filter((e) => e.disposal_batch_id === b.id);
             return (
               <Card key={b.id}>
-                <CardContent className="p-3">
+                <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold">{b.disposed_date}</p>

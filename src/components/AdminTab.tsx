@@ -42,7 +42,7 @@ export default function AdminTab() {
   if (!isAdmin || !currentSite) {
     return (
       <Card>
-        <CardContent className="p-6 text-center text-sm text-muted-foreground">
+        <CardContent className="p-4 text-center text-xs text-muted-foreground">
           You need admin access on the selected site to use this panel.
         </CardContent>
       </Card>
@@ -77,7 +77,7 @@ export default function AdminTab() {
       </Tabs>
 
       <Card>
-        <CardContent className="p-4 space-y-2">
+        <CardContent className="p-4 space-y-3">
           <h3 className="text-sm font-semibold">Account</h3>
           <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
           <Button variant="outline" size="sm" className="w-full gap-2" onClick={signOut}>
@@ -179,9 +179,9 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
     <div className="space-y-3">
       {/* Pending site access requests */}
       <Card className={requests.length > 0 ? "border-warning/40" : ""}>
-        <CardContent className="p-4 space-y-2">
-          <h3 className="text-sm font-semibold flex items-center gap-2">
-            <UserPlus className="h-4 w-4 text-warning" /> Pending requests ({requests.length})
+        <CardContent className="p-4 space-y-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <UserPlus className="h-3.5 w-3.5 text-warning" /> Pending requests ({requests.length})
           </h3>
           {requests.length === 0 ? (
             <p className="text-xs text-muted-foreground">No pending site access requests.</p>
@@ -225,8 +225,8 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
 
       <Card>
         <CardContent className="p-4 space-y-3">
-          <h3 className="text-sm font-semibold flex items-center gap-2">
-            <UserPlus className="h-4 w-4" /> Invite to {siteName}
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <UserPlus className="h-3.5 w-3.5" /> Invite to {siteName}
           </h3>
           <form onSubmit={invite} className="space-y-2">
             <div className="space-y-1.5">
@@ -253,8 +253,10 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
 
 
       <Card>
-        <CardContent className="p-4 space-y-2">
-          <h3 className="text-sm font-semibold">Members ({members.length})</h3>
+        <CardContent className="p-4 space-y-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5" /> Members ({members.length})
+          </h3>
           {loading ? (
             <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
           ) : members.length === 0 ? (
@@ -348,10 +350,12 @@ function SitesPanel({ sites, onChanged }: { sites: SiteRow[]; onChanged: () => P
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <Card>
-        <CardContent className="p-4 space-y-2">
-          <h3 className="text-sm font-semibold">Sites ({sites.length})</h3>
+        <CardContent className="p-4 space-y-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <Building2 className="h-3.5 w-3.5" /> Sites ({sites.length})
+          </h3>
           <ul className="divide-y">
             {sites.map((s) => (
               <li key={s.id} className="py-2 space-y-2">
@@ -374,8 +378,8 @@ function SitesPanel({ sites, onChanged }: { sites: SiteRow[]; onChanged: () => P
         </CardContent>
       </Card>
       <Card>
-        <CardContent className="p-4 space-y-2">
-          <h3 className="text-sm font-semibold flex items-center gap-2"><Building2 className="h-4 w-4" /> New site</h3>
+        <CardContent className="p-4 space-y-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" /> New site</h3>
           <form onSubmit={create} className="space-y-2">
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Site name" required />
             <Input value={loc} onChange={(e) => setLoc(e.target.value)} placeholder="Location (optional)" />
@@ -512,7 +516,9 @@ function RecordsPanel({ siteId }: { siteId: string }) {
   return (
     <Card>
       <CardContent className="p-4 space-y-2">
-        <h3 className="text-sm font-semibold">Latest waste records ({rows.length})</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <FileText className="h-3.5 w-3.5" /> Latest waste records ({rows.length})
+        </h3>
         {loading ? (
           <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : rows.length === 0 ? (
@@ -569,7 +575,9 @@ function AuditPanel() {
   return (
     <Card>
       <CardContent className="p-4 space-y-2">
-        <h3 className="text-sm font-semibold">Recent activity ({rows.length})</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <ScrollText className="h-3.5 w-3.5" /> Recent activity ({rows.length})
+        </h3>
         {loading ? (
           <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : rows.length === 0 ? (
