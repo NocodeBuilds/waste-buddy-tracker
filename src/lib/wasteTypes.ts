@@ -1,4 +1,4 @@
-export type WasteCategory = "hazardous" | "non_hazardous" | "e_waste";
+export type WasteCategory = "hazardous" | "non_hazardous" | "e_waste" | "other_wastes";
 export type MeasureUnit = "kg" | "litres";
 
 export interface WasteType {
@@ -43,9 +43,17 @@ export const WASTE_TYPES: WasteType[] = [
   { id: "e-waste-resistors", name: "Resistors", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
   { id: "e-waste-capacitors", name: "Capacitors", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
   { id: "e-waste-others", name: "E-waste Others", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
+  // Other wastes
+  { id: "aluminium-scrap", name: "Aluminium Scrap", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false },
+  { id: "copper-scrap", name: "Copper Scrap", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false },
+  { id: "ms-scrap", name: "MS Scrap", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false },
+  { id: "plastic-scrap", name: "Plastic Scrap", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false },
+  { id: "frp-scrap", name: "FRP Scrap (Blade)", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false },
+  { id: "scrap-insulator", name: "Scrap Insulator", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false },
+  { id: "rubber-scrap", name: "Rubber Scrap", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false },
 ];
 
-export type ActivityType = "breakdown" | "preventive" | "5s";
+export type ActivityType = "breakdown" | "preventive" | "5s" | "others";
 
 export interface WasteEntry {
   id: string;

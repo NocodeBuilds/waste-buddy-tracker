@@ -172,7 +172,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
               const suffix = w.measureUnit === "litres" ? "L" : "kg";
               const barColor = w.measureUnit === "litres"
                 ? "bg-accent"
-                : w.wasteCategory === "hazardous" ? "bg-overdue" : "bg-success";
+                : w.wasteCategory === "hazardous" ? "bg-overdue" : w.wasteCategory === "other_wastes" ? "bg-amber-500" : "bg-success";
               return (
                 <div key={w.id} className="flex items-center gap-2">
                   <span className="text-xs flex-1 truncate">{w.name}</span>
@@ -270,11 +270,11 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
                 return (
                   <TableRow key={entry.id} className={getStatus(entry) === "overdue" && !isDisposed(entry) ? "bg-overdue/5" : ""}>
                     <TableCell className="font-mono font-semibold">{entry.location ?? "—"}</TableCell>
-                    <TableCell className="text-xs">{entry.activity_type === "preventive" ? "PM" : entry.activity_type === "breakdown" ? "BM" : "5S"}</TableCell>
+                    <TableCell className="text-xs">{entry.activity_type === "preventive" ? "PM" : entry.activity_type === "breakdown" ? "BM" : entry.activity_type === "5s" ? "5S" : "OTH"}</TableCell>
                     <TableCell className="max-w-[180px] truncate">{getWasteName(entry.waste_type_id)}</TableCell>
                     <TableCell className="text-xs">
-                      <Badge variant="outline" className={entry.waste_category === "hazardous" ? "border-overdue/40 text-overdue" : "border-success/40 text-success"}>
-                        {entry.waste_category === "hazardous" ? "HAZ" : "NON"}
+                      <Badge variant="outline" className={entry.waste_category === "hazardous" ? "border-overdue/40 text-overdue" : entry.waste_category === "other_wastes" ? "border-amber-500/40 text-amber-600" : "border-success/40 text-success"}>
+                        {entry.waste_category === "hazardous" ? "HAZ" : entry.waste_category === "other_wastes" ? "OTHER" : "NON"}
                       </Badge>
                     </TableCell>
                     <TableCell>

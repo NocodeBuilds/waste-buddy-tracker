@@ -146,6 +146,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
             <SelectItem value="hazardous">Hazardous</SelectItem>
             <SelectItem value="non_hazardous">Non-Hazardous</SelectItem>
             <SelectItem value="e_waste">E-waste</SelectItem>
+            <SelectItem value="other_wastes">Other Wastes</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -158,6 +159,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
             <SelectItem value="breakdown">Breakdown Maintenance</SelectItem>
             <SelectItem value="preventive">Preventive Maintenance</SelectItem>
             <SelectItem value="5s">5S Activity</SelectItem>
+            <SelectItem value="others">Others</SelectItem>
           </SelectContent>
         </Select>
       </div>

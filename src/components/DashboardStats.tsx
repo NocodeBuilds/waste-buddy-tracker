@@ -6,7 +6,7 @@ import {
 } from "@/lib/wasteTypes";
 import {
   Package, AlertTriangle, Clock, Beaker,
-  ShieldAlert, Leaf, Trash2,
+  ShieldAlert, Leaf, Trash2, Recycle,
 } from "lucide-react";
 
 interface Props {
@@ -24,13 +24,14 @@ function sumWeight(entries: WasteEntry[]): number {
   return entries.reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
 }
 
-/** Split entries into { hazKg, nonHazKg, litres } using measureUnit + waste_category. */
+/** Split entries into { hazKg, nonHazKg, otherWastesKg, litres } using measureUnit + waste_category. */
 function splitByCatAndUnit(entries: WasteEntry[]) {
   const solids = entries.filter((e) => getMeasureUnit(e.waste_type_id) === "kg");
   const liquids = entries.filter((e) => getMeasureUnit(e.waste_type_id) === "litres");
   return {
     hazKg: sumWeight(solids.filter((e) => e.waste_category === "hazardous")),
     nonHazKg: sumWeight(solids.filter((e) => e.waste_category === "non_hazardous")),
+    otherWastesKg: sumWeight(solids.filter((e) => e.waste_category === "other_wastes")),
     litres: sumWeight(liquids),
   };
 }
@@ -72,6 +73,14 @@ export default function DashboardStats({ entries }: Props) {
 
   const eWasteThisMonth = WASTE_TYPES
     .filter((wt) => wt.wasteCategory === "e_waste")
+    .map((wt) => {
+      const items = thisMonthEntries.filter((e) => e.waste_type_id === wt.id);
+      return { ...wt, total: sumWeight(items) };
+    })
+    .filter((w) => w.total > 0);
+
+  const otherWastesThisMonth = WASTE_TYPES
+    .filter((wt) => wt.wasteCategory === "other_wastes")
     .map((wt) => {
       const items = thisMonthEntries.filter((e) => e.waste_type_id === wt.id);
       return { ...wt, total: sumWeight(items) };
@@ -120,6 +129,15 @@ export default function DashboardStats({ entries }: Props) {
                 <p className="text-xl font-bold leading-tight">{fmtNum(eWasteKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
               <p className="text-[10px] text-muted-foreground">E-Waste in Storage</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <Recycle className="h-5 w-5 text-amber-600 shrink-0" />
+                <p className="text-xl font-bold leading-tight">{fmtNum(cumul.otherWastesKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Other Wastes in Storage</p>
             </CardContent>
           </Card>
           <Card className={overdue.length > 0 ? "border-overdue/40" : ""}>
@@ -192,7 +210,7 @@ export default function DashboardStats({ entries }: Props) {
           </Card>
         </div>
 
-        {hazSolids.length === 0 && nonHazSolids.length === 0 && eWasteThisMonth.length === 0 ? (
+        {hazSolids.length === 0 && nonHazSolids.length === 0 && otherWastesThisMonth.length === 0 && eWasteThisMonth.length === 0 ? (
           <Card>
             <CardContent className="p-4 text-center text-xs text-muted-foreground flex flex-col items-center gap-1">
               <Package className="h-5 w-5 opacity-40" />
@@ -234,6 +252,26 @@ export default function DashboardStats({ entries }: Props) {
                       <span className="text-xs flex-1 truncate">{w.name}</span>
                       <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
                         <div className="bg-success h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
+                      </div>
+                      <span className="text-xs font-mono font-semibold w-16 text-right">{fmtNum(w.total)} kg</span>
+                    </div>
+                  );
+                })}
+              </DashboardCard>
+            )}
+            {otherWastesThisMonth.length > 0 && (
+              <DashboardCard>
+                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                  <Recycle className="h-3.5 w-3.5 text-amber-600" />
+                  Other Wastes This Month (kg)
+                </h3>
+                {otherWastesThisMonth.map((w) => {
+                  const max = Math.max(...otherWastesThisMonth.map((x) => x.total));
+                  return (
+                    <div key={w.id} className="flex items-center gap-2">
+                      <span className="text-xs flex-1 truncate">{w.name}</span>
+                      <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
+                        <div className="bg-amber-600 h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
                       </div>
                       <span className="text-xs font-mono font-semibold w-16 text-right">{fmtNum(w.total)} kg</span>
                     </div>
