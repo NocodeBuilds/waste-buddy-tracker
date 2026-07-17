@@ -152,7 +152,7 @@ export default function AnalyticsTab({ entries, batches }: Props) {
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           Active Solids by Category
         </h3>
-        <div className="grid grid-cols-3 gap-3 text-center mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center mb-3">
           <div className="bg-overdue/10 rounded-lg p-3">
             <p className="text-2xl font-bold text-overdue">
               {fmtNum(hazardousKg)} <span className="text-xs font-normal text-muted-foreground">kg</span>
@@ -172,7 +172,7 @@ export default function AnalyticsTab({ entries, batches }: Props) {
             <p className="text-xs text-muted-foreground">Other Wastes</p>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-3 text-center text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-xs">
           {activityTotals.map((a) => (
             <div key={a.activity}>
               <p className="font-bold">{fmtNum(a.kg)} kg · {fmtNum(a.litres)} L</p>

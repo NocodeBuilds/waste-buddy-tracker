@@ -162,7 +162,7 @@ export default function DashboardStats({ entries }: Props) {
           This Month
         </h2>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <Card className="border-overdue/30">
             <CardContent className="p-3 flex flex-col items-center text-center gap-1">
               <div className="flex items-center gap-2">
