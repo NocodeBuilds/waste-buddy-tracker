@@ -413,9 +413,9 @@ export type Database = {
       user_site_ids: { Args: { _user_id: string }; Returns: string[] }
     }
     Enums: {
-      activity_type: "breakdown" | "preventive" | "5s"
+      activity_type: "breakdown" | "preventive" | "5s" | "others"
       app_role: "admin" | "manager" | "member"
-      waste_category: "hazardous" | "non_hazardous"
+      waste_category: "hazardous" | "non_hazardous" | "e_waste" | "other_wastes"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -543,9 +543,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      activity_type: ["breakdown", "preventive", "5s"],
+      activity_type: ["breakdown", "preventive", "5s", "others"],
       app_role: ["admin", "manager", "member"],
-      waste_category: ["hazardous", "non_hazardous"],
+      waste_category: ["hazardous", "non_hazardous", "e_waste", "other_wastes"],
     },
   },
 } as const

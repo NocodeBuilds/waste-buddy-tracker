@@ -58,9 +58,11 @@ export default function AnalyticsTab({ entries, batches }: Props) {
     .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
   const nonHazardousKg = solids.filter((e) => e.waste_category === "non_hazardous")
     .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+  const otherWastesKg = solids.filter((e) => e.waste_category === "other_wastes")
+    .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
 
   // Activity split by weight
-  const activityTotals = (["breakdown", "preventive", "5s"] as const).map((a) => {
+  const activityTotals = (["breakdown", "preventive", "5s", "others"] as const).map((a) => {
     const items = entries.filter((e) => e.activity_type === a);
     const t = sumByUnit(items);
     return { activity: a, kg: t.kg, litres: t.litres };
@@ -73,9 +75,12 @@ export default function AnalyticsTab({ entries, batches }: Props) {
       .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
     const non = solids.filter((e) => e.waste_category === "non_hazardous")
       .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+    const other = solids.filter((e) => e.waste_category === "other_wastes")
+      .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
     return [
       { name: "Hazardous (kg)", value: +haz.toFixed(2), color: COLORS.overdue },
       { name: "Non-hazardous (kg)", value: +non.toFixed(2), color: COLORS.success },
+      { name: "Other Wastes (kg)", value: +other.toFixed(2), color: COLORS.warning },
     ].filter((d) => d.value > 0);
   }, [active]);
 
@@ -147,7 +152,7 @@ export default function AnalyticsTab({ entries, batches }: Props) {
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           Active Solids by Category
         </h3>
-        <div className="grid grid-cols-2 gap-3 text-center mb-3">
+        <div className="grid grid-cols-3 gap-3 text-center mb-3">
           <div className="bg-overdue/10 rounded-lg p-3">
             <p className="text-2xl font-bold text-overdue">
               {fmtNum(hazardousKg)} <span className="text-xs font-normal text-muted-foreground">kg</span>
@@ -160,13 +165,19 @@ export default function AnalyticsTab({ entries, batches }: Props) {
             </p>
             <p className="text-xs text-muted-foreground">Non-Hazardous</p>
           </div>
+          <div className="bg-warning/10 rounded-lg p-3">
+            <p className="text-2xl font-bold text-warning">
+              {fmtNum(otherWastesKg)} <span className="text-xs font-normal text-muted-foreground">kg</span>
+            </p>
+            <p className="text-xs text-muted-foreground">Other Wastes</p>
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-3 text-center text-xs">
           {activityTotals.map((a) => (
             <div key={a.activity}>
               <p className="font-bold">{fmtNum(a.kg)} kg · {fmtNum(a.litres)} L</p>
               <p className="text-muted-foreground capitalize">
-                {a.activity === "5s" ? "5S" : a.activity}
+                {a.activity === "5s" ? "5S" : a.activity === "others" ? "Others" : a.activity}
               </p>
             </div>
           ))}

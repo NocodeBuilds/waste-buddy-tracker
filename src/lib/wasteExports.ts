@@ -32,14 +32,17 @@ export function exportInventoryToExcel(
     "Location": e.location ?? "—",
     "Waste Description": wasteName(e.waste_type_id),
     "Physical Form": wasteCat(e.waste_type_id),
-    "Category": e.waste_category === "hazardous" ? "Hazardous" : "Non-Hazardous",
+    "Category": e.waste_category === "hazardous" ? "Hazardous"
+      : e.waste_category === "non_hazardous" ? "Non-Hazardous"
+      : "Other Wastes",
     "Weight": Number(e.weight_kg ?? 0),
     "Unit": wasteUnitLabel(e.waste_type_id),
     "Count (pcs)": e.piece_count ?? "",
     "Source / Activity":
       e.activity_type === "preventive" ? "Preventive Maintenance"
       : e.activity_type === "breakdown" ? "Breakdown Maintenance"
-      : "5S Activity",
+      : e.activity_type === "5s" ? "5S Activity"
+      : "Others",
     "Days in Storage": getDaysStored(e.generated_date),
     "Notes": e.notes ?? "",
   }));
@@ -138,10 +141,10 @@ export function exportForm3Pdf(entries: WasteEntry[], siteName: string) {
   const body = inStorage.map((e, i) => [
     String(i + 1),
     e.generated_date,
-    e.activity_type === "preventive" ? "PM" : e.activity_type === "breakdown" ? "BM" : "5S",
+    e.activity_type === "preventive" ? "PM" : e.activity_type === "breakdown" ? "BM" : e.activity_type === "5s" ? "5S" : "Others",
     e.location ?? "—",
     wasteName(e.waste_type_id),
-    `${e.waste_category === "hazardous" ? "Haz" : "Non-Haz"} / ${wasteCat(e.waste_type_id)}`,
+    `${e.waste_category === "hazardous" ? "Haz" : e.waste_category === "non_hazardous" ? "Non-Haz" : "Other"} / ${wasteCat(e.waste_type_id)}`,
     fmtNum(Number(e.weight_kg ?? 0)),
     wasteUnitLabel(e.waste_type_id),
     e.piece_count != null ? String(e.piece_count) : "—",
@@ -228,11 +231,11 @@ export function exportDisposalBatchPdf(
     e.generated_date,
     e.location ?? "—",
     wasteName(e.waste_type_id),
-    e.waste_category === "hazardous" ? "Haz" : "Non-Haz",
+    e.waste_category === "hazardous" ? "Haz" : e.waste_category === "non_hazardous" ? "Non-Haz" : "Other",
     `${fmtNum(Number(e.weight_kg ?? 0))} ${wasteUnitLabel(e.waste_type_id)}`,
     e.piece_count != null ? String(e.piece_count) : "—",
     String(daysHeld(e.generated_date)),
-    e.activity_type === "preventive" ? "PM" : e.activity_type === "breakdown" ? "BM" : "5S",
+    e.activity_type === "preventive" ? "PM" : e.activity_type === "breakdown" ? "BM" : e.activity_type === "5s" ? "5S" : "Others",
   ]);
 
   autoTable(doc, {
