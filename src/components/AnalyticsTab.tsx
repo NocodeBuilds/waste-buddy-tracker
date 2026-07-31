@@ -51,14 +51,19 @@ export default function AnalyticsTab({ entries, batches }: Props) {
   // Lifetime totals from all entries
   const lifetimeTotals = sumByUnit(entries);
 
-  // ── Active Solids by Category ────────────────────────────────
+  // ── 6-category totals from active entries ────────────────────
 
-  const solids = active.filter((e) => getMeasureUnit(e.waste_type_id) === "kg");
-  const hazardousKg = solids.filter((e) => e.waste_category === "hazardous")
+  const hazSolidsKg = active.filter((e) => e.waste_category === "hazardous" && getMeasureUnit(e.waste_type_id) === "kg")
     .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
-  const nonHazardousKg = solids.filter((e) => e.waste_category === "non_hazardous")
+  const nonHazSolidsKg = active.filter((e) => e.waste_category === "non_hazardous" && getMeasureUnit(e.waste_type_id) === "kg")
     .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
-  const otherWastesKg = solids.filter((e) => e.waste_category === "other_wastes")
+  const liquidLitres = active.filter((e) => getMeasureUnit(e.waste_type_id) === "litres")
+    .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+  const eWasteKg = active.filter((e) => e.waste_category === "e_waste" && e.waste_type_id !== "used-batteries")
+    .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+  const batteryKg = active.filter((e) => e.waste_type_id === "used-batteries")
+    .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+  const otherWastesKg = active.filter((e) => e.waste_category === "other_wastes" && getMeasureUnit(e.waste_type_id) === "kg")
     .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
 
   // Activity split by weight
@@ -71,16 +76,26 @@ export default function AnalyticsTab({ entries, batches }: Props) {
   // ── Category pie chart data ─────────────────────────────────
 
   const categoryData = useMemo(() => {
-    const haz = solids.filter((e) => e.waste_category === "hazardous")
+    const entries_ = active;
+    const haz = entries_.filter((e) => e.waste_category === "hazardous" && getMeasureUnit(e.waste_type_id) === "kg")
       .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
-    const non = solids.filter((e) => e.waste_category === "non_hazardous")
+    const non = entries_.filter((e) => e.waste_category === "non_hazardous" && getMeasureUnit(e.waste_type_id) === "kg")
       .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
-    const other = solids.filter((e) => e.waste_category === "other_wastes")
+    const liq = entries_.filter((e) => getMeasureUnit(e.waste_type_id) === "litres")
+      .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+    const ew = entries_.filter((e) => e.waste_category === "e_waste" && e.waste_type_id !== "used-batteries")
+      .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+    const bat = entries_.filter((e) => e.waste_type_id === "used-batteries")
+      .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+    const other = entries_.filter((e) => e.waste_category === "other_wastes" && getMeasureUnit(e.waste_type_id) === "kg")
       .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
     return [
-      { name: "Hazardous (kg)", value: +haz.toFixed(2), color: COLORS.overdue },
-      { name: "Non-hazardous (kg)", value: +non.toFixed(2), color: COLORS.success },
-      { name: "Other Wastes (kg)", value: +other.toFixed(2), color: COLORS.warning },
+      { name: `Hazardous (${fmtNum(haz)} kg)`, value: +haz.toFixed(2), color: COLORS.overdue },
+      { name: `Non-Hazardous (${fmtNum(non)} kg)`, value: +non.toFixed(2), color: COLORS.success },
+      { name: `Liquid (${fmtNum(liq)} L)`, value: +liq.toFixed(2), color: "#06b6d4" },
+      { name: `E-Waste (${fmtNum(ew)} kg)`, value: +ew.toFixed(2), color: "#f97316" },
+      { name: `Battery (${fmtNum(bat)} kg)`, value: +bat.toFixed(2), color: "#ca8a04" },
+      { name: `Other (${fmtNum(other)} kg)`, value: +other.toFixed(2), color: COLORS.warning },
     ].filter((d) => d.value > 0);
   }, [active]);
 
@@ -147,32 +162,38 @@ export default function AnalyticsTab({ entries, batches }: Props) {
         <BarChart3 className="h-5 w-5 text-accent" /> Analytics
       </h2>
 
-      {/* ── Active Solids by Category (top) ── */}
+      {/* ── In Storage by Category (6 categories) ── */}
       <DashboardCard>
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Active Solids by Category
+          In Storage by Category
         </h3>
         <div className="grid grid-cols-3 gap-3 text-center mb-3">
-          <div className="bg-overdue/10 rounded-lg p-3">
-            <p className="text-2xl font-bold text-overdue">
-              {fmtNum(hazardousKg)} <span className="text-xs font-normal text-muted-foreground">kg</span>
-            </p>
-            <p className="text-xs text-muted-foreground">Hazardous</p>
+          <div className="bg-overdue/10 rounded-lg p-2">
+            <p className="text-lg font-bold text-overdue">{fmtNum(hazSolidsKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
+            <p className="text-[10px] text-muted-foreground">Hazardous Solids</p>
           </div>
-          <div className="bg-success/10 rounded-lg p-3">
-            <p className="text-2xl font-bold text-success">
-              {fmtNum(nonHazardousKg)} <span className="text-xs font-normal text-muted-foreground">kg</span>
-            </p>
-            <p className="text-xs text-muted-foreground">Non-Hazardous</p>
+          <div className="bg-success/10 rounded-lg p-2">
+            <p className="text-lg font-bold text-success">{fmtNum(nonHazSolidsKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
+            <p className="text-[10px] text-muted-foreground">Non-Hazardous Solids</p>
           </div>
-          <div className="bg-warning/10 rounded-lg p-3">
-            <p className="text-2xl font-bold text-warning">
-              {fmtNum(otherWastesKg)} <span className="text-xs font-normal text-muted-foreground">kg</span>
-            </p>
-            <p className="text-xs text-muted-foreground">Other Wastes</p>
+          <div className="bg-cyan-500/10 rounded-lg p-2">
+            <p className="text-lg font-bold text-cyan-600">{fmtNum(liquidLitres)} <span className="text-[10px] font-normal text-muted-foreground">L</span></p>
+            <p className="text-[10px] text-muted-foreground">Liquid Waste</p>
+          </div>
+          <div className="bg-orange-500/10 rounded-lg p-2">
+            <p className="text-lg font-bold text-orange-500">{fmtNum(eWasteKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
+            <p className="text-[10px] text-muted-foreground">E-Waste</p>
+          </div>
+          <div className="bg-yellow-500/10 rounded-lg p-2">
+            <p className="text-lg font-bold text-yellow-600">{fmtNum(batteryKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
+            <p className="text-[10px] text-muted-foreground">Battery Waste</p>
+          </div>
+          <div className="bg-amber-500/10 rounded-lg p-2">
+            <p className="text-lg font-bold text-amber-600">{fmtNum(otherWastesKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
+            <p className="text-[10px] text-muted-foreground">Other Wastes</p>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-3 text-center text-xs">
+        <div className="grid grid-cols-4 gap-2 text-center text-xs">
           {activityTotals.map((a) => (
             <div key={a.activity}>
               <p className="font-bold">{fmtNum(a.kg)} kg · {fmtNum(a.litres)} L</p>

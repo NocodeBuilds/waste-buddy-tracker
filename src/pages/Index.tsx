@@ -14,7 +14,7 @@ import EditWasteDialog from "@/components/EditWasteDialog";
 import { WasteEntry, DISPOSAL_LIMIT_DAYS, getDaysStored, isDisposed } from "@/lib/wasteTypes";
 
 import SiteSwitcher from "@/components/SiteSwitcher";
-import { Leaf, ArrowLeft, Loader2 } from "lucide-react";
+import { Leaf, ArrowLeft, Loader2, Bell } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -24,6 +24,7 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
@@ -38,6 +39,17 @@ const Index = () => {
     () => entries.filter((e) => !isDisposed(e) && getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS).length,
     [entries],
   );
+
+  const warningCount = useMemo(
+    () => entries.filter((e) => {
+      if (isDisposed(e)) return false;
+      const d = getDaysStored(e.generated_date);
+      return d >= 70 && d < DISPOSAL_LIMIT_DAYS;
+    }).length,
+    [entries],
+  );
+
+  const alertCount = overdueCount + warningCount;
 
   // No site assigned → show request-access flow
   if (!siteLoading && sites.length === 0) {
@@ -57,6 +69,21 @@ const Index = () => {
             <p className="text-[10px] text-primary-foreground/70">Wind Turbine Maintenance — Waste Management</p>
           </div>
           <SiteSwitcher />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative h-9 w-9 text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/10">
+                <Bell className="h-5 w-5" />
+                {alertCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-overdue text-[9px] font-bold text-white flex items-center justify-center leading-none">
+                    {alertCount > 9 ? "9+" : alertCount}
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" sideOffset={8} className="w-80 max-h-[70vh] overflow-y-auto p-0">
+              <AlertsPanel entries={entries} />
+            </PopoverContent>
+          </Popover>
         </div>
       </header>
 
@@ -69,7 +96,6 @@ const Index = () => {
           <>
             {activeTab === "home" && (
               <>
-                <AlertsPanel entries={entries} />
                 <FuturisticDashboard entries={entries} />
               </>
             )}
