@@ -167,22 +167,12 @@ export default function AnalyticsTab({ entries, batches }: Props) {
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           In Storage by Category
         </h3>
-        <div className="grid grid-cols-3 gap-3 text-center mb-3">
-          <div className="bg-overdue/10 rounded-lg p-2">
-            <p className="text-lg font-bold text-overdue">{fmtNum(hazSolidsKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
-            <p className="text-[10px] text-muted-foreground">Hazardous Solids</p>
-          </div>
-          <div className="bg-success/10 rounded-lg p-2">
-            <p className="text-lg font-bold text-success">{fmtNum(nonHazSolidsKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
-            <p className="text-[10px] text-muted-foreground">Non-Hazardous Solids</p>
-          </div>
-          <div className="bg-cyan-500/10 rounded-lg p-2">
-            <p className="text-lg font-bold text-cyan-600">{fmtNum(liquidLitres)} <span className="text-[10px] font-normal text-muted-foreground">L</span></p>
-            <p className="text-[10px] text-muted-foreground">Liquid Waste</p>
-          </div>
-          <div className="bg-orange-500/10 rounded-lg p-2">
-            <p className="text-lg font-bold text-orange-500">{fmtNum(eWasteKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
-            <p className="text-[10px] text-muted-foreground">E-Waste</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center mb-3">
+          <div className="bg-overdue/10 rounded-lg p-3">
+            <p className="text-2xl font-bold text-overdue">
+              {fmtNum(hazardousKg)} <span className="text-xs font-normal text-muted-foreground">kg</span>
+            </p>
+            <p className="text-xs text-muted-foreground">Hazardous</p>
           </div>
           <div className="bg-yellow-500/10 rounded-lg p-2">
             <p className="text-lg font-bold text-yellow-600">{fmtNum(batteryKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
@@ -193,7 +183,7 @@ export default function AnalyticsTab({ entries, batches }: Props) {
             <p className="text-[10px] text-muted-foreground">Other Wastes</p>
           </div>
         </div>
-        <div className="grid grid-cols-4 gap-2 text-center text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-xs">
           {activityTotals.map((a) => (
             <div key={a.activity}>
               <p className="font-bold">{fmtNum(a.kg)} kg · {fmtNum(a.litres)} L</p>

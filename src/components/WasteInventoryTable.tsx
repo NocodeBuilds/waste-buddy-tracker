@@ -118,7 +118,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           In storage by Category
         </h3>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Card className="border-overdue/30 bg-overdue/10">
             <CardContent className="p-3 flex flex-col items-center text-center gap-1">
               <div className="flex items-center gap-1.5">
@@ -155,6 +155,8 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
               <p className="text-[10px] text-muted-foreground">E-Waste</p>
             </CardContent>
           </Card>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Card>
             <CardContent className="p-3 flex flex-col items-center text-center gap-1">
               <div className="flex items-center gap-1.5">

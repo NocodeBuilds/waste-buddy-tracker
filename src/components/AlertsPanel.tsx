@@ -83,9 +83,15 @@ export default function AlertsPanel({ entries }: Props) {
         {overdue.map((e) => (
           <div key={e.id} className="flex items-start gap-2 bg-overdue/10 p-2 rounded-lg">
             <AlertTriangle className="h-4 w-4 text-overdue mt-0.5 shrink-0" />
-            <div className="text-xs flex-1 min-w-0">
-              <p className="font-semibold truncate">{e.location} — {getWasteName(e.waste_type_id)}</p>
-              <p className="text-muted-foreground">{formatQty(e)} · <span className="font-bold text-overdue">{getDaysStored(e.generated_date)}d</span> stored (limit {DISPOSAL_LIMIT_DAYS}d)</p>
+            <div className="text-xs sm:text-sm flex-1 min-w-0">
+              <span className="font-semibold">{e.location}</span>
+              {" — "}
+              <span className="truncate">{getWasteName(e.waste_type_id)}</span>
+              {" ("}
+              {formatQty(e)}
+              {") stored for "}
+              <span className="font-bold text-overdue">{getDaysStored(e.generated_date)} days</span>
+              {"."}
             </div>
             <Button
               variant="ghost"
@@ -101,9 +107,13 @@ export default function AlertsPanel({ entries }: Props) {
         {warnings.map((e) => (
           <div key={e.id} className="flex items-start gap-2 bg-warning/10 p-2 rounded-lg">
             <AlertTriangle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
-            <div className="text-xs flex-1 min-w-0">
-              <p className="font-semibold truncate">{e.location} — {getWasteName(e.waste_type_id)}</p>
-              <p className="text-muted-foreground">{formatQty(e)} · <span className="font-semibold text-warning">{getDaysStored(e.generated_date)}d</span> stored (warning ≥70d)</p>
+            <div className="text-xs sm:text-sm flex-1 min-w-0">
+              <span className="font-semibold">{e.location}</span>
+              {" — "}
+              <span className="truncate">{getWasteName(e.waste_type_id)}</span>
+              {" stored for "}
+              <span className="font-semibold text-warning">{getDaysStored(e.generated_date)} days</span>
+              {"."}
             </div>
             <Button
               variant="ghost"

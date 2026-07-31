@@ -6,10 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Shield, Users, Building2, FileText, History, Loader2, UserPlus, Trash2, UserMinus, LogOut, MapPin, Plus,
+  Shield, Users, Building2, FileText, History, Loader2, UserPlus, Trash2, UserMinus, LogOut, MapPin, Plus, ScrollText,
 } from "lucide-react";
+import { WASTE_TYPES } from "@/lib/wasteTypes";
 
-import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -55,7 +58,7 @@ export default function AdminTab() {
         <Shield className="h-5 w-5 text-accent" /> Admin Panel
       </h2>
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid w-full grid-cols-4 h-auto">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
           <TabsTrigger value="users" className="text-[11px] py-1.5 gap-1"><Users className="h-3.5 w-3.5" />Users</TabsTrigger>
           <TabsTrigger value="sites" className="text-[11px] py-1.5 gap-1"><Building2 className="h-3.5 w-3.5" />Sites</TabsTrigger>
           <TabsTrigger value="records" className="text-[11px] py-1.5 gap-1"><FileText className="h-3.5 w-3.5" />Records</TabsTrigger>
@@ -98,10 +101,12 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role>("member");
   const [busy, setBusy] = useState(false);
+  const [approveRoles, setApproveRoles] = useState<Record<string, Role>>({});
+
+  const setReqRole = (reqId: string, r: Role) => setApproveRoles((prev) => ({ ...prev, [reqId]: r }));
 
   const load = async () => {
     setLoading(true);
-    // Fetch memberships and roles for this site in parallel.
     const [{ data: ms }, { data: rs }] = await Promise.all([
       supabase.from("user_sites").select("user_id").eq("site_id", siteId),
       supabase.from("user_roles").select("user_id, role").eq("site_id", siteId),
@@ -110,8 +115,6 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
       ...(ms ?? []).map((m: any) => m.user_id),
       ...(rs ?? []).map((r: any) => r.user_id),
     ]));
-    // Fetch profiles separately — join via profiles!inner drops rows when RLS
-    // filters the profile row (PostgREST embed does not backfill).
     let profMap: Record<string, { email: string | null; full_name: string | null }> = {};
     if (userIds.length) {
       const { data: ps } = await supabase
@@ -129,7 +132,6 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
       roles: byUser[m.user_id] ?? [],
     })));
 
-    // Pending site-access requests
     const { data: reqRows } = await supabase
       .from("site_access_requests")
       .select("id, user_id, note, created_at, status")
@@ -138,7 +140,6 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
       .order("created_at", { ascending: false });
     setRequests((reqRows ?? []).map((r: any) => ({ ...r, profile: profMap[r.user_id] })));
 
-    // Backfill any requester profiles we didn't fetch above.
     const missing = (reqRows ?? [])
       .map((r: any) => r.user_id)
       .filter((id: string) => !profMap[id]);
@@ -175,6 +176,16 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
     if (ok) setEmail("");
   };
 
+  const approveReq = async (r: any) => {
+    const chosenRole = approveRoles[r.id] ?? "member";
+    await call({ action: "approve_request", request_id: r.id, site_id: siteId, role: chosenRole }, "Approved");
+    setApproveRoles((prev) => { const next = { ...prev }; delete next[r.id]; return next; });
+  };
+
+  const rejectReq = async (r: any) => {
+    await call({ action: "reject_request", request_id: r.id, site_id: siteId }, "Rejected");
+  };
+
   return (
     <div className="space-y-3">
       {/* Pending site access requests */}
@@ -199,7 +210,7 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
                     {r.note && <p className="text-[10px] italic text-muted-foreground truncate">"{r.note}"</p>}
                   </div>
                   <div className="flex gap-1">
-                    <Select defaultValue="member" onValueChange={(v) => (r._role = v)}>
+                    <Select value={approveRoles[r.id] ?? "member"} onValueChange={(v) => setReqRole(r.id, v as Role)}>
                       <SelectTrigger className="h-7 text-[10px] w-24"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="member">Member</SelectItem>
@@ -207,12 +218,10 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
                         <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button size="sm" className="h-7 text-[10px] flex-1" disabled={busy}
-                      onClick={() => call({ action: "approve_request", request_id: r.id, site_id: siteId, role: r._role ?? "member" }, "Approved")}>
+                    <Button size="sm" className="h-7 text-[10px] flex-1" disabled={busy} onClick={() => approveReq(r)}>
                       Approve
                     </Button>
-                    <Button size="sm" variant="outline" className="h-7 text-[10px]" disabled={busy}
-                      onClick={() => call({ action: "reject_request", request_id: r.id, site_id: siteId }, "Rejected")}>
+                    <Button size="sm" variant="outline" className="h-7 text-[10px]" disabled={busy} onClick={() => rejectReq(r)}>
                       Reject
                     </Button>
                   </div>
@@ -244,7 +253,7 @@ function UsersPanel({ siteId, siteName, callerId }: { siteId: string; siteName: 
                 </SelectContent>
               </Select>
             </div>
-            <Button type="submit" size="sm" className="w-full" disabled={busy}>
+            <Button type="submit" size="sm" className="w-full" disabled={busy || !email}>
               {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Send invite
             </Button>
           </form>
@@ -316,6 +325,9 @@ function SitesPanel({ sites, onChanged }: { sites: SiteRow[]; onChanged: () => P
   const [name, setName] = useState("");
   const [loc, setLoc] = useState("");
   const [busy, setBusy] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<SiteRow | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<SiteRow | null>(null);
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -332,20 +344,31 @@ function SitesPanel({ sites, onChanged }: { sites: SiteRow[]; onChanged: () => P
     setCurrentSite({ id: data.id, name: data.name, location: data.location });
   };
 
-  const rename = async (s: SiteRow) => {
-    const newName = prompt("New name", s.name);
-    if (!newName || newName === s.name) return;
-    const { error } = await supabase.from("sites").update({ name: newName }).eq("id", s.id);
+  const openRename = (s: SiteRow) => {
+    setRenameTarget(s);
+    setRenameValue(s.name);
+  };
+
+  const commitRename = async () => {
+    if (!renameTarget) return;
+    const v = renameValue.trim();
+    if (!v || v === renameTarget.name) {
+      setRenameTarget(null);
+      return;
+    }
+    const { error } = await supabase.from("sites").update({ name: v }).eq("id", renameTarget.id);
     if (error) return toast.error(error.message);
     toast.success("Renamed");
+    setRenameTarget(null);
     onChanged();
   };
 
-  const remove = async (s: SiteRow) => {
-    if (!confirm(`Delete site "${s.name}"? This removes all its data.`)) return;
-    const { error } = await supabase.from("sites").delete().eq("id", s.id);
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const { error } = await supabase.from("sites").delete().eq("id", deleteTarget.id);
     if (error) return toast.error(error.message);
     toast.success("Deleted");
+    setDeleteTarget(null);
     onChanged();
   };
 
@@ -365,8 +388,8 @@ function SitesPanel({ sites, onChanged }: { sites: SiteRow[]; onChanged: () => P
                     {s.location && <p className="text-[10px] text-muted-foreground truncate">{s.location}</p>}
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button size="sm" variant="outline" className="h-7 px-2 text-[10px]" onClick={() => rename(s)}>Rename</Button>
-                    <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => remove(s)}>
+                    <Button size="sm" variant="outline" className="h-7 px-2 text-[10px]" onClick={() => openRename(s)}>Rename</Button>
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => setDeleteTarget(s)}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -389,6 +412,35 @@ function SitesPanel({ sites, onChanged }: { sites: SiteRow[]; onChanged: () => P
           </form>
         </CardContent>
       </Card>
+
+      {/* Rename dialog */}
+      <AlertDialog open={!!renameTarget} onOpenChange={(o) => !o && setRenameTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rename site</AlertDialogTitle>
+            <AlertDialogDescription>Enter a new name for "{renameTarget?.name}".</AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input value={renameValue} onChange={(e) => setRenameValue(e.target.value)} autoFocus />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); commitRename(); }}>Save</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete site "{deleteTarget?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>This removes all members, entries, and disposal records associated with this site. This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmDelete(); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -491,6 +543,7 @@ function LocationsManager({ siteId }: { siteId: string }) {
 function RecordsPanel({ siteId }: { siteId: string }) {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingDel, setPendingDel] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -505,12 +558,14 @@ function RecordsPanel({ siteId }: { siteId: string }) {
   };
   useEffect(() => { load(); }, [siteId]);
 
+  const confirmDel = (id: string) => setPendingDel(id);
+
   const del = async (id: string) => {
-    if (!confirm("Delete this record?")) return;
+    setPendingDel(null);
     const { error } = await supabase.from("waste_entries").delete().eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success("Deleted");
-    load();
+    toast.success("Record deleted");
+    setRows((prev) => prev.filter((r) => r.id !== id));
   };
 
   return (
@@ -528,13 +583,13 @@ function RecordsPanel({ siteId }: { siteId: string }) {
             {rows.map((r) => (
               <li key={r.id} className="py-2 flex items-center justify-between gap-2 text-xs">
                 <div className="min-w-0">
-                  <p className="font-medium truncate">{r.location} · {r.waste_type_id}</p>
+                  <p className="font-medium truncate">{r.location} · {WASTE_TYPES.find((w) => w.id === r.waste_type_id)?.name ?? r.waste_type_id}</p>
                   <p className="text-[10px] text-muted-foreground">
                     {r.generated_date} · {r.weight_kg ?? r.quantity ?? "—"} · {r.activity_type}
                     {r.disposal_batch_id ? " · disposed" : ""}
                   </p>
                 </div>
-                <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => del(r.id)}>
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive shrink-0" onClick={() => confirmDel(r.id)}>
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </li>
