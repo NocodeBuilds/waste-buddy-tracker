@@ -3,7 +3,7 @@ import { WasteEntry, WASTE_TYPES, getDaysStored, getStatus, DISPOSAL_LIMIT_DAYS,
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, CheckCircle, Loader2, FileSpreadsheet, FileText, Pencil, Download, Scale, ShieldAlert, Leaf, Beaker } from "lucide-react";
+import { Trash2, CheckCircle, Loader2, FileSpreadsheet, FileText, Pencil, Download, Scale, ShieldAlert, Leaf, Beaker, Droplets, Battery, Recycle } from "lucide-react";
 import { exportInventoryToExcel, exportForm3Pdf, exportDisposalBatchPdf } from "@/lib/wasteExports";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
@@ -120,41 +120,59 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Card className="border-overdue/30 bg-overdue/10">
-            <CardContent className="p-4 flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-overdue shrink-0" />
-              <div className="min-w-0">
-                <p className="text-2xl font-bold leading-tight text-overdue">{fmtNum(hazKg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                <p className="text-[10px] text-muted-foreground">Hazardous</p>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-1.5">
+                <ShieldAlert className="h-4 w-4 text-overdue shrink-0" />
+                <p className="text-lg font-bold leading-tight text-overdue">{fmtNum(hazKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
+              <p className="text-[10px] text-muted-foreground">Hazardous Solids</p>
             </CardContent>
           </Card>
           <Card className="border-success/30 bg-success/10">
-            <CardContent className="p-4 flex items-center gap-2">
-              <Leaf className="h-5 w-5 text-success shrink-0" />
-              <div className="min-w-0">
-                <p className="text-2xl font-bold leading-tight text-success">{fmtNum(nonHazKg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                <p className="text-[10px] text-muted-foreground">Non-Hazardous</p>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-1.5">
+                <Leaf className="h-4 w-4 text-success shrink-0" />
+                <p className="text-lg font-bold leading-tight text-success">{fmtNum(nonHazKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
+              <p className="text-[10px] text-muted-foreground">Non-Hazardous Solids</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-1.5">
+                <Droplets className="h-4 w-4 text-cyan-500 shrink-0" />
+                <p className="text-lg font-bold leading-tight">{fmtNum(totals.litres)} <span className="text-[10px] font-normal text-muted-foreground">L</span></p>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Liquid Waste</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-1.5">
+                <Trash2 className="h-4 w-4 text-orange-500 shrink-0" />
+                <p className="text-lg font-bold leading-tight">{fmtNum(solids.filter((e) => e.waste_category === "e_waste" && e.waste_type_id !== "used-batteries").reduce((s, e) => s + Number(e.weight_kg ?? 0), 0))} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
+              </div>
+              <p className="text-[10px] text-muted-foreground">E-Waste</p>
             </CardContent>
           </Card>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Card>
-            <CardContent className="p-4 flex items-center gap-2">
-              <Beaker className="h-5 w-5 text-accent shrink-0" />
-              <div className="min-w-0">
-                <p className="text-2xl font-bold leading-tight">{fmtNum(totals.litres)} <span className="text-xs font-normal text-muted-foreground">L</span></p>
-                <p className="text-[10px] text-muted-foreground">Liquid in storage</p>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-1.5">
+                <Battery className="h-4 w-4 text-yellow-600 shrink-0" />
+                <p className="text-lg font-bold leading-tight">{fmtNum(solids.filter((e) => e.waste_type_id === "used-batteries").reduce((s, e) => s + Number(e.weight_kg ?? 0), 0))} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
+              <p className="text-[10px] text-muted-foreground">Battery Waste</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-2xl font-bold leading-tight">{fmtNum(solids.filter((e) => e.waste_category === "e_waste").reduce((s, e) => s + Number(e.weight_kg ?? 0), 0))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                <p className="text-[10px] text-muted-foreground">E-waste in storage</p>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-1.5">
+                <Recycle className="h-4 w-4 text-amber-600 shrink-0" />
+                <p className="text-lg font-bold leading-tight">{fmtNum(solids.filter((e) => e.waste_category === "other_wastes").reduce((s, e) => s + Number(e.weight_kg ?? 0), 0))} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
+              <p className="text-[10px] text-muted-foreground">Other Wastes</p>
             </CardContent>
           </Card>
         </div>

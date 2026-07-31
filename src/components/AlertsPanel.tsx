@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS, isDisposed, getMeasureUnit, unitLabel, fmtNum } from "@/lib/wasteTypes";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Bell, X, EyeOff } from "lucide-react";
 
@@ -65,24 +64,24 @@ export default function AlertsPanel({ entries }: Props) {
   };
 
   return (
-    <Card className="border-overdue/30">
-      <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
-        <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-overdue">
+    <div className="border border-border rounded-lg bg-card">
+      <div className="px-3 py-2 border-b flex items-center justify-between gap-2">
+        <h4 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-overdue">
           <Bell className="h-3.5 w-3.5" />
           Disposal Alerts
-        </CardTitle>
+        </h4>
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground"
+          className="h-6 gap-1 text-[10px] text-muted-foreground hover:text-foreground px-2"
           onClick={hideAll}
         >
-          <EyeOff className="h-3.5 w-3.5" /> Hide all
+          <EyeOff className="h-3 w-3" /> Hide all
         </Button>
-      </CardHeader>
-      <CardContent className="space-y-2">
+      </div>
+      <div className="p-2 space-y-2">
         {overdue.map((e) => (
-          <div key={e.id} className="flex items-start gap-2 bg-overdue/10 p-3 rounded-lg">
+          <div key={e.id} className="flex items-start gap-2 bg-overdue/10 p-2 rounded-lg">
             <AlertTriangle className="h-4 w-4 text-overdue mt-0.5 shrink-0" />
             <div className="text-xs sm:text-sm flex-1 min-w-0">
               <span className="font-semibold">{e.location}</span>
@@ -97,16 +96,16 @@ export default function AlertsPanel({ entries }: Props) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
+              className="h-5 w-5 shrink-0 text-muted-foreground hover:text-foreground"
               onClick={() => dismiss(e.id)}
               aria-label="Hide alert"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3 w-3" />
             </Button>
           </div>
         ))}
         {warnings.map((e) => (
-          <div key={e.id} className="flex items-start gap-2 bg-warning/10 p-3 rounded-lg">
+          <div key={e.id} className="flex items-start gap-2 bg-warning/10 p-2 rounded-lg">
             <AlertTriangle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
             <div className="text-xs sm:text-sm flex-1 min-w-0">
               <span className="font-semibold">{e.location}</span>
@@ -119,15 +118,15 @@ export default function AlertsPanel({ entries }: Props) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
+              className="h-5 w-5 shrink-0 text-muted-foreground hover:text-foreground"
               onClick={() => dismiss(e.id)}
               aria-label="Hide alert"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3 w-3" />
             </Button>
           </div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
