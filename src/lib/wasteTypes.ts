@@ -129,3 +129,106 @@ export function sumByUnit(entries: WasteEntry[]): { kg: number; litres: number }
 export function fmtNum(n: number): string {
   return (Math.round(n * 100) / 100).toString();
 }
+
+/** Return today's date as "YYYY-MM-DD" in the user's local timezone. */
+export function getLocalDate(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/** Clamp a date string (YYYY-MM-DD) so it is not in the future. Returns the clamped string. */
+export function clampDateNotFuture(dateStr: string): string {
+  const today = getLocalDate();
+  return dateStr > today ? today : dateStr;
+}
+
+// ─── Period / Range helpers ────────────────────────────────────────
+
+export type PeriodKind = "all" | "month" | "range" | "fy";
+
+export interface AnalyticsPeriod {
+  kind: PeriodKind;
+  /** Inclusive start date "YYYY-MM-DD". End may be undefined when "all". */
+  start?: string;
+  /** Exclusive end date "YYYY-MM-DD" (always day-after for inclusive filtering). */
+  end?: string;
+  /** Human-readable label describing the chosen period. */
+  label: string;
+}
+
+/** All-time period (no filtering). */
+export const ALL_TIME_PERIOD: AnalyticsPeriod = { kind: "all", label: "All time" };
+
+/** Pick a calendar month in a given year (Jan = 0). */
+export function monthPeriod(year: number, monthIndex: number): AnalyticsPeriod {
+  const start = new Date(year, monthIndex, 1);
+  const end = new Date(year, monthIndex + 1, 1);
+  const monthName = start.toLocaleString("en-US", { month: "long" });
+  return {
+    kind: "month",
+    start: getLocalDate(start),
+    end: getLocalDate(end),
+    label: `${monthName} ${year}`,
+  };
+}
+
+/** Custom range. Inclusive of start, exclusive of end. End auto-extended by 1 day for half-open filtering. */
+export function rangePeriod(startStr: string, endStr: string): AnalyticsPeriod {
+  const start = new Date(startStr + "T00:00:00");
+  const end = new Date(endStr + "T00:00:00");
+  end.setDate(end.getDate() + 1);
+  return {
+    kind: "range",
+    start: getLocalDate(start),
+    end: getLocalDate(end),
+    label: `${startStr} → ${endStr}`,
+  };
+}
+
+/** Indian financial year: April 1 → March 31. FY "2025-26" runs Apr 2025 – Mar 2026. */
+export function fyPeriod(fyStartYear: number): AnalyticsPeriod {
+  const start = new Date(fyStartYear, 3, 1); // April 1
+  const end = new Date(fyStartYear + 1, 3, 1); // April 1 next year
+  const fyLabel = `${fyStartYear}-${String(fyStartYear + 1).slice(-2)}`;
+  return {
+    kind: "fy",
+    start: getLocalDate(start),
+    end: getLocalDate(end),
+    label: `FY ${fyLabel}`,
+  };
+}
+
+/** Current financial-year starting year (e.g., 2025 if today is in or after Apr 2025). */
+export function currentFyStartYear(now: Date = new Date()): number {
+  return now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+}
+
+/** List the most recent N financial years (e.g. last 5). Newest first. */
+export function recentFinancialYears(count: number, now: Date = new Date()): number[] {
+  const current = currentFyStartYear(now);
+  return Array.from({ length: count }, (_, i) => current - i);
+}
+
+/** List the most recent N months (oldest first, current month last). */
+export function recentMonthOptions(count: number, now: Date = new Date()): { year: number; monthIndex: number; label: string }[] {
+  const out: { year: number; monthIndex: number; label: string }[] = [];
+  for (let i = count - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    out.push({
+      year: d.getFullYear(),
+      monthIndex: d.getMonth(),
+      label: d.toLocaleString("en-US", { month: "long", year: "numeric" }),
+    });
+  }
+  return out;
+}
+
+/** Filter an entry list to those whose generated_date falls inside the period. */
+export function filterByPeriod<T extends { generated_date: string }>(entries: T[], period: AnalyticsPeriod): T[] {
+  if (period.kind === "all") return entries;
+  if (!period.start || !period.end) return entries;
+  return entries.filter((e) => e.generated_date >= period.start! && e.generated_date < period.end!);
+}
+

@@ -1,9 +1,11 @@
 import { useState, useMemo } from "react";
-import { WasteEntry, WASTE_TYPES, getDaysStored, getStatus, DISPOSAL_LIMIT_DAYS, isDisposed, DisposalBatch, getMeasureUnit, unitLabel, sumByUnit, fmtNum } from "@/lib/wasteTypes";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { WasteEntry, WASTE_TYPES, getDaysStored, getStatus, DISPOSAL_LIMIT_DAYS, isDisposed, DisposalBatch, getMeasureUnit, unitLabel, sumByUnit, fmtNum, getLocalDate, filterByPeriod, ALL_TIME_PERIOD, monthPeriod, rangePeriod, fyPeriod, currentFyStartYear, recentFinancialYears, recentMonthOptions, PeriodKind, AnalyticsPeriod } from "@/lib/wasteTypes";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, CheckCircle, Loader2, FileSpreadsheet, FileText, Pencil, Download, Scale, ShieldAlert, Leaf, Beaker, Droplets, Battery, Recycle } from "lucide-react";
+import { Trash2, CheckCircle, Loader2, FileSpreadsheet, FileText, Pencil, Download, Scale, ShieldAlert, Leaf, Beaker, Droplets, Battery, Recycle, CalendarIcon, X } from "lucide-react";
 import { exportInventoryToExcel, exportForm3Pdf, exportDisposalBatchPdf } from "@/lib/wasteExports";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useSite } from "@/contexts/SiteContext";
 import { useEntryPhotoCounts } from "@/hooks/useEntryPhotos";
+import { format } from "date-fns";
 import EntryPhotosButton from "./EntryPhotosButton";
 import { toast } from "sonner";
 
@@ -37,15 +40,43 @@ interface Props {
 export default function WasteInventoryTable({ entries, batches, onDelete, onEdit, onCreateDisposal }: Props) {
   const { isManagerOrAdmin, currentSite } = useSite();
   const [filter, setFilter] = useState<"all" | "active" | "overdue" | "disposed">("active");
-  const [disposalDate, setDisposalDate] = useState(new Date().toISOString().split("T")[0]);
+  const [periodKind, setPeriodKind] = useState<PeriodKind>("all");
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [rangeStart, setRangeStart] = useState("");
+  const [rangeEnd, setRangeEnd] = useState("");
+  const [rangeOpenStart, setRangeOpenStart] = useState(false);
+  const [rangeOpenEnd, setRangeOpenEnd] = useState(false);
+  const [selectedFy, setSelectedFy] = useState<number>(currentFyStartYear());
+  const [disposalDate, setDisposalDate] = useState(getLocalDate());
   const [disposalNotes, setDisposalNotes] = useState("");
   const [disposing, setDisposing] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dateOpen, setDateOpen] = useState(false);
 
-  const activeEntries = entries.filter((e) => !isDisposed(e));
+  const years = useMemo(() => {
+    const cur = new Date().getFullYear();
+    return Array.from({ length: cur - 2019 }, (_, i) => 2020 + i);
+  }, []);
+
+  const monthOpts = useMemo(() => recentMonthOptions(24), []);
+  const fyOpts = useMemo(() => recentFinancialYears(5), []);
+
+  const period = useMemo<AnalyticsPeriod>(() => {
+    if (periodKind === "all") return ALL_TIME_PERIOD;
+    if (periodKind === "month") return monthPeriod(selectedYear, selectedMonth);
+    if (periodKind === "range" && rangeStart && rangeEnd) return rangePeriod(rangeStart, rangeEnd);
+    if (periodKind === "fy") return fyPeriod(selectedFy);
+    return ALL_TIME_PERIOD;
+  }, [periodKind, selectedYear, selectedMonth, rangeStart, rangeEnd, selectedFy]);
+
+  const periodFiltered = useMemo(() => filterByPeriod(entries, period), [entries, period]);
+
+  const allActiveEntries = entries.filter((e) => !isDisposed(e));
+  const activeEntries = periodFiltered.filter((e) => !isDisposed(e));
   const { data: photoCounts = {} } = useEntryPhotoCounts(entries.map((e) => e.id));
 
-  const filtered = entries.filter((e) => {
+  const filtered = periodFiltered.filter((e) => {
     if (filter === "active") return !isDisposed(e);
     if (filter === "disposed") return isDisposed(e);
     if (filter === "overdue") return !isDisposed(e) && getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS;
@@ -88,7 +119,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
     setDisposing(true);
     try {
       await onCreateDisposal({ disposed_date: disposalDate, notes: disposalNotes || undefined });
-      toast.success(`Marked ${activeEntries.length} entries as disposed`);
+      toast.success(`Marked ${allActiveEntries.length} entries as disposed`);
       setDialogOpen(false);
       setDisposalNotes("");
     } catch (err: any) {
@@ -98,19 +129,127 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
     }
   };
 
+  const handleExportExcel = () => {
+    if (periodFiltered.length === 0) {
+      toast.error("No data in the selected period to export");
+      return;
+    }
+    try {
+      exportInventoryToExcel(periodFiltered, currentSite?.name ?? "Site", period);
+      toast.success(`Excel exported — ${period.label}`);
+    } catch (err: any) {
+      toast.error(err.message ?? "Export failed");
+    }
+  };
+
+  const handleExportForm3 = () => {
+    if (periodFiltered.length === 0) {
+      toast.error("No data in the selected period to export");
+      return;
+    }
+    try {
+      exportForm3Pdf(periodFiltered, currentSite?.name ?? "Site", period);
+      toast.success(`Form 3 PDF exported — ${period.label}`);
+    } catch (err: any) {
+      toast.error(err.message ?? "Export failed");
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h3 className="text-lg font-bold flex items-center gap-2">Waste Inventory</h3>
-        <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-          <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Entries</SelectItem>
-            <SelectItem value="active">In Storage</SelectItem>
-            <SelectItem value="overdue">Overdue Only</SelectItem>
-            <SelectItem value="disposed">Disposed</SelectItem>
-          </SelectContent>
-        </Select>
+        <h3 className="text-lg font-bold flex items-center gap-2 whitespace-nowrap">Waste Inventory</h3>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+            <SelectTrigger className="h-7 text-[11px] w-auto min-w-[120px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Entries</SelectItem>
+              <SelectItem value="active">In Storage</SelectItem>
+              <SelectItem value="overdue">Overdue Only</SelectItem>
+              <SelectItem value="disposed">Disposed</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={periodKind} onValueChange={(v) => setPeriodKind(v as PeriodKind)}>
+            <SelectTrigger className="h-7 text-[11px] w-auto min-w-[110px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="month">Month</SelectItem>
+              <SelectItem value="range">Custom Range</SelectItem>
+              <SelectItem value="fy">Financial Year</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {periodKind === "month" && (
+            <>
+              <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+                <SelectTrigger className="h-7 text-[11px] w-auto"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {years.slice(-6).map((y) => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
+                <SelectTrigger className="h-7 text-[11px] w-auto"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {monthOpts.filter((o) => o.year === selectedYear).map((o) => (
+                    <SelectItem key={o.monthIndex} value={String(o.monthIndex)}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          )}
+
+          {periodKind === "range" && (
+            <>
+              <Popover open={rangeOpenStart} onOpenChange={setRangeOpenStart}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-7 text-[11px] font-normal px-2">
+                    <CalendarIcon className="mr-1 h-3 w-3" />
+                    {rangeStart || "From"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={rangeStart ? new Date(rangeStart + "T00:00:00") : undefined} onSelect={(d) => { if (d) { setRangeStart(format(d, "yyyy-MM-dd")); setRangeOpenStart(false); }}} />
+                </PopoverContent>
+              </Popover>
+              <Popover open={rangeOpenEnd} onOpenChange={setRangeOpenEnd}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-7 text-[11px] font-normal px-2">
+                    <CalendarIcon className="mr-1 h-3 w-3" />
+                    {rangeEnd || "To"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={rangeEnd ? new Date(rangeEnd + "T00:00:00") : undefined} onSelect={(d) => { if (d) { setRangeEnd(format(d, "yyyy-MM-dd")); setRangeOpenEnd(false); }}} />
+                </PopoverContent>
+              </Popover>
+              {(rangeStart || rangeEnd) && (
+                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setRangeStart(""); setRangeEnd(""); }}>
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </>
+          )}
+
+          {periodKind === "fy" && (
+            <Select value={String(selectedFy)} onValueChange={(v) => setSelectedFy(Number(v))}>
+              <SelectTrigger className="h-7 text-[11px] w-auto">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {fyOpts.map((y) => (
+                  <SelectItem key={y} value={String(y)}>FY {y}-{String(y + 1).slice(-2)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </div>
 
       {/* Storage summary — themed cards matching analytics tab */}
@@ -212,15 +351,15 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
       <div className="grid grid-cols-2 gap-2">
         <Button
           variant="outline" size="sm"
-          disabled={activeEntries.length === 0}
-          onClick={() => exportInventoryToExcel(entries, currentSite?.name ?? "Site")}
+          disabled={periodFiltered.length === 0}
+          onClick={handleExportExcel}
         >
           <FileSpreadsheet className="h-4 w-4 mr-2" /> Export Excel
         </Button>
         <Button
           variant="outline" size="sm"
-          disabled={activeEntries.length === 0}
-          onClick={() => exportForm3Pdf(entries, currentSite?.name ?? "Site")}
+          disabled={periodFiltered.length === 0}
+          onClick={handleExportForm3}
         >
           <FileText className="h-4 w-4 mr-2" /> Form 3 (PDF)
         </Button>
@@ -232,7 +371,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
           <AlertDialogTrigger asChild>
             <Button className="w-full bg-primary hover:bg-primary/90">
               <CheckCircle className="h-4 w-4 mr-2" />
-              Mark Quarterly Disposal ({activeEntries.length} entries)
+              Mark Quarterly Disposal ({allActiveEntries.length} entries)
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -245,7 +384,17 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="dd">Disposal Date</Label>
-                <Input id="dd" type="date" value={disposalDate} onChange={(e) => setDisposalDate(e.target.value)} />
+                <Popover open={dateOpen} onOpenChange={setDateOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {disposalDate}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={new Date(disposalDate + "T00:00:00")} onSelect={(d) => { if (d) { setDisposalDate(format(d, "yyyy-MM-dd")); setDateOpen(false); }}} disabled={(date) => date > new Date()} />
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="dn">Notes (optional)</Label>

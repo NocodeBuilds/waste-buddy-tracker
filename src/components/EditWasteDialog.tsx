@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
-import { WASTE_TYPES, WasteCategory, WasteEntry, ActivityType, unitLabel } from "@/lib/wasteTypes";
+import { WASTE_TYPES, WasteCategory, WasteEntry, ActivityType, unitLabel, clampDateNotFuture } from "@/lib/wasteTypes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 interface Props {
   entry: WasteEntry | null;
@@ -31,6 +34,7 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
   const [weight, setWeight] = useState("");
   const [pieceCount, setPieceCount] = useState("");
   const [date, setDate] = useState("");
+  const [dateOpen, setDateOpen] = useState(false);
   const [activity, setActivity] = useState<ActivityType>("preventive");
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
@@ -42,7 +46,7 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
     setTypeId(entry.waste_type_id);
     setWeight(String(entry.weight_kg ?? entry.quantity ?? ""));
     setPieceCount(entry.piece_count != null ? String(entry.piece_count) : "");
-    setDate(entry.generated_date);
+    setDate(clampDateNotFuture(entry.generated_date));
     setActivity(entry.activity_type);
     setLocation(entry.location ?? "");
     setNotes(entry.notes ?? "");
@@ -53,12 +57,23 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
   const weightUnit = selected ? unitLabel(selected.measureUnit) : "kg";
   const showCount = !!selected?.countable;
 
+  const handleDateSelect = (d: Date | undefined) => {
+    if (!d) return;
+    const newDate = format(d, "yyyy-MM-dd");
+    setDate(newDate);
+    setDateOpen(false);
+  };
+
   const submit = async () => {
     if (!entry) return;
     const w = parseFloat(weight);
     if (!typeId || !w || w <= 0 || !date) {
       toast.error("Fill all required fields");
       return;
+    }
+    const safeDate = clampDateNotFuture(date);
+    if (safeDate !== date) {
+      setDate(safeDate);
     }
     setSaving(true);
     try {
@@ -68,7 +83,7 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
         waste_category: category,
         weight_kg: w,
         piece_count: showCount && pieceCount ? Number(pieceCount) : null,
-        generated_date: date,
+        generated_date: safeDate,
         activity_type: activity,
         location: location || null,
         notes: notes || null,
@@ -132,7 +147,17 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Generated</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <Popover open={dateOpen} onOpenChange={setDateOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={date ? new Date(date + "T00:00:00") : undefined} onSelect={handleDateSelect} disabled={(date) => date > new Date()} />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
           <div className="space-y-1.5">
