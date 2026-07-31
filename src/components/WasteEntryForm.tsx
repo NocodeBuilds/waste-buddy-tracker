@@ -1,13 +1,16 @@
 import { useState, useMemo, useRef } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { WASTE_TYPES, WasteCategory, ActivityType, unitLabel } from "@/lib/wasteTypes";
+import { Calendar } from "@/components/ui/calendar";
+import { WASTE_TYPES, WasteCategory, ActivityType, unitLabel, getLocalDate } from "@/lib/wasteTypes";
 import { useSiteLocations } from "@/hooks/useSiteLocations";
-import { Plus, Loader2, Camera, Image as ImageIcon, X } from "lucide-react";
+import { Plus, Loader2, Camera, Image as ImageIcon, X, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 interface NewEntry {
   waste_type_id: string;
@@ -32,11 +35,18 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
   const [wasteTypeId, setWasteTypeId] = useState("");
   const [weight, setWeight] = useState("");
   const [pieceCount, setPieceCount] = useState("");
-  const [generatedDate, setGeneratedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [generatedDate, setGeneratedDate] = useState(getLocalDate());
   const [activityType, setActivityType] = useState<ActivityType>("preventive");
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
   const [photos, setPhotos] = useState<File[]>([]);
+  const [dateOpen, setDateOpen] = useState(false);
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+    setGeneratedDate(format(date, "yyyy-MM-dd"));
+    setDateOpen(false);
+  };
   const [submitting, setSubmitting] = useState(false);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -91,6 +101,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         photos: photos.length > 0 ? photos : undefined,
       });
       toast.success("Waste entry recorded");
+      setGeneratedDate(getLocalDate());
       setWasteTypeId("");
       setWeight("");
       setPieceCount("");
@@ -219,7 +230,17 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
 
       <div className="space-y-2">
         <Label htmlFor="date" className="text-xs">Date Generated *</Label>
-        <Input id="date" type="date" value={generatedDate} onChange={(e) => setGeneratedDate(e.target.value)} />
+        <Popover open={dateOpen} onOpenChange={setDateOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full justify-start text-left font-normal">
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {generatedDate}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar mode="single" selected={new Date(generatedDate + "T00:00:00")} onSelect={handleDateSelect} disabled={(date) => date > new Date()} />
+          </PopoverContent>
+        </Popover>
       </div>
       <div className="space-y-2">
         <Label htmlFor="notes" className="text-xs">Notes</Label>
