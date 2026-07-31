@@ -2,39 +2,58 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#1f6b3a" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#10b981" />
+    <meta name="description" content="Track and manage waste generation, activities, and disposal operations across your facilities." />
+    <meta name="keywords" content="waste, tracking, compliance, disposal, PWA, hazardous waste" />
+    <meta name="author" content="Waste Buddy" />
 
-    <title>Hazardous Waste Tracker — WTG Maintenance Compliance</title>
-    <meta name="description" content="Track hazardous waste from wind turbine maintenance. Multi-site, role-based, with 90-day disposal compliance alerts." />
+    <title>Waste Buddy Tracker</title>
     <link rel="canonical" href="/" />
 
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+
+    <!-- Apple -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="HazWaste" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="WasteBuddy" />
+
+    <!-- Android / PWA -->
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Waste Buddy Tracker" />
+    <meta name="msapplication-TileColor" content="#10b981" />
+    <meta name="msapplication-tap-highlight" content="no" />
 
-
-    <meta property="og:title" content="Hazardous Waste Tracker" />
-    <meta property="og:description" content="Multi-site hazardous waste compliance for WTG maintenance teams." />
+    <!-- Open Graph -->
+    <meta property="og:title" content="Waste Buddy Tracker" />
+    <meta property="og:description" content="Track and manage waste generation, activities, and disposal operations across your facilities." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="/" />
 
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Hazardous Waste Tracker" />
-    <meta name="twitter:description" content="Multi-site hazardous waste compliance for WTG maintenance teams." />
+    <meta name="twitter:title" content="Waste Buddy Tracker" />
+    <meta name="twitter:description" content="Track and manage waste generation, activities, and disposal operations across your facilities." />
 
+    <!-- Structured data -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
-        "name": "Hazardous Waste Tracker",
+        "name": "Waste Buddy Tracker",
         "applicationCategory": "BusinessApplication",
-        "description": "Multi-site hazardous waste tracking for wind turbine maintenance with 90-day disposal compliance."
+        "description": "Track and manage waste generation, activities, and disposal operations across your facilities.",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
       }
     </script>
   </head>

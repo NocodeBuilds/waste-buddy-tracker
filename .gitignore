@@ -22,3 +22,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+
+# IDE
+.idea/
+.vim/
+*.swp
+*~
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
