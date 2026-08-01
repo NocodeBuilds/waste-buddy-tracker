@@ -16,6 +16,7 @@ import {
 import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 type Role = "admin" | "manager" | "member";
 
@@ -558,8 +559,6 @@ function RecordsPanel({ siteId }: { siteId: string }) {
   };
   useEffect(() => { load(); }, [siteId]);
 
-  const confirmDel = (id: string) => setPendingDel(id);
-
   const del = async (id: string) => {
     setPendingDel(null);
     const { error } = await supabase.from("waste_entries").delete().eq("id", id);
@@ -569,35 +568,49 @@ function RecordsPanel({ siteId }: { siteId: string }) {
   };
 
   return (
-    <Card>
-      <CardContent className="p-4 space-y-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <FileText className="h-3.5 w-3.5" /> Latest waste records ({rows.length})
-        </h3>
-        {loading ? (
-          <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-        ) : rows.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No records yet.</p>
-        ) : (
-          <ul className="divide-y">
-            {rows.map((r) => (
-              <li key={r.id} className="py-2 flex items-center justify-between gap-2 text-xs">
-                <div className="min-w-0">
-                  <p className="font-medium truncate">{r.location} · {WASTE_TYPES.find((w) => w.id === r.waste_type_id)?.name ?? r.waste_type_id}</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {r.generated_date} · {r.weight_kg ?? r.quantity ?? "—"} · {r.activity_type}
-                    {r.disposal_batch_id ? " · disposed" : ""}
-                  </p>
-                </div>
-                <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive shrink-0" onClick={() => confirmDel(r.id)}>
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+    <>
+      <Card>
+        <CardContent className="p-4 space-y-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <FileText className="h-3.5 w-3.5" /> Latest waste records ({rows.length})
+          </h3>
+          {loading ? (
+            <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          ) : rows.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No records yet.</p>
+          ) : (
+            <ul className="divide-y">
+              {rows.map((r) => (
+                <li key={r.id} className="py-2 flex items-center justify-between gap-2 text-xs">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{r.location} · {WASTE_TYPES.find((w) => w.id === r.waste_type_id)?.name ?? r.waste_type_id}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {r.generated_date} · {r.weight_kg ?? r.quantity ?? "—"} · {r.activity_type}
+                      {r.disposal_batch_id ? " · disposed" : ""}
+                    </p>
+                  </div>
+                  <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive shrink-0" onClick={() => setPendingDel(r.id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+      <AlertDialog open={!!pendingDel} onOpenChange={(open) => !open && setPendingDel(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete record?</AlertDialogTitle>
+            <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDel(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => { if (pendingDel) await del(pendingDel); }}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
