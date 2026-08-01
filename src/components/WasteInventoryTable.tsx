@@ -257,8 +257,8 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           In storage by Category
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Card className="border-overdue/30 bg-overdue/10">
+        <div className="flex sm:grid sm:grid-cols-2 gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 sm:mx-0 sm:px-0 sm:pb-0">
+          <Card className="border-overdue/30 bg-overdue/10 shrink-0 w-[calc(50%-0.5rem)] sm:w-auto snap-start">
             <CardContent className="p-3 flex flex-col items-center text-center gap-1">
               <div className="flex items-center gap-1.5">
                 <ShieldAlert className="h-4 w-4 text-overdue shrink-0" />
@@ -295,8 +295,8 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
             </CardContent>
           </Card>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Card>
+        <div className="flex sm:grid sm:grid-cols-2 gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 sm:mx-0 sm:px-0 sm:pb-0">
+          <Card className="shrink-0 w-[calc(50%-0.5rem)] sm:w-auto snap-start">
             <CardContent className="p-3 flex flex-col items-center text-center gap-1">
               <div className="flex items-center gap-1.5">
                 <Battery className="h-4 w-4 text-yellow-600 shrink-0" />
