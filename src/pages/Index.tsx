@@ -66,7 +66,6 @@ const Index = () => {
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-base font-bold tracking-tight truncate">Waste Tracker</h1>
-            <p className="text-[10px] text-primary-foreground/70">Site Waste Management</p>
           </div>
           <SiteSwitcher />
           <Popover>
