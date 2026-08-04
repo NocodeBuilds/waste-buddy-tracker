@@ -66,7 +66,7 @@ export default function SettingsTab({ entries }: Props) {
       "Location,Waste Type,Category,Weight,Unit,Count (pcs),Activity,Generated,Disposed Batch,Notes",
       ...entries.map((e) => {
         const wt = WASTE_TYPES.find((w) => w.id === e.waste_type_id);
-        const unit = wt?.measureUnit === "litres" ? "L" : "kg";
+        const unit = wt?.measureUnit === "litres" ? "Ltr" : "kg";
         return [
           e.location,
           wt?.name ?? e.waste_type_id,
