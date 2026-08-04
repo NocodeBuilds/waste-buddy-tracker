@@ -85,6 +85,9 @@ function CategoryBlock({ entries, label, Icon, dot, textColor, unit, filterFn, t
   const ovd = catEntries.filter((e) => getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS);
   const wrn = catEntries.filter((e) => { const d = getDaysStored(e.generated_date); return d >= 70 && d < DISPOSAL_LIMIT_DAYS; });
   const saf = catEntries.filter((e) => getStatus(e) === "safe");
+  const ovdW = Math.round(sumWeight(ovd));
+  const wrnW = Math.round(sumWeight(wrn));
+  const safW = Math.round(sumWeight(saf));
   return (
     <div>
       <div className="flex items-center gap-1 mb-1">
@@ -93,9 +96,26 @@ function CategoryBlock({ entries, label, Icon, dot, textColor, unit, filterFn, t
         <span className="text-[9px] text-muted-foreground">({catEntries.length})</span>
         <span className="text-[9px] font-mono ml-auto" style={{ color: textColor }}>{fmtNum(totalValue)} {unit}</span>
       </div>
-      <SeverityRow label="Overdue" count={ovd.length} value={sumWeight(ovd)} dot="bg-overdue" countColor="text-overdue" weightColor="text-overdue" unit={unit} />
-      <SeverityRow label="Warning" count={wrn.length} value={sumWeight(wrn)} dot="bg-orange-500" countColor="text-orange-500" weightColor="text-orange-500" unit={unit} />
-      <SeverityRow label="OK" count={saf.length} value={sumWeight(saf)} dot="bg-success" unit={unit} />
+      <div className="flex items-start justify-center gap-2">
+        <div className="flex flex-col items-center gap-0.5">
+          <div className="h-9 w-9 rounded-full bg-overdue/15 border border-overdue/40 flex items-center justify-center shrink-0">
+            <span className="text-[8px] font-bold text-overdue leading-none tabular-nums">{ovdW ? `${fmtNum(ovdW)} ${unit}` : "0"}</span>
+          </div>
+          <span className="text-[8px] font-medium text-muted-foreground uppercase tracking-wide">Overdue</span>
+        </div>
+        <div className="flex flex-col items-center gap-0.5">
+          <div className="h-9 w-9 rounded-full bg-orange-500/15 border border-orange-500/40 flex items-center justify-center shrink-0">
+            <span className="text-[8px] font-bold text-orange-500 leading-none tabular-nums">{wrnW ? `${fmtNum(wrnW)} ${unit}` : "0"}</span>
+          </div>
+          <span className="text-[8px] font-medium text-muted-foreground uppercase tracking-wide">Warning</span>
+        </div>
+        <div className="flex flex-col items-center gap-0.5">
+          <div className="h-9 w-9 rounded-full bg-success/15 border border-success/40 flex items-center justify-center shrink-0">
+            <span className="text-[8px] font-bold text-success leading-none tabular-nums">{safW ? `${fmtNum(safW)} ${unit}` : "0"}</span>
+          </div>
+          <span className="text-[8px] font-medium text-muted-foreground uppercase tracking-wide">OK</span>
+        </div>
+      </div>
     </div>
   );
 }
