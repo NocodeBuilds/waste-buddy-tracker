@@ -109,9 +109,9 @@ export function getMeasureUnit(wasteTypeId: string): MeasureUnit {
   return WASTE_TYPES.find((w) => w.id === wasteTypeId)?.measureUnit ?? "kg";
 }
 
-/** Human-friendly unit suffix ("kg" or "L"). */
+/** Human-friendly unit suffix ("kg" or "Ltr"). */
 export function unitLabel(u: MeasureUnit): string {
-  return u === "litres" ? "L" : "kg";
+  return u === "litres" ? "Ltr" : "kg";
 }
 
 /** Sum weight for entries, split by measurement unit. */

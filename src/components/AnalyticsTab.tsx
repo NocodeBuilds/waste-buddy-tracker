@@ -348,7 +348,7 @@ export default function AnalyticsTab({ entries, batches }: Props) {
                       ))}
                     </Pie>
                     <Tooltip contentStyle={tooltipStyle} formatter={(v: number, name?: string) => {
-                      const unit = name && name.includes("Liquid") ? "L" : "kg";
+                      const unit = name && name.includes("Liquid") ? "Ltr" : "kg";
                       return [`${fmtNum(v)} ${unit}`, name?.split(" (")[0] ?? ""];
                     }} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />

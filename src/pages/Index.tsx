@@ -65,7 +65,7 @@ const Index = () => {
             <Leaf className="h-5 w-5 text-accent-foreground" />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-bold tracking-tight truncate">Waste Tracker</h1>
+            <h1 className="text-sm font-bold tracking-tight truncate">WasteBuddy</h1>
           </div>
           <SiteSwitcher />
           <Popover>

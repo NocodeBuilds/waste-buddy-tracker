@@ -1,5 +1,7 @@
+import { ReactNode, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import DashboardCard from "./dashboard/DashboardCard";
+import ComicBubble from "./ComicBubble";
 import {
   WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS,
   getStatus, isDisposed, getMeasureUnit, fmtNum,
@@ -88,6 +90,34 @@ function CategoryBlock({ entries, label, Icon, dot, textColor, unit, filterFn, t
   const ovdW = Math.round(sumWeight(ovd));
   const wrnW = Math.round(sumWeight(wrn));
   const safW = Math.round(sumWeight(saf));
+
+  // Bubble detail helpers
+  const fmtDate = (s: string) => new Date(s + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  const dueDate = (entry: WasteEntry) => {
+    const gen = new Date(entry.generated_date + "T00:00:00");
+    gen.setDate(gen.getDate() + DISPOSAL_LIMIT_DAYS);
+    return gen.toISOString().slice(0, 10);
+  };
+
+  const nextDue = saf.length > 0
+    ? saf.map(e => dueDate(e)).sort()[0]
+    : "";
+
+  const maxDaysOverdue = ovd.length > 0
+    ? Math.max(...ovd.map(e => getDaysStored(e.generated_date) - DISPOSAL_LIMIT_DAYS))
+    : 0;
+
+  const minDaysToDue = wrn.length > 0
+    ? Math.min(...wrn.map(e => DISPOSAL_LIMIT_DAYS - getDaysStored(e.generated_date)))
+    : 0;
+
+  const overdueDue = ovd.length > 0
+    ? fmtDate(dueDate(ovd.reduce((a, b) => getDaysStored(a.generated_date) > getDaysStored(b.generated_date) ? a : b)))
+    : "—";
+
+  // Only one bubble open at a time
+  const [openBubble, setOpenBubble] = useState<string | null>(null);
+  const toggle = (key: string) => setOpenBubble(prev => prev === key ? null : key);
   return (
     <div>
       <div className="flex items-center justify-center gap-1 mb-2">
@@ -95,36 +125,67 @@ function CategoryBlock({ entries, label, Icon, dot, textColor, unit, filterFn, t
         <span className="text-[11px] font-bold text-foreground">{label}</span>
       </div>
       <div className="flex items-start justify-center gap-2.5">
-        <div className="flex flex-col items-center gap-1">
+        <ComicBubble
+          tone="overdue"
+          open={openBubble === "overdue"}
+          onOpenChange={(v) => toggle("overdue")}
+          body={
+            <div className="space-y-0.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-overdue/80">Overdue</p>
+              <p className="font-medium">{fmtNum(ovdW)} {unit}</p>
+              <p className="text-foreground/65">{ovd.length > 0 ? `Due: ${overdueDue}` : "No overdue items"}</p>
+              <p className="text-foreground/50">{maxDaysOverdue > 0 ? `${maxDaysOverdue} days overdue` : ovd.length > 0 ? "Past due" : "—"}</p>
+            </div>
+          }
+        >
           <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-overdue/20 to-overdue/5 border-2 border-overdue/30 shadow-[0_2px_8px_rgba(239,68,68,0.15)] flex flex-col items-center justify-center shrink-0 animate-[pulse-gentle_3s_ease-in-out_infinite]">
             <div className="absolute inset-[2px] rounded-full bg-gradient-to-t from-transparent to-overdue/10" />
             <span className="relative text-[9px] font-bold text-overdue leading-none tabular-nums">{ovdW ? fmtNum(ovdW) : "0"}</span>
             <span className="relative text-[7px] font-semibold text-overdue/70 leading-none">{ovdW ? unit : ""}</span>
           </div>
-          <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">Overdue</span>
-        </div>
-        <div className="flex flex-col items-center gap-1">
+        </ComicBubble>
+        <ComicBubble
+          tone="warning"
+          open={openBubble === "warning"}
+          onOpenChange={(v) => toggle("warning")}
+          body={
+            <div className="space-y-0.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-warning/80">Warning</p>
+              <p className="font-medium">{fmtNum(wrnW)} {unit}</p>
+              <p className="text-foreground/65">{minDaysToDue}d remaining to disposal</p>
+            </div>
+          }
+        >
           <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30 shadow-[0_2px_8px_rgba(249,115,22,0.15)] flex flex-col items-center justify-center shrink-0 animate-[pulse-gentle_3s_ease-in-out_infinite] [animation-delay:1s]">
             <div className="absolute inset-[2px] rounded-full bg-gradient-to-t from-transparent to-orange-500/10" />
             <span className="relative text-[9px] font-bold text-orange-500 leading-none tabular-nums">{wrnW ? fmtNum(wrnW) : "0"}</span>
             <span className="relative text-[7px] font-semibold text-orange-500/70 leading-none">{wrnW ? unit : ""}</span>
           </div>
-          <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">Warning</span>
-        </div>
-        <div className="flex flex-col items-center gap-1">
+        </ComicBubble>
+        <ComicBubble
+          tone="success"
+          open={openBubble === "success"}
+          onOpenChange={(v) => toggle("success")}
+          body={
+            <div className="space-y-0.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-success/80">On Track</p>
+              <p className="font-medium">{fmtNum(safW)} {unit}</p>
+              <p className="text-foreground/65">Next disposal: {nextDue ? fmtDate(nextDue) : "—"}</p>
+            </div>
+          }
+        >
           <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-success/20 to-success/5 border-2 border-success/30 shadow-[0_2px_8px_rgba(34,197,94,0.15)] flex flex-col items-center justify-center shrink-0 animate-[pulse-gentle_3s_ease-in-out_infinite] [animation-delay:2s]">
             <div className="absolute inset-[2px] rounded-full bg-gradient-to-t from-transparent to-success/10" />
             <span className="relative text-[9px] font-bold text-success leading-none tabular-nums">{safW ? fmtNum(safW) : "0"}</span>
             <span className="relative text-[7px] font-semibold text-success/70 leading-none">{safW ? unit : ""}</span>
           </div>
-          <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">OK</span>
-        </div>
+        </ComicBubble>
       </div>
-      <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-center gap-1.5 text-[10px]">
-        <span className="text-muted-foreground">{catEntries.length} {catEntries.length === 1 ? "entry" : "entries"}</span>
-        <span className="text-border">·</span>
-        <span className="font-mono font-semibold" style={{ color: textColor }}>{fmtNum(totalValue)} {unit}</span>
+      <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-center gap-1.5 text-[11px]">
+        <span className="font-mono font-bold text-[12px]" style={{ color: textColor }}>{Math.round(totalValue)} {unit}</span>
         <span className="text-muted-foreground">total</span>
+        <span className="text-border">·</span>
+        <span className="text-muted-foreground">{catEntries.length} {catEntries.length === 1 ? "entry" : "entries"}</span>
       </div>
     </div>
   );
@@ -226,7 +287,7 @@ export default function DashboardStats({ entries }: Props) {
         <div className="grid grid-cols-2 gap-3 mt-3">
           <Card>
             <CardContent className="p-3">
-              <CategoryBlock entries={entries} label="Liquid Waste" Icon={Droplets} dot="bg-cyan-500" textColor="text-cyan-500" unit="L"
+              <CategoryBlock entries={entries} label="Liquid Waste" Icon={Droplets} dot="bg-cyan-500" textColor="text-cyan-500" unit="Ltr"
                 filterFn={(e) => getMeasureUnit(e.waste_type_id) === "litres"}
                 totalValue={liquidLitres(entries)} />
             </CardContent>

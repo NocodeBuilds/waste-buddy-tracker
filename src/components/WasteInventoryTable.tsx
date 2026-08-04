@@ -324,7 +324,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
             </h3>
             {byType.map((w) => {
               const max = Math.max(...byType.map((x) => x.total));
-              const suffix = w.measureUnit === "litres" ? "L" : "kg";
+              const suffix = w.measureUnit === "litres" ? "Ltr" : "kg";
               const barColor = w.measureUnit === "litres"
                 ? "bg-accent"
                 : w.wasteCategory === "hazardous" ? "bg-overdue" : w.wasteCategory === "other_wastes" ? "bg-amber-500" : "bg-success";
