@@ -120,11 +120,11 @@ function CategoryBlock({ entries, label, Icon, dot, textColor, unit, filterFn, t
           <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">OK</span>
         </div>
       </div>
-      <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-center gap-1.5 text-[10px]">
-        <span className="text-muted-foreground">{catEntries.length} {catEntries.length === 1 ? "entry" : "entries"}</span>
-        <span className="text-border">·</span>
-        <span className="font-mono font-semibold" style={{ color: textColor }}>{fmtNum(totalValue)} {unit}</span>
+      <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-center gap-1.5 text-[11px]">
+        <span className="font-mono font-bold text-[12px]" style={{ color: textColor }}>{Math.round(totalValue)} {unit}</span>
         <span className="text-muted-foreground">total</span>
+        <span className="text-border">·</span>
+        <span className="text-muted-foreground">{catEntries.length} {catEntries.length === 1 ? "entry" : "entries"}</span>
       </div>
     </div>
   );
