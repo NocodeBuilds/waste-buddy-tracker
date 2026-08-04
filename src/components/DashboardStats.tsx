@@ -93,8 +93,6 @@ function CategoryBlock({ entries, label, Icon, dot, textColor, unit, filterFn, t
       <div className="flex items-center justify-center gap-1 mb-2">
         <Icon className={`h-3.5 w-3.5 ${textColor}`} />
         <span className="text-[11px] font-bold text-foreground">{label}</span>
-        <span className="text-[9px] text-muted-foreground">({catEntries.length})</span>
-        <span className="text-[9px] font-mono ml-auto" style={{ color: textColor }}>{fmtNum(totalValue)} {unit}</span>
       </div>
       <div className="flex items-start justify-center gap-2.5">
         <div className="flex flex-col items-center gap-1">
@@ -121,6 +119,12 @@ function CategoryBlock({ entries, label, Icon, dot, textColor, unit, filterFn, t
           </div>
           <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">OK</span>
         </div>
+      </div>
+      <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-center gap-1.5 text-[10px]">
+        <span className="text-muted-foreground">{catEntries.length} {catEntries.length === 1 ? "entry" : "entries"}</span>
+        <span className="text-border">·</span>
+        <span className="font-mono font-semibold" style={{ color: textColor }}>{fmtNum(totalValue)} {unit}</span>
+        <span className="text-muted-foreground">total</span>
       </div>
     </div>
   );
