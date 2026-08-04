@@ -108,7 +108,7 @@ export default function InstallPrompt() {
             <Smartphone className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold leading-tight">Install HazWaste app</p>
+            <p className="text-sm font-semibold leading-tight">Install WasteBuddy app</p>
             <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
               {getInstructions()}
             </p>
