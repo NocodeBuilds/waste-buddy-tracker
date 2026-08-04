@@ -10,8 +10,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Leaf, Loader2, Recycle, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
-const ALLOWED_DOMAIN = "renew.com";
-
 const loginSchema = z.object({
   email: z.string().trim().email("Invalid email"),
   password: z.string().min(6, "Min 6 characters"),
@@ -19,10 +17,7 @@ const loginSchema = z.object({
 
 const signupSchema = z.object({
   full_name: z.string().trim().min(2, "Name required").max(100),
-  email: z.string().trim().email("Invalid email")
-    .refine((e) => e.toLowerCase().endsWith(`@${ALLOWED_DOMAIN}`), {
-      message: `Only @${ALLOWED_DOMAIN} emails are allowed`,
-    }),
+  email: z.string().trim().email("Invalid email"),
   password: z.string().min(8, "Min 8 characters").max(72),
 });
 
@@ -119,7 +114,7 @@ export default function Auth() {
                 {mode === "reset"
                   ? "We'll email you a reset link"
                   : mode === "signup"
-                  ? `Sign up with your @${ALLOWED_DOMAIN} email`
+                  ? `Sign up with any email`
                   : "Hazardous Waste Tracker"}
               </p>
             </div>
@@ -145,7 +140,7 @@ export default function Auth() {
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={mode === "signup" ? `you@${ALLOWED_DOMAIN}` : undefined}
+                  placeholder={mode === "signup" ? `you@example.com` : undefined}
                   required
                 />
               </div>
@@ -211,7 +206,7 @@ export default function Auth() {
             </div>
 
             <p className="text-[11px] text-center text-muted-foreground border-t pt-3">
-              Sign-ups are restricted to <span className="font-mono">@{ALLOWED_DOMAIN}</span> emails. After signup, request access to a site — an admin will approve you.
+              After signup, request access to a site — an admin will approve you.
             </p>
           </CardContent>
         </Card>
