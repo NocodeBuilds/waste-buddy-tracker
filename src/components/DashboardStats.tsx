@@ -85,17 +85,47 @@ function CategoryBlock({ entries, label, Icon, dot, textColor, unit, filterFn, t
   const ovd = catEntries.filter((e) => getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS);
   const wrn = catEntries.filter((e) => { const d = getDaysStored(e.generated_date); return d >= 70 && d < DISPOSAL_LIMIT_DAYS; });
   const saf = catEntries.filter((e) => getStatus(e) === "safe");
+  const ovdW = Math.round(sumWeight(ovd));
+  const wrnW = Math.round(sumWeight(wrn));
+  const safW = Math.round(sumWeight(saf));
   return (
     <div>
-      <div className="flex items-center gap-1 mb-1">
-        <Icon className={`h-3 w-3 ${textColor}`} />
+      <div className="flex items-center justify-center gap-1 mb-2">
+        <Icon className={`h-3.5 w-3.5 ${textColor}`} />
         <span className="text-[11px] font-bold text-foreground">{label}</span>
-        <span className="text-[9px] text-muted-foreground">({catEntries.length})</span>
-        <span className="text-[9px] font-mono ml-auto" style={{ color: textColor }}>{fmtNum(totalValue)} {unit}</span>
       </div>
-      <SeverityRow label="Overdue" count={ovd.length} value={sumWeight(ovd)} dot="bg-overdue" countColor="text-overdue" weightColor="text-overdue" unit={unit} />
-      <SeverityRow label="Warning" count={wrn.length} value={sumWeight(wrn)} dot="bg-orange-500" countColor="text-orange-500" weightColor="text-orange-500" unit={unit} />
-      <SeverityRow label="OK" count={saf.length} value={sumWeight(saf)} dot="bg-success" unit={unit} />
+      <div className="flex items-start justify-center gap-2.5">
+        <div className="flex flex-col items-center gap-1">
+          <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-overdue/20 to-overdue/5 border-2 border-overdue/30 shadow-[0_2px_8px_rgba(239,68,68,0.15)] flex flex-col items-center justify-center shrink-0 animate-[pulse-gentle_3s_ease-in-out_infinite]">
+            <div className="absolute inset-[2px] rounded-full bg-gradient-to-t from-transparent to-overdue/10" />
+            <span className="relative text-[9px] font-bold text-overdue leading-none tabular-nums">{ovdW ? fmtNum(ovdW) : "0"}</span>
+            <span className="relative text-[7px] font-semibold text-overdue/70 leading-none">{ovdW ? unit : ""}</span>
+          </div>
+          <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">Overdue</span>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30 shadow-[0_2px_8px_rgba(249,115,22,0.15)] flex flex-col items-center justify-center shrink-0 animate-[pulse-gentle_3s_ease-in-out_infinite] [animation-delay:1s]">
+            <div className="absolute inset-[2px] rounded-full bg-gradient-to-t from-transparent to-orange-500/10" />
+            <span className="relative text-[9px] font-bold text-orange-500 leading-none tabular-nums">{wrnW ? fmtNum(wrnW) : "0"}</span>
+            <span className="relative text-[7px] font-semibold text-orange-500/70 leading-none">{wrnW ? unit : ""}</span>
+          </div>
+          <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">Warning</span>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-success/20 to-success/5 border-2 border-success/30 shadow-[0_2px_8px_rgba(34,197,94,0.15)] flex flex-col items-center justify-center shrink-0 animate-[pulse-gentle_3s_ease-in-out_infinite] [animation-delay:2s]">
+            <div className="absolute inset-[2px] rounded-full bg-gradient-to-t from-transparent to-success/10" />
+            <span className="relative text-[9px] font-bold text-success leading-none tabular-nums">{safW ? fmtNum(safW) : "0"}</span>
+            <span className="relative text-[7px] font-semibold text-success/70 leading-none">{safW ? unit : ""}</span>
+          </div>
+          <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">OK</span>
+        </div>
+      </div>
+      <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-center gap-1.5 text-[10px]">
+        <span className="text-muted-foreground">{catEntries.length} {catEntries.length === 1 ? "entry" : "entries"}</span>
+        <span className="text-border">·</span>
+        <span className="font-mono font-semibold" style={{ color: textColor }}>{fmtNum(totalValue)} {unit}</span>
+        <span className="text-muted-foreground">total</span>
+      </div>
     </div>
   );
 }
