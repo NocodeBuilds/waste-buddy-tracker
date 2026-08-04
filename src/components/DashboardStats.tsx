@@ -90,30 +90,36 @@ function CategoryBlock({ entries, label, Icon, dot, textColor, unit, filterFn, t
   const safW = Math.round(sumWeight(saf));
   return (
     <div>
-      <div className="flex items-center gap-1 mb-1">
-        <Icon className={`h-3 w-3 ${textColor}`} />
+      <div className="flex items-center justify-center gap-1 mb-2">
+        <Icon className={`h-3.5 w-3.5 ${textColor}`} />
         <span className="text-[11px] font-bold text-foreground">{label}</span>
         <span className="text-[9px] text-muted-foreground">({catEntries.length})</span>
         <span className="text-[9px] font-mono ml-auto" style={{ color: textColor }}>{fmtNum(totalValue)} {unit}</span>
       </div>
-      <div className="flex items-start justify-center gap-2">
-        <div className="flex flex-col items-center gap-0.5">
-          <div className="h-9 w-9 rounded-full bg-overdue/15 border border-overdue/40 flex items-center justify-center shrink-0">
-            <span className="text-[8px] font-bold text-overdue leading-none tabular-nums">{ovdW ? `${fmtNum(ovdW)} ${unit}` : "0"}</span>
+      <div className="flex items-start justify-center gap-2.5">
+        <div className="flex flex-col items-center gap-1">
+          <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-overdue/20 to-overdue/5 border-2 border-overdue/30 shadow-[0_2px_8px_rgba(239,68,68,0.15)] flex flex-col items-center justify-center shrink-0 animate-[pulse-gentle_3s_ease-in-out_infinite]">
+            <div className="absolute inset-[2px] rounded-full bg-gradient-to-t from-transparent to-overdue/10" />
+            <span className="relative text-[9px] font-bold text-overdue leading-none tabular-nums">{ovdW ? fmtNum(ovdW) : "0"}</span>
+            <span className="relative text-[7px] font-semibold text-overdue/70 leading-none">{ovdW ? unit : ""}</span>
           </div>
-          <span className="text-[8px] font-medium text-muted-foreground uppercase tracking-wide">Overdue</span>
+          <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">Overdue</span>
         </div>
-        <div className="flex flex-col items-center gap-0.5">
-          <div className="h-9 w-9 rounded-full bg-orange-500/15 border border-orange-500/40 flex items-center justify-center shrink-0">
-            <span className="text-[8px] font-bold text-orange-500 leading-none tabular-nums">{wrnW ? `${fmtNum(wrnW)} ${unit}` : "0"}</span>
+        <div className="flex flex-col items-center gap-1">
+          <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30 shadow-[0_2px_8px_rgba(249,115,22,0.15)] flex flex-col items-center justify-center shrink-0 animate-[pulse-gentle_3s_ease-in-out_infinite] [animation-delay:1s]">
+            <div className="absolute inset-[2px] rounded-full bg-gradient-to-t from-transparent to-orange-500/10" />
+            <span className="relative text-[9px] font-bold text-orange-500 leading-none tabular-nums">{wrnW ? fmtNum(wrnW) : "0"}</span>
+            <span className="relative text-[7px] font-semibold text-orange-500/70 leading-none">{wrnW ? unit : ""}</span>
           </div>
-          <span className="text-[8px] font-medium text-muted-foreground uppercase tracking-wide">Warning</span>
+          <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">Warning</span>
         </div>
-        <div className="flex flex-col items-center gap-0.5">
-          <div className="h-9 w-9 rounded-full bg-success/15 border border-success/40 flex items-center justify-center shrink-0">
-            <span className="text-[8px] font-bold text-success leading-none tabular-nums">{safW ? `${fmtNum(safW)} ${unit}` : "0"}</span>
+        <div className="flex flex-col items-center gap-1">
+          <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-success/20 to-success/5 border-2 border-success/30 shadow-[0_2px_8px_rgba(34,197,94,0.15)] flex flex-col items-center justify-center shrink-0 animate-[pulse-gentle_3s_ease-in-out_infinite] [animation-delay:2s]">
+            <div className="absolute inset-[2px] rounded-full bg-gradient-to-t from-transparent to-success/10" />
+            <span className="relative text-[9px] font-bold text-success leading-none tabular-nums">{safW ? fmtNum(safW) : "0"}</span>
+            <span className="relative text-[7px] font-semibold text-success/70 leading-none">{safW ? unit : ""}</span>
           </div>
-          <span className="text-[8px] font-medium text-muted-foreground uppercase tracking-wide">OK</span>
+          <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">OK</span>
         </div>
       </div>
     </div>
