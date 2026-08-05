@@ -291,24 +291,6 @@ export default function AnalyticsTab({ entries, batches }: Props) {
             <Card>
               <CardContent className="p-3 flex flex-col items-center text-center gap-1">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary shrink-0" />
-                  <p className="text-xl font-bold leading-tight">{avgDays || "—"} <span className="text-[10px] font-normal text-muted-foreground">days</span></p>
-                </div>
-                <p className="text-[10px] text-muted-foreground">Avg days to disposal</p>
-              </CardContent>
-            </Card>
-            <Card className={daysToNextDisposal !== null && daysToNextDisposal <= 20 ? "border-overdue/30" : ""}>
-              <CardContent className="p-3 flex flex-col items-center text-center gap-1">
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className={`h-5 w-5 shrink-0 ${daysToNextDisposal !== null && daysToNextDisposal <= 20 ? "text-overdue" : "text-warning"}`} />
-                  <p className="text-xl font-bold leading-tight">{daysToNextDisposal ?? "—"} <span className="text-[10px] font-normal text-muted-foreground">days</span></p>
-                </div>
-                <p className="text-[10px] text-muted-foreground">Days to next disposal</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3 flex flex-col items-center text-center gap-1">
-                <div className="flex items-center gap-2">
                   <Scale className="h-5 w-5 text-primary shrink-0" />
                   <p className="text-xl font-bold leading-tight">{fmtNum(lifetimeTotals.kg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
                 </div>
