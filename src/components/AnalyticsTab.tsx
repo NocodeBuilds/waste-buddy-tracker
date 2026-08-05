@@ -22,6 +22,7 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 
 interface Props {
@@ -287,44 +288,42 @@ export default function AnalyticsTab({ entries, batches }: Props) {
         <>
           {/* ── Key Metrics ── */}
           <div className="grid grid-cols-2 gap-3">
-            <DashboardCard>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-2xl font-bold leading-tight">{avgDays || "—"} <span className="text-xs font-normal text-muted-foreground">days</span></p>
-                  <p className="text-[10px] text-muted-foreground">Avg days to disposal</p>
+            <Card>
+              <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary shrink-0" />
+                  <p className="text-xl font-bold leading-tight">{avgDays || "—"} <span className="text-[10px] font-normal text-muted-foreground">days</span></p>
                 </div>
-              </div>
-            </DashboardCard>
-            <DashboardCard>
-              <div className="flex items-center gap-2">
-                <CalendarIcon
-                  className={`h-5 w-5 shrink-0 ${daysToNextDisposal !== null && daysToNextDisposal <= 20 ? "text-overdue" : "text-warning"}`}
-                />
-                <div className="min-w-0">
-                  <p className="text-2xl font-bold leading-tight">{daysToNextDisposal ?? "—"} <span className="text-xs font-normal text-muted-foreground">days</span></p>
-                  <p className="text-[10px] text-muted-foreground">Days to next disposal</p>
+                <p className="text-[10px] text-muted-foreground">Avg days to disposal</p>
+              </CardContent>
+            </Card>
+            <Card className={daysToNextDisposal !== null && daysToNextDisposal <= 20 ? "border-overdue/30" : ""}>
+              <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                <div className="flex items-center gap-2">
+                  <CalendarIcon className={`h-5 w-5 shrink-0 ${daysToNextDisposal !== null && daysToNextDisposal <= 20 ? "text-overdue" : "text-warning"}`} />
+                  <p className="text-xl font-bold leading-tight">{daysToNextDisposal ?? "—"} <span className="text-[10px] font-normal text-muted-foreground">days</span></p>
                 </div>
-              </div>
-            </DashboardCard>
-            <DashboardCard>
-              <div className="flex items-center gap-2">
-                <Scale className="h-5 w-5 text-primary shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-2xl font-bold leading-tight">{fmtNum(lifetimeTotals.kg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                  <p className="text-[10px] text-muted-foreground">Generated (period)</p>
+                <p className="text-[10px] text-muted-foreground">Days to next disposal</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                <div className="flex items-center gap-2">
+                  <Scale className="h-5 w-5 text-primary shrink-0" />
+                  <p className="text-xl font-bold leading-tight">{fmtNum(lifetimeTotals.kg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
                 </div>
-              </div>
-            </DashboardCard>
-            <DashboardCard>
-              <div className="flex items-center gap-2">
-                <Beaker className="h-5 w-5 text-accent shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-2xl font-bold leading-tight">{fmtNum(lifetimeTotals.litres)} <span className="text-xs font-normal text-muted-foreground">L</span></p>
-                  <p className="text-[10px] text-muted-foreground">Generated (period)</p>
+                <p className="text-[10px] text-muted-foreground">Generated (period)</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                <div className="flex items-center gap-2">
+                  <Beaker className="h-5 w-5 text-accent shrink-0" />
+                  <p className="text-xl font-bold leading-tight">{fmtNum(lifetimeTotals.litres)} <span className="text-[10px] font-normal text-muted-foreground">L</span></p>
                 </div>
-              </div>
-            </DashboardCard>
+                <p className="text-[10px] text-muted-foreground">Generated (period)</p>
+              </CardContent>
+            </Card>
           </div>
 
           {/* ── Category pie + Aging bar ── */}
