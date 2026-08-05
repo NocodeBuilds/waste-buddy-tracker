@@ -1,4 +1,5 @@
 // One-time bootstrap: if no admin exists, the caller becomes admin of ALL sites.
+// Auto-creates a default "Main Site" if none exist.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -21,9 +22,11 @@ Deno.serve(async (req) => {
     }
     const token = authHeader.replace("Bearer ", "");
     const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
-    if (claimsErr || !claimsData?.claims?.sub) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    const user = { id: claimsData.claims.sub as string };
+    const { data: userData, error: userErr } = await userClient.auth.getUser(token);
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const user = { id: userData.user.id as string };
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
@@ -37,10 +40,18 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "An admin already exists" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Fetch all sites
-    const { data: sites, error: sErr } = await admin.from("sites").select("id");
+    // Fetch all sites (create a default one if none exist)
+    let { data: sites, error: sErr } = await admin.from("sites").select("id");
     if (sErr || !sites || sites.length === 0) {
-      return new Response(JSON.stringify({ error: "No sites configured" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const { data: newSite, error: nsErr } = await admin
+        .from("sites")
+        .insert({ name: "Main Site", location: "Default Location" })
+        .select("id")
+        .single();
+      if (nsErr || !newSite) {
+        return new Response(JSON.stringify({ error: "Could not create default site: " + nsErr?.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      sites = [newSite];
     }
 
     const userSites = sites.map((s) => ({ user_id: user.id, site_id: s.id }));
