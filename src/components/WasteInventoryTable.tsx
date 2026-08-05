@@ -35,9 +35,11 @@ interface Props {
   onDelete: (id: string) => Promise<void>;
   onEdit: (entry: WasteEntry) => void;
   onCreateDisposal: (params: { disposed_date: string; notes?: string }) => Promise<void>;
+  onApproveDisposal?: (batchId: string) => Promise<void>;
+  onRejectDisposal?: (batchId: string, reason?: string) => Promise<void>;
 }
 
-export default function WasteInventoryTable({ entries, batches, onDelete, onEdit, onCreateDisposal }: Props) {
+export default function WasteInventoryTable({ entries, batches, onDelete, onEdit, onCreateDisposal, onApproveDisposal, onRejectDisposal }: Props) {
   const { isManagerOrAdmin, currentSite } = useSite();
   const [filter, setFilter] = useState<"all" | "active" | "overdue" | "disposed">("active");
   const [periodKind, setPeriodKind] = useState<PeriodKind>("all");
@@ -53,6 +55,8 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
   const [disposing, setDisposing] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const years = useMemo(() => {
     const cur = new Date().getFullYear();
@@ -119,7 +123,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
     setDisposing(true);
     try {
       await onCreateDisposal({ disposed_date: disposalDate, notes: disposalNotes || undefined });
-      toast.success(`Marked ${allActiveEntries.length} entries as disposed`);
+      toast.success("Disposal request submitted — pending approval");
       setDialogOpen(false);
       setDisposalNotes("");
     } catch (err: any) {
@@ -489,25 +493,105 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
           </h3>
           {batches.map((b) => {
             const inBatch = entries.filter((e) => e.disposal_batch_id === b.id);
+            const status = (b as any).status ?? "approved";
+            const isPending = status === "pending";
+            const isRejected = status === "rejected";
             return (
-              <Card key={b.id}>
+              <Card key={b.id} className={
+                isPending ? "border-warning/40 bg-warning/5" :
+                isRejected ? "border-destructive/40 bg-destructive/5" :
+                "border-success/30"
+              }>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold">{b.disposed_date}</p>
-                      <p className="text-xs text-muted-foreground">{inBatch.length} entries disposed</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold">{b.disposed_date}</p>
+                        {isPending && <Badge variant="outline" className="border-warning/40 text-warning">Pending approval</Badge>}
+                        {isRejected && <Badge variant="outline" className="border-destructive/40 text-destructive">Rejected</Badge>}
+                        {!isPending && !isRejected && <Badge variant="outline" className="border-success/40 text-success">Approved</Badge>}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {inBatch.length > 0 ? `${inBatch.length} entries disposed` : `All active entries (${allActiveEntries.length}) pending`}
+                      </p>
                       {b.notes && <p className="text-xs text-muted-foreground mt-1 italic break-words">{b.notes}</p>}
+                      {isRejected && (b as any).rejection_reason && (
+                        <p className="text-xs text-destructive mt-1 italic break-words">Reason: {(b as any).rejection_reason}</p>
+                      )}
+                      {isPending && isManagerOrAdmin && onApproveDisposal && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="h-8 text-xs gap-1 bg-success hover:bg-success/90"
+                            onClick={async () => {
+                              try {
+                                await onApproveDisposal(b.id);
+                                toast.success("Disposal approved — entries marked as disposed");
+                              } catch (err: any) {
+                                toast.error(err.message ?? "Failed to approve");
+                              }
+                            }}
+                          >
+                            <CheckCircle className="h-3.5 w-3.5" /> Approve
+                          </Button>
+                          {rejectingId === b.id ? (
+                            <div className="flex gap-2 items-center w-full">
+                              <Input
+                                placeholder="Reason for rejection…"
+                                value={rejectReason}
+                                onChange={(e) => setRejectReason(e.target.value)}
+                                className="h-8 text-xs"
+                                maxLength={200}
+                              />
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-8 text-xs"
+                                onClick={async () => {
+                                  try {
+                                    await onRejectDisposal?.(b.id, rejectReason);
+                                    toast.success("Disposal rejected");
+                                    setRejectingId(null);
+                                    setRejectReason("");
+                                  } catch (err: any) {
+                                    toast.error(err.message ?? "Failed to reject");
+                                  }
+                                }}
+                              >
+                                Confirm
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setRejectingId(null); setRejectReason(""); }}>
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-xs gap-1 border-destructive/40 text-destructive"
+                              onClick={() => setRejectingId(b.id)}
+                            >
+                              <X className="h-3.5 w-3.5" /> Reject
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
-                      <CheckCircle className="h-5 w-5 text-success" />
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-xs gap-1"
-                        onClick={() => exportDisposalBatchPdf(b, inBatch, currentSite?.name ?? "Site")}
-                      >
-                        <Download className="h-3 w-3" /> Manifest
-                      </Button>
+                      {!isPending && (
+                        <CheckCircle className="h-5 w-5 text-success" />
+                      )}
+                      {inBatch.length > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1"
+                          onClick={() => exportDisposalBatchPdf(b, inBatch, currentSite?.name ?? "Site")}
+                        >
+                          <Download className="h-3 w-3" /> Manifest
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>

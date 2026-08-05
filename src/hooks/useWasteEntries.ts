@@ -4,6 +4,15 @@ import { WasteEntry, DisposalBatch } from "@/lib/wasteTypes";
 import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
 
+// Extend DisposalBatch with status fields from DB
+interface DisposalBatchWithStatus extends DisposalBatch {
+  status: "pending" | "approved" | "rejected";
+  requested_at?: string;
+  approved_by?: string;
+  approved_at?: string;
+  rejection_reason?: string;
+}
+
 export function useWasteEntries() {
   const { currentSite } = useSite();
   const { user } = useAuth();
@@ -27,14 +36,14 @@ export function useWasteEntries() {
   const batchesQuery = useQuery({
     queryKey: ["disposal_batches", siteId],
     enabled: !!siteId,
-    queryFn: async (): Promise<DisposalBatch[]> => {
+    queryFn: async (): Promise<DisposalBatchWithStatus[]> => {
       const { data, error } = await supabase
         .from("disposal_batches")
         .select("*")
         .eq("site_id", siteId!)
         .order("disposed_date", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as DisposalBatch[];
+      return (data ?? []) as DisposalBatchWithStatus[];
     },
   });
 
@@ -128,17 +137,15 @@ export function useWasteEntries() {
           disposed_date: params.disposed_date,
           disposed_by: user.id,
           notes: params.notes ?? null,
+          status: "pending",
         })
         .select("id")
         .single();
       if (bErr) throw bErr;
 
-      const { error: uErr } = await supabase
-        .from("waste_entries")
-        .update({ disposal_batch_id: batch.id })
-        .eq("site_id", siteId)
-        .is("disposal_batch_id", null);
-      if (uErr) throw uErr;
+      // Don't link entries yet — wait for admin/manager approval
+      // The approve edge function will handle linking entries
+      return batch.id;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["waste_entries", siteId] });
@@ -154,5 +161,25 @@ export function useWasteEntries() {
     updateEntry,
     deleteEntry,
     createDisposalBatch,
+    approveDisposalBatch: useMutation({
+      mutationFn: async ({ batchId, action, reason }: { batchId: string; action: "approve" | "reject"; reason?: string }) => {
+        if (!siteId || !user) throw new Error("No site/user");
+        const result = await supabase.functions.invoke("approve-disposal", {
+          body: { batch_id: batchId, site_id: siteId, action, reason, user_id: user.id },
+        });
+        if (result.error) {
+          // Extract message from edge function response
+          const msg = result.error.message || result.error.context?.message || JSON.stringify(result.error);
+          throw new Error(msg);
+        }
+        if (result.data?.error) {
+          throw new Error(result.data.error);
+        }
+      },
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["disposal_batches", siteId] });
+        qc.invalidateQueries({ queryKey: ["waste_entries", siteId] });
+      },
+    }),
   };
 }
