@@ -5,13 +5,44 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
+let supabase;
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  console.error('Missing Supabase credentials. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in your environment.');
+  // Create a stub that throws helpful errors instead of crashing silently
+  supabase = {
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null }, error: new Error('Supabase not configured') }),
+      signInWithPassword: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
+      signUp: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
+      signOut: () => Promise.resolve({ error: null }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+    },
+    from: () => ({
+      select: () => ({ data: null, error: new Error('Supabase not configured') }),
+      insert: () => ({ data: null, error: new Error('Supabase not configured') }),
+      update: () => ({ data: null, error: new Error('Supabase not configured') }),
+      delete: () => ({ data: null, error: new Error('Supabase not configured') }),
+      eq: () => ({ data: null, error: new Error('Supabase not configured') }),
+      single: () => ({ data: null, error: new Error('Supabase not configured') }),
+    }),
+    storage: {
+      from: () => ({
+        upload: () => ({ data: null, error: new Error('Supabase not configured') }),
+        list: () => ({ data: [], error: new Error('Supabase not configured') }),
+      }),
+    },
+  } as any;
+} else {
+  // Import the supabase client like this:
+  // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
-  }
-});
+  supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    auth: {
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+    }
+  });
+}
+
+export { supabase };
