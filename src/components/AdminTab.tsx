@@ -17,25 +17,7 @@ import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-
-type Role = "admin" | "manager" | "member";
-
-interface Member {
-  user_id: string;
-  email: string | null;
-  full_name: string | null;
-  roles: Role[];
-}
-interface SiteRow { id: string; name: string; location: string | null }
-interface AuditRow {
-  id: string;
-  actor_id: string | null;
-  table_name: string;
-  action: string;
-  row_id: string | null;
-  site_id: string | null;
-  created_at: string;
-}
+import { Role, Member, SiteRow, AuditLogRow as AuditRow, AccessRequest } from "@/types";
 
 export default function AdminTab() {
   const { currentSite, sites, isAdmin, refresh } = useSite();

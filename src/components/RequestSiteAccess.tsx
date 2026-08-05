@@ -8,15 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Building2, Clock, Loader2, LogOut, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-
-interface Site { id: string; name: string; location: string | null }
-interface Req {
-  id: string;
-  site_id: string;
-  status: "pending" | "approved" | "rejected";
-  note: string | null;
-  created_at: string;
-}
+import { Site, AccessRequestRow as Req } from "@/types";
 
 export default function RequestSiteAccess({ onApproved }: { onApproved: () => void }) {
   const { user, signOut } = useAuth();

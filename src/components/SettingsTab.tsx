@@ -61,6 +61,12 @@ export default function SettingsTab({ entries }: Props) {
     if (isAdmin) loadMembers();
   }, [currentSite, isAdmin]);
 
+  const sanitizeCsv = (v: unknown): string => {
+    const s = String(v ?? "");
+    if (/^[=+\-@]/.test(s)) return `'${s.replace(/'/g, "''")}`;
+    return s.replace(/,/g, ";");
+  };
+
   const handleExport = () => {
     const csv = [
       "Location,Waste Type,Category,Weight,Unit,Count (pcs),Activity,Generated,Disposed Batch,Notes",
@@ -68,16 +74,16 @@ export default function SettingsTab({ entries }: Props) {
         const wt = WASTE_TYPES.find((w) => w.id === e.waste_type_id);
         const unit = wt?.measureUnit === "litres" ? "Ltr" : "kg";
         return [
-          e.location,
-          wt?.name ?? e.waste_type_id,
-          e.waste_category,
-          e.weight_kg ?? "",
-          unit,
-          e.piece_count ?? "",
-          e.activity_type,
-          e.generated_date,
-          e.disposal_batch_id ?? "",
-          (e.notes ?? "").replace(/,/g, ";"),
+          sanitizeCsv(e.location),
+          sanitizeCsv(wt?.name ?? e.waste_type_id),
+          sanitizeCsv(e.waste_category),
+          sanitizeCsv(e.weight_kg ?? ""),
+          sanitizeCsv(unit),
+          sanitizeCsv(e.piece_count ?? ""),
+          sanitizeCsv(e.activity_type),
+          sanitizeCsv(e.generated_date),
+          sanitizeCsv(e.disposal_batch_id ?? ""),
+          sanitizeCsv(e.notes ?? ""),
         ].join(",");
       }),
     ].join("\n");

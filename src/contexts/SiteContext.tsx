@@ -1,14 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
-
-export interface Site {
-  id: string;
-  name: string;
-  location: string | null;
-}
-
-export type Role = "admin" | "manager" | "member";
+import { Site, Role } from "@/types";
 
 interface SiteContextValue {
   sites: Site[];
