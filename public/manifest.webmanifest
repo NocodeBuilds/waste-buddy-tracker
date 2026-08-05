@@ -2,7 +2,7 @@
   "name": "WasteBuddy",
   "short_name": "WasteBuddy",
   "description": "Track and manage waste generation, activities, and disposal operations across your facilities.",
-  "start_url": "/",
+  "start_url": "/auth",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
