@@ -32,6 +32,18 @@ export function registerAppServiceWorker() {
     return;
   }
 
+  // Force-clear any stale service worker from a previous deployment
+  // This fixes the white-screen issue when a new deploy changes start_url or routes
+  if ("caches" in window) {
+    caches.keys().then((names) => {
+      const stale = names.filter((n) => !n.includes("v4"));
+      if (stale.length > 0) {
+        console.log("[PWA] Clearing stale caches:", stale);
+        stale.forEach((n) => caches.delete(n));
+      }
+    }).catch(() => {});
+  }
+
   window.addEventListener("load", () => {
     navigator.serviceWorker.register(APP_SW_PATH, { scope: "/" }).catch(() => {
       /* noop */
