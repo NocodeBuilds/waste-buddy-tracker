@@ -3,10 +3,6 @@
 // preserving the exact key layout  <site_id>/<waste_entry_id>/<file>.jpg
 // so waste_entry_photos.storage_path keeps working unchanged.
 //
-// Needs a service-role key for BOTH projects. On Lovable Cloud the old project's
-// service-role key is not accessible to you — in that case ask Lovable to run the
-// bundled `migrate-storage` edge function instead (see RUNBOOK.md, step 5b).
-//
 // Usage:
 //   npm i @supabase/supabase-js
 //   OLD_SUPABASE_URL=... OLD_SERVICE_ROLE_KEY=... \

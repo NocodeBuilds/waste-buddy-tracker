@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { WasteEntry, DisposalBatch } from "@/lib/wasteTypes";
 import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { compressImages } from "@/lib/imageCompress";
 
 // Extend DisposalBatch with status fields from DB
 interface DisposalBatchWithStatus extends DisposalBatch {
@@ -79,7 +80,8 @@ export function useWasteEntries() {
       const entryId = inserted.id as string;
 
       if (photos && photos.length > 0) {
-        for (const file of photos) {
+        const compressed = await compressImages(photos);
+        for (const file of compressed) {
           const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
           const id = (typeof crypto !== "undefined" && crypto.randomUUID)
             ? crypto.randomUUID()
