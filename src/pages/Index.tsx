@@ -14,7 +14,8 @@ import EditWasteDialog from "@/components/EditWasteDialog";
 import { WasteEntry, DISPOSAL_LIMIT_DAYS, getDaysStored, isDisposed } from "@/lib/wasteTypes";
 
 import SiteSwitcher from "@/components/SiteSwitcher";
-import { Leaf, ArrowLeft, Loader2, Bell } from "lucide-react";
+import { Leaf, ArrowLeft, Loader2, Bell, Home, List, BarChart3, Settings, Plus, Shield } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Drawer,
   DrawerContent,
@@ -57,10 +58,10 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-primary text-primary-foreground border-b sticky top-0 z-40">
-        <div className="px-4 py-3 flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
           <div className="bg-accent rounded-lg p-1.5">
             <Leaf className="h-5 w-5 text-accent-foreground" />
           </div>
@@ -86,7 +87,38 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="px-3 sm:px-4 py-3 sm:py-4 space-y-3 sm:space-y-4 max-w-2xl mx-auto">
+      {/* Desktop tab bar (hidden on mobile) */}
+      <nav className="hidden lg:flex items-center gap-1 border-b bg-card px-4 max-w-7xl mx-auto">
+        {[
+          { id: "home" as TabId, label: "Home", icon: Home },
+          { id: "inventory" as TabId, label: "Inventory", icon: List },
+          { id: "analytics" as TabId, label: "Analytics", icon: BarChart3 },
+          { id: "settings" as TabId, label: "Settings", icon: Settings },
+          ...(isAdmin ? [{ id: "admin" as TabId, label: "Admin", icon: Shield }] : []),
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors",
+              activeTab === tab.id
+                ? "border-accent text-accent"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <tab.icon className="h-4 w-4" />
+            {tab.label}
+          </button>
+        ))}
+        <div className="ml-auto">
+          <Button onClick={() => setDrawerOpen(true)} size="sm" className="gap-2">
+            <Plus className="h-4 w-4" /> Log Entry
+          </Button>
+        </div>
+      </nav>
+
+      {/* Main content */}
+      <main className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -116,8 +148,10 @@ const Index = () => {
         )}
       </main>
 
-      {/* Bottom Navigation */}
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} onAddClick={() => setDrawerOpen(true)} isAdmin={isAdmin} overdueCount={overdueCount} />
+      {/* Bottom Navigation (mobile only) */}
+      <div className="lg:hidden">
+        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} onAddClick={() => setDrawerOpen(true)} isAdmin={isAdmin} overdueCount={overdueCount} />
+      </div>
 
       <EditWasteDialog
         entry={editEntry}
