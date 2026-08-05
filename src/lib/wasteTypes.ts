@@ -232,3 +232,96 @@ export function filterByPeriod<T extends { generated_date: string }>(entries: T[
   return entries.filter((e) => e.generated_date >= period.start! && e.generated_date < period.end!);
 }
 
+// ─── Category aggregation helpers ─────────────────────────────────
+
+export interface CategoryBreakdown {
+  hazSolidsKg: number;
+  nonHazSolidsKg: number;
+  liquidLitres: number;
+  eWasteKg: number;
+  batteryKg: number;
+  otherWastesKg: number;
+}
+
+export function aggregateByCategory(entries: WasteEntry[]): CategoryBreakdown {
+  const r: CategoryBreakdown = {
+    hazSolidsKg: 0,
+    nonHazSolidsKg: 0,
+    liquidLitres: 0,
+    eWasteKg: 0,
+    batteryKg: 0,
+    otherWastesKg: 0,
+  };
+  for (const e of entries) {
+    const v = Number(e.weight_kg ?? 0);
+    switch (e.waste_type_id) {
+      case "used-batteries":
+        r.batteryKg += v;
+        break;
+      case "e-waste-general":
+      case "e-waste-circuit-boards":
+      case "e-waste-igbts":
+      case "e-waste-diodes":
+      case "e-waste-thyristors":
+      case "e-waste-resistors":
+      case "e-waste-capacitors":
+      case "e-waste-others":
+        r.eWasteKg += v;
+        break;
+      case "waste-oil":
+      case "waste-grease":
+        r.liquidLitres += v;
+        break;
+      case "plastic-waste":
+      case "plastic-non-contaminated":
+      case "dust-filter-mat":
+      case "empty-containers":
+      case "oil-filters-misc":
+      case "carbon-brush":
+        r.hazSolidsKg += v;
+        break;
+      case "paper-waste":
+      case "packaging-waste":
+      case "wooden-boxes":
+      case "non-haz-others":
+      case "rubber-scrap":
+      case "frp-scrap":
+      case "scrap-insulator":
+      case "aluminium-scrap":
+      case "copper-scrap":
+      case "ms-scrap":
+      case "plastic-scrap":
+        r.otherWastesKg += v;
+        break;
+      default:
+        if (e.waste_category === "hazardous") r.hazSolidsKg += v;
+        else if (e.waste_category === "non_hazardous") r.nonHazSolidsKg += v;
+        else if (e.waste_category === "e_waste") r.eWasteKg += v;
+        else if (e.waste_category === "other_wastes") r.otherWastesKg += v;
+        break;
+    }
+  }
+  return r;
+}
+
+export function aggregateByType(entries: WasteEntry[]): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const e of entries) {
+    const v = Number(e.weight_kg ?? 0);
+    map.set(e.waste_type_id, (map.get(e.waste_type_id) ?? 0) + v);
+  }
+  return map;
+}
+
+// ─── Activity type formatting ─────────────────────────────────────
+
+const ACTIVITY_LABELS: Record<string, { long: string; short: string }> = {
+  breakdown: { long: "Breakdown Maintenance", short: "BM" },
+  preventive: { long: "Preventive Maintenance", short: "PM" },
+  "5s": { long: "5S Activity", short: "5S" },
+  others: { long: "Others", short: "OTH" },
+};
+
+export function formatActivityType(t: string, format: "long" | "short" = "long"): string {
+  return ACTIVITY_LABELS[t]?.[format] ?? t;
+}

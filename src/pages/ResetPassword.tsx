@@ -17,13 +17,16 @@ export default function ResetPassword() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Supabase auto-handles the recovery hash; just confirm a session exists
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true);
-    });
+    // Only allow access if this is a genuine password recovery flow
     const { data: sub } = supabase.auth.onAuthStateChange((evt) => {
-      if (evt === "PASSWORD_RECOVERY" || evt === "SIGNED_IN") setReady(true);
+      setReady(evt === "PASSWORD_RECOVERY");
     });
+
+    // Fallback: if the URL hash contains a recovery token, allow access
+    if (window.location.hash.includes("type=recovery")) {
+      setReady(true);
+    }
+
     return () => sub.subscription.unsubscribe();
   }, []);
 

@@ -2,11 +2,20 @@
 // Requires the caller to be admin on the target site.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+const DEFAULT_REDIRECT = ALLOWED_ORIGINS[0] ?? "";
+
+function buildCorsHeaders(reqOrigin: string | null): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+  if (ALLOWED_ORIGINS.length === 0 || (reqOrigin && ALLOWED_ORIGINS.includes(reqOrigin))) {
+    headers["Access-Control-Allow-Origin"] = reqOrigin ?? "*";
+    headers["Access-Control-Allow-Credentials"] = "true";
+  }
+  return headers;
+}
 
 type Action =
   | { action: "invite"; email: string; site_id: string; role: "admin" | "manager" | "member"; full_name?: string }
@@ -16,35 +25,37 @@ type Action =
   | { action: "approve_request"; request_id: string; site_id: string; role?: "admin" | "manager" | "member" }
   | { action: "reject_request"; request_id: string; site_id: string; note?: string };
 
-function json(body: unknown, status = 200) {
+function json(body: unknown, status = 200, cors: Record<string, string>) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...cors, "Content-Type": "application/json" },
   });
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const origin = req.headers.get("origin");
+  const cors = buildCorsHeaders(origin);
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
+    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401, cors);
     const token = authHeader.replace("Bearer ", "");
 
     const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const { data: userData, error: userErr } = await userClient.auth.getUser(token);
-    if (userErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
+    if (userErr || !userData?.user) return json({ error: "Unauthorized" }, 401, cors);
     const user = { id: userData.user.id as string };
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
     const body = (await req.json()) as Action;
-    if (!body || !("action" in body)) return json({ error: "Invalid payload" }, 400);
+    if (!body || !("action" in body)) return json({ error: "Invalid payload" }, 400, cors);
 
     const site_id = (body as any).site_id as string;
-    if (!site_id) return json({ error: "site_id required" }, 400);
+    if (!site_id) return json({ error: "site_id required" }, 400, cors);
 
     // Verify caller is admin of target site
     const { data: callerRole } = await admin
@@ -54,13 +65,12 @@ Deno.serve(async (req) => {
       .eq("site_id", site_id)
       .eq("role", "admin")
       .maybeSingle();
-    if (!callerRole) return json({ error: "Forbidden — not an admin of this site" }, 403);
+    if (!callerRole) return json({ error: "Forbidden — not an admin of this site" }, 403, cors);
 
     if (body.action === "invite") {
       const email = body.email.trim().toLowerCase();
-      if (!email.includes("@")) return json({ error: "Invalid email" }, 400);
+      if (!email.includes("@")) return json({ error: "Invalid email" }, 400, cors);
 
-      // Find existing user by email
       let targetId: string | null = null;
       const { data: existing } = await admin
         .from("profiles")
@@ -69,16 +79,15 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (existing) {
         targetId = existing.id;
-        // Existing user — send password reset link so they can update if needed
-        await admin.auth.admin.generateLink({ type: "recovery", email });
+        const redirectTo = `${DEFAULT_REDIRECT}/reset-password`;
+        await admin.auth.admin.generateLink({ type: "recovery", email, redirectTo });
       } else {
-        // Send invite email — user clicks link and sets their own password
-        const redirectTo = `${req.headers.get("origin") ?? ""}/reset-password`;
+        const redirectTo = `${DEFAULT_REDIRECT}/reset-password`;
         const { data: inv, error: invErr } = await admin.auth.admin.inviteUserByEmail(email, {
           redirectTo,
           data: { full_name: body.full_name ?? email },
         });
-        if (invErr || !inv.user) return json({ error: invErr?.message ?? "Invite failed" }, 400);
+        if (invErr || !inv.user) return json({ error: invErr?.message ?? "Invite failed" }, 400, cors);
         targetId = inv.user.id;
       }
 
@@ -91,7 +100,7 @@ Deno.serve(async (req) => {
         { onConflict: "user_id,site_id,role" }
       );
 
-      return json({ ok: true, user_id: targetId });
+      return json({ ok: true, user_id: targetId }, 200, cors);
     }
 
     if (body.action === "assign") {
@@ -103,19 +112,18 @@ Deno.serve(async (req) => {
         { user_id: body.user_id, site_id, role: body.role },
         { onConflict: "user_id,site_id,role" }
       );
-      if (error) return json({ error: error.message }, 400);
-      return json({ ok: true });
+      if (error) return json({ error: error.message }, 400, cors);
+      return json({ ok: true }, 200, cors);
     }
 
     if (body.action === "revoke_role") {
-      // Prevent removing the last admin
       if (body.role === "admin") {
         const { count } = await admin
           .from("user_roles")
           .select("user_id", { count: "exact", head: true })
           .eq("site_id", site_id)
           .eq("role", "admin");
-        if ((count ?? 0) <= 1) return json({ error: "Cannot remove the last admin" }, 400);
+        if ((count ?? 0) <= 1) return json({ error: "Cannot remove the last admin" }, 400, cors);
       }
       const { error } = await admin
         .from("user_roles")
@@ -123,8 +131,8 @@ Deno.serve(async (req) => {
         .eq("user_id", body.user_id)
         .eq("site_id", site_id)
         .eq("role", body.role);
-      if (error) return json({ error: error.message }, 400);
-      return json({ ok: true });
+      if (error) return json({ error: error.message }, 400, cors);
+      return json({ ok: true }, 200, cors);
     }
 
     if (body.action === "remove_from_site") {
@@ -140,12 +148,12 @@ Deno.serve(async (req) => {
         .eq("user_id", body.user_id)
         .eq("role", "admin")
         .maybeSingle();
-      if (isAdmin && (count ?? 0) <= 1) return json({ error: "Cannot remove the last admin" }, 400);
+      if (isAdmin && (count ?? 0) <= 1) return json({ error: "Cannot remove the last admin" }, 400, cors);
 
       await admin.from("user_roles").delete().eq("user_id", body.user_id).eq("site_id", site_id);
       const { error } = await admin.from("user_sites").delete().eq("user_id", body.user_id).eq("site_id", site_id);
-      if (error) return json({ error: error.message }, 400);
-      return json({ ok: true });
+      if (error) return json({ error: error.message }, 400, cors);
+      return json({ ok: true }, 200, cors);
     }
 
     if (body.action === "approve_request") {
@@ -154,9 +162,9 @@ Deno.serve(async (req) => {
         .select("id, user_id, site_id, status")
         .eq("id", body.request_id)
         .maybeSingle();
-      if (reqErr || !reqRow) return json({ error: "Request not found" }, 404);
-      if (reqRow.site_id !== site_id) return json({ error: "Site mismatch" }, 400);
-      if (reqRow.status !== "pending") return json({ error: "Already decided" }, 400);
+      if (reqErr || !reqRow) return json({ error: "Request not found" }, 404, cors);
+      if (reqRow.site_id !== site_id) return json({ error: "Site mismatch" }, 400, cors);
+      if (reqRow.status !== "pending") return json({ error: "Already decided" }, 400, cors);
 
       const role = body.role ?? "member";
       await admin.from("user_sites").upsert(
@@ -170,7 +178,7 @@ Deno.serve(async (req) => {
       await admin.from("site_access_requests")
         .update({ status: "approved", decided_at: new Date().toISOString(), decided_by: user.id })
         .eq("id", body.request_id);
-      return json({ ok: true });
+      return json({ ok: true }, 200, cors);
     }
 
     if (body.action === "reject_request") {
@@ -183,13 +191,13 @@ Deno.serve(async (req) => {
         })
         .eq("id", body.request_id)
         .eq("site_id", site_id);
-      if (error) return json({ error: error.message }, 400);
-      return json({ ok: true });
+      if (error) return json({ error: error.message }, 400, cors);
+      return json({ ok: true }, 200, cors);
     }
 
-    return json({ error: "Unknown action" }, 400);
+    return json({ error: "Unknown action" }, 400, cors);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown";
-    return json({ error: msg }, 500);
+    return json({ error: msg }, 500, cors);
   }
 });

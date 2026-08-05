@@ -55,8 +55,7 @@ export default function AdminAuth() {
       password,
       options: { emailRedirectTo: `${window.location.origin}/app` },
     });
-    const alreadyExists = suErr && suErr.message.toLowerCase().includes("already");
-    if (suErr && !alreadyExists) {
+    if (suErr && !suErr.message.toLowerCase().includes("already")) {
       setSubmitting(false);
       return toast.error(suErr.message);
     }
@@ -64,7 +63,7 @@ export default function AdminAuth() {
     if (siErr) {
       setSubmitting(false);
       return toast.error(
-        alreadyExists
+        suErr
           ? "This email already has an account but the password doesn't match."
           : siErr.message
       );

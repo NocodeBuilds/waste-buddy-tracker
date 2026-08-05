@@ -2,11 +2,21 @@
 // Uses the SUPABASE service role to invite + create user_sites + user_roles.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+// Use the first allowed origin as the default redirect target for auth emails.
+const DEFAULT_REDIRECT = ALLOWED_ORIGINS[0] ?? "";
+
+function buildCorsHeaders(reqOrigin: string | null): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+  if (ALLOWED_ORIGINS.length === 0 || (reqOrigin && ALLOWED_ORIGINS.includes(reqOrigin))) {
+    headers["Access-Control-Allow-Origin"] = reqOrigin ?? "*";
+    headers["Access-Control-Allow-Credentials"] = "true";
+  }
+  return headers;
+}
 
 interface Body {
   email: string;
@@ -15,7 +25,9 @@ interface Body {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const origin = req.headers.get("origin");
+  const cors = buildCorsHeaders(origin);
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -24,22 +36,21 @@ Deno.serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...cors, "Content-Type": "application/json" } });
     }
     const token = authHeader.replace("Bearer ", "");
     const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
     if (claimsErr || !claimsData?.claims?.sub) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...cors, "Content-Type": "application/json" } });
     }
     const user = { id: claimsData.claims.sub as string };
 
     const body = (await req.json()) as Body;
     if (!body.email || !body.site_id || !body.role) {
-      return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
     }
 
-    // Service role client for admin ops
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
     // Verify caller is admin of the site
@@ -50,7 +61,7 @@ Deno.serve(async (req) => {
       .eq("site_id", body.site_id);
     const isAdmin = (callerRoles ?? []).some((r) => r.role === "admin");
     if (!isAdmin) {
-      return new Response(JSON.stringify({ error: "Only site admins can invite" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Only site admins can invite" }), { status: 403, headers: { ...cors, "Content-Type": "application/json" } });
     }
 
     // Check whether the user already exists
@@ -63,14 +74,17 @@ Deno.serve(async (req) => {
 
     if (existing) {
       userId = existing.id;
+      // Existing user — send password reset link so they can set/update their password
+      const redirectTo = `${DEFAULT_REDIRECT}/reset-password`;
+      await admin.auth.admin.generateLink({ type: "recovery", email: body.email, redirectTo });
     } else {
-      // Invite by email (sends invite email + creates auth user)
-      const redirectTo = `${req.headers.get("origin") ?? ""}/reset-password`;
+      // Invite by email — user clicks link and sets their own password
+      const redirectTo = `${DEFAULT_REDIRECT}/reset-password`;
       const { data: inv, error: invErr } = await admin.auth.admin.inviteUserByEmail(body.email, {
         redirectTo,
       });
       if (invErr || !inv.user) {
-        return new Response(JSON.stringify({ error: invErr?.message ?? "Invite failed" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ error: invErr?.message ?? "Invite failed" }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
       }
       userId = inv.user.id;
     }
@@ -89,10 +103,10 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ ok: true, user_id: userId }), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
-    return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
   }
 });
