@@ -25,15 +25,18 @@ export default defineConfig(() => ({
       includeAssets: ["icon-192.png", "icon-512.png", "apple-touch-icon.png"],
       manifest: false, // we ship our own manifest.webmanifest
       workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//],
         globPatterns: ["**/*.{js,css,html,svg,png,ico,webp,woff2}"],
+        // Bump cache version to force fresh install for all users
+        additionalManifestEntries: [{ url: "/", revision: "v4" }],
         runtimeCaching: [
           {
             urlPattern: ({ request }) => request.mode === "navigate",
             handler: "NetworkFirst",
             options: {
-              cacheName: "html-navigations",
+              cacheName: "html-navigations-v4",
               networkTimeoutSeconds: 4,
               expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 7 },
             },
@@ -42,7 +45,7 @@ export default defineConfig(() => ({
             urlPattern: ({ url }) => /\/assets\//.test(url.pathname),
             handler: "CacheFirst",
             options: {
-              cacheName: "static-assets",
+              cacheName: "static-assets-v4",
               expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
           },
@@ -50,7 +53,7 @@ export default defineConfig(() => ({
             urlPattern: ({ url }) => /supabase\.co\/storage\/v1\/object\/sign\//.test(url.href),
             handler: "CacheFirst",
             options: {
-              cacheName: "signed-photos",
+              cacheName: "signed-photos-v4",
               expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 7 },
             },
           },

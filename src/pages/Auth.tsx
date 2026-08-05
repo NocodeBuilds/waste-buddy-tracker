@@ -33,6 +33,19 @@ export default function Auth() {
   const [showPw, setShowPw] = useState(false);
   const [mode, setMode] = useState<Mode>("login");
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="bg-primary/10 rounded-full p-4">
+            <Leaf className="h-8 w-8 text-primary animate-pulse" />
+          </div>
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!loading && session) return <Navigate to="/app" replace />;
 
   const handleLogin = async (e: React.FormEvent) => {
