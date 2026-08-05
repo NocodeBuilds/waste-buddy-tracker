@@ -1,14 +1,14 @@
 import { useState, useMemo } from "react";
 import DashboardCard from "./dashboard/DashboardCard";
 import {
-  WasteEntry, getDaysStored, DISPOSAL_LIMIT_DAYS, isDisposed, DisposalBatch,
+  WasteEntry, getDaysStored, isDisposed, DisposalBatch,
   getMeasureUnit, sumByUnit, fmtNum,
   ALL_TIME_PERIOD, monthPeriod, rangePeriod, fyPeriod, currentFyStartYear,
   recentFinancialYears, recentMonthOptions, filterByPeriod,
   PeriodKind, AnalyticsPeriod,
 } from "@/lib/wasteTypes";
 import {
-  BarChart3, CalendarIcon, TrendingUp, AlertTriangle, Scale, Beaker, Droplets, Activity, X,
+  BarChart3, CalendarIcon, AlertTriangle, Scale, Beaker, Droplets, Activity, X,
 } from "lucide-react";
 import {
   Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Legend, CartesianGrid, PieChart, Pie, LineChart, Line,
@@ -22,6 +22,7 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 
 interface Props {
@@ -62,20 +63,9 @@ export default function AnalyticsTab({ entries, batches }: Props) {
 
   // ── Key metrics ──────────────────────────────────────────────
 
-  const allDays = periodEntries.map((e) => getDaysStored(e.generated_date)).filter((d) => d >= 0);
-  const avgDays = allDays.length > 0
-    ? Math.round(allDays.reduce((a, b) => a + b, 0) / allDays.length)
-    : 0;
-
-  const oldest = periodActive.reduce<number | null>((max, e) => {
-    const d = getDaysStored(e.generated_date);
-    return max === null || d > max ? d : max;
-  }, null);
-  const daysToNextDisposal = oldest === null ? null : Math.max(0, DISPOSAL_LIMIT_DAYS - oldest);
-
   const lifetimeTotals = sumByUnit(periodEntries);
 
-  // ── 6-category totals ────────────────────────────────────────
+// ── 6-category totals ────────────────────────────────────────
 
   const hazSolidsKg = periodActive.filter((e) => e.waste_category === "hazardous" && getMeasureUnit(e.waste_type_id) === "kg")
     .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
@@ -287,44 +277,24 @@ export default function AnalyticsTab({ entries, batches }: Props) {
         <>
           {/* ── Key Metrics ── */}
           <div className="grid grid-cols-2 gap-3">
-            <DashboardCard>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-2xl font-bold leading-tight">{avgDays || "—"} <span className="text-xs font-normal text-muted-foreground">days</span></p>
-                  <p className="text-[10px] text-muted-foreground">Avg days to disposal</p>
+            <Card>
+              <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                <div className="flex items-center gap-2">
+                  <Scale className="h-5 w-5 text-primary shrink-0" />
+                  <p className="text-xl font-bold leading-tight">{fmtNum(lifetimeTotals.kg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
                 </div>
-              </div>
-            </DashboardCard>
-            <DashboardCard>
-              <div className="flex items-center gap-2">
-                <CalendarIcon
-                  className={`h-5 w-5 shrink-0 ${daysToNextDisposal !== null && daysToNextDisposal <= 20 ? "text-overdue" : "text-warning"}`}
-                />
-                <div className="min-w-0">
-                  <p className="text-2xl font-bold leading-tight">{daysToNextDisposal ?? "—"} <span className="text-xs font-normal text-muted-foreground">days</span></p>
-                  <p className="text-[10px] text-muted-foreground">Days to next disposal</p>
+                <p className="text-[10px] text-muted-foreground">Generated (period)</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                <div className="flex items-center gap-2">
+                  <Beaker className="h-5 w-5 text-accent shrink-0" />
+                  <p className="text-xl font-bold leading-tight">{fmtNum(lifetimeTotals.litres)} <span className="text-[10px] font-normal text-muted-foreground">L</span></p>
                 </div>
-              </div>
-            </DashboardCard>
-            <DashboardCard>
-              <div className="flex items-center gap-2">
-                <Scale className="h-5 w-5 text-primary shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-2xl font-bold leading-tight">{fmtNum(lifetimeTotals.kg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                  <p className="text-[10px] text-muted-foreground">Generated (period)</p>
-                </div>
-              </div>
-            </DashboardCard>
-            <DashboardCard>
-              <div className="flex items-center gap-2">
-                <Beaker className="h-5 w-5 text-accent shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-2xl font-bold leading-tight">{fmtNum(lifetimeTotals.litres)} <span className="text-xs font-normal text-muted-foreground">L</span></p>
-                  <p className="text-[10px] text-muted-foreground">Generated (period)</p>
-                </div>
-              </div>
-            </DashboardCard>
+                <p className="text-[10px] text-muted-foreground">Generated (period)</p>
+              </CardContent>
+            </Card>
           </div>
 
           {/* ── Category pie + Aging bar ── */}

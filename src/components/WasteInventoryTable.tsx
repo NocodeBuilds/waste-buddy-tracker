@@ -5,7 +5,7 @@ import { WasteEntry, WASTE_TYPES, getDaysStored, getStatus, DISPOSAL_LIMIT_DAYS,
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, CheckCircle, Loader2, FileSpreadsheet, FileText, Pencil, Download, Scale, ShieldAlert, Leaf, Beaker, Droplets, Battery, Recycle, CalendarIcon, X } from "lucide-react";
+import { Trash2, CheckCircle, Loader2, FileSpreadsheet, Pencil, Download, Scale, ShieldAlert, Leaf, Beaker, Droplets, Battery, Recycle, CalendarIcon, X } from "lucide-react";
 import { exportInventoryToExcel, exportForm3Pdf, exportDisposalBatchPdf } from "@/lib/wasteExports";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,6 +28,7 @@ import { useEntryPhotoCounts } from "@/hooks/useEntryPhotos";
 import { format } from "date-fns";
 import EntryPhotosButton from "./EntryPhotosButton";
 import { toast } from "sonner";
+import ExportOptionsDialog from "./ExportOptionsDialog";
 
 interface Props {
   entries: WasteEntry[];
@@ -35,9 +36,11 @@ interface Props {
   onDelete: (id: string) => Promise<void>;
   onEdit: (entry: WasteEntry) => void;
   onCreateDisposal: (params: { disposed_date: string; notes?: string }) => Promise<void>;
+  onApproveDisposal?: (batchId: string) => Promise<void>;
+  onRejectDisposal?: (batchId: string, reason?: string) => Promise<void>;
 }
 
-export default function WasteInventoryTable({ entries, batches, onDelete, onEdit, onCreateDisposal }: Props) {
+export default function WasteInventoryTable({ entries, batches, onDelete, onEdit, onCreateDisposal, onApproveDisposal, onRejectDisposal }: Props) {
   const { isManagerOrAdmin, currentSite } = useSite();
   const [filter, setFilter] = useState<"all" | "active" | "overdue" | "disposed">("active");
   const [periodKind, setPeriodKind] = useState<PeriodKind>("all");
@@ -53,6 +56,11 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
   const [disposing, setDisposing] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"excel" | "pdf">("excel");
 
   const years = useMemo(() => {
     const cur = new Date().getFullYear();
@@ -119,7 +127,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
     setDisposing(true);
     try {
       await onCreateDisposal({ disposed_date: disposalDate, notes: disposalNotes || undefined });
-      toast.success(`Marked ${allActiveEntries.length} entries as disposed`);
+      toast.success("Disposal request submitted — pending approval");
       setDialogOpen(false);
       setDisposalNotes("");
     } catch (err: any) {
@@ -129,29 +137,39 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
     }
   };
 
-  const handleExportExcel = () => {
-    if (periodFiltered.length === 0) {
-      toast.error("No data in the selected period to export");
-      return;
-    }
-    try {
-      exportInventoryToExcel(periodFiltered, currentSite?.name ?? "Site", period);
-      toast.success(`Excel exported — ${period.label}`);
-    } catch (err: any) {
-      toast.error(err.message ?? "Export failed");
-    }
+  const openExport = (fmt: "excel" | "pdf") => {
+    setExportFormat(fmt);
+    setExportOpen(true);
   };
 
-  const handleExportForm3 = () => {
-    if (periodFiltered.length === 0) {
-      toast.error("No data in the selected period to export");
-      return;
-    }
-    try {
-      exportForm3Pdf(periodFiltered, currentSite?.name ?? "Site", period);
-      toast.success(`Form 3 PDF exported — ${period.label}`);
-    } catch (err: any) {
-      toast.error(err.message ?? "Export failed");
+  const handleExport = (opts: {
+    format: "excel" | "pdf";
+    filteredEntries: WasteEntry[];
+    chosenBatch: DisposalBatch | null;
+    periodLabel: string;
+  }) => {
+    if (opts.format === "excel") {
+      if (periodFiltered.length === 0 && opts.filteredEntries.length === 0) {
+        toast.error("No data in the selected period to export");
+        return;
+      }
+      try {
+        exportInventoryToExcel(opts.filteredEntries, currentSite?.name ?? "Site", { label: opts.periodLabel, kind: "all" });
+        toast.success(`Excel exported — ${opts.periodLabel}`);
+      } catch (err: any) {
+        toast.error(err.message ?? "Export failed");
+      }
+    } else {
+      if (opts.filteredEntries.length === 0) {
+        toast.error("No data to export");
+        return;
+      }
+      try {
+        exportForm3Pdf(opts.filteredEntries, currentSite?.name ?? "Site", { label: opts.periodLabel, kind: "all" });
+        toast.success(`PDF exported — ${opts.periodLabel}`);
+      } catch (err: any) {
+        toast.error(err.message ?? "Export failed");
+      }
     }
   };
 
@@ -252,64 +270,69 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
         </div>
       </div>
 
-      {/* Storage summary — themed cards matching analytics tab */}
+      {/* Storage summary — matches "This Month" cards theme on home */}
       <div className="space-y-3">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          In storage by Category
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          <Card className="border-overdue/30 bg-overdue/10">
-            <CardContent className="p-1.5 flex items-center gap-1.5">
-              <ShieldAlert className="h-3.5 w-3.5 text-overdue shrink-0" />
-              <div className="min-w-0">
-                <p className="text-sm font-bold leading-tight text-overdue truncate">{fmtNum(hazKg)} <span className="text-[9px] font-normal text-muted-foreground">kg</span></p>
-                <p className="text-[9px] text-muted-foreground truncate">Hazardous</p>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            In storage by Category
+          </h3>
+          <Button variant="outline" size="sm" onClick={() => openExport("excel")}>
+            <FileSpreadsheet className="h-4 w-4 mr-2" /> Export
+          </Button>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <Card className="border-overdue/30">
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="h-5 w-5 text-overdue shrink-0" />
+                <p className="text-xl font-bold leading-tight">{fmtNum(hazKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
+              <p className="text-[10px] text-muted-foreground">Hazardous Solids</p>
             </CardContent>
           </Card>
-          <Card className="border-success/30 bg-success/10">
-            <CardContent className="p-1.5 flex items-center gap-1.5">
-              <Leaf className="h-3.5 w-3.5 text-success shrink-0" />
-              <div className="min-w-0">
-                <p className="text-sm font-bold leading-tight text-success truncate">{fmtNum(nonHazKg)} <span className="text-[9px] font-normal text-muted-foreground">kg</span></p>
-                <p className="text-[9px] text-muted-foreground truncate">Non-Haz</p>
+          <Card className="border-success/30">
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <Leaf className="h-5 w-5 text-success shrink-0" />
+                <p className="text-xl font-bold leading-tight">{fmtNum(nonHazKg)} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-1.5 flex items-center gap-1.5">
-              <Droplets className="h-3.5 w-3.5 text-cyan-500 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-sm font-bold leading-tight truncate">{fmtNum(totals.litres)} <span className="text-[9px] font-normal text-muted-foreground">L</span></p>
-                <p className="text-[9px] text-muted-foreground truncate">Liquid</p>
-              </div>
+              <p className="text-[10px] text-muted-foreground">Non-Hazardous Solids</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-1.5 flex items-center gap-1.5">
-              <Trash2 className="h-3.5 w-3.5 text-orange-500 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-sm font-bold leading-tight truncate">{fmtNum(solids.filter((e) => e.waste_category === "e_waste" && e.waste_type_id !== "used-batteries").reduce((s, e) => s + Number(e.weight_kg ?? 0), 0))} <span className="text-[9px] font-normal text-muted-foreground">kg</span></p>
-                <p className="text-[9px] text-muted-foreground truncate">E-Waste</p>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <Droplets className="h-5 w-5 text-cyan-500 shrink-0" />
+                <p className="text-xl font-bold leading-tight">{fmtNum(totals.litres)} <span className="text-[10px] font-normal text-muted-foreground">L</span></p>
               </div>
+              <p className="text-[10px] text-muted-foreground">Liquid Waste</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-1.5 flex items-center gap-1.5">
-              <Battery className="h-3.5 w-3.5 text-yellow-600 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-sm font-bold leading-tight truncate">{fmtNum(solids.filter((e) => e.waste_type_id === "used-batteries").reduce((s, e) => s + Number(e.weight_kg ?? 0), 0))} <span className="text-[9px] font-normal text-muted-foreground">kg</span></p>
-                <p className="text-[9px] text-muted-foreground truncate">Battery</p>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
+                <p className="text-xl font-bold leading-tight">{fmtNum(solids.filter((e) => e.waste_category === "e_waste" && e.waste_type_id !== "used-batteries").reduce((s, e) => s + Number(e.weight_kg ?? 0), 0))} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
+              <p className="text-[10px] text-muted-foreground">E-Waste</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-1.5 flex items-center gap-1.5">
-              <Recycle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-sm font-bold leading-tight truncate">{fmtNum(solids.filter((e) => e.waste_category === "other_wastes").reduce((s, e) => s + Number(e.weight_kg ?? 0), 0))} <span className="text-[9px] font-normal text-muted-foreground">kg</span></p>
-                <p className="text-[9px] text-muted-foreground truncate">Other</p>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <Battery className="h-5 w-5 text-yellow-600 shrink-0" />
+                <p className="text-xl font-bold leading-tight">{fmtNum(solids.filter((e) => e.waste_type_id === "used-batteries").reduce((s, e) => s + Number(e.weight_kg ?? 0), 0))} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
+              <p className="text-[10px] text-muted-foreground">Battery Waste</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+              <div className="flex items-center gap-2">
+                <Recycle className="h-5 w-5 text-amber-600 shrink-0" />
+                <p className="text-xl font-bold leading-tight">{fmtNum(solids.filter((e) => e.waste_category === "other_wastes").reduce((s, e) => s + Number(e.weight_kg ?? 0), 0))} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Other Wastes</p>
             </CardContent>
           </Card>
         </div>
@@ -319,11 +342,26 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
       {byType.length > 0 && (
         <Card>
           <CardContent className="p-4 space-y-2">
-            <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-              <Scale className="h-3.5 w-3.5" /> In storage by waste type
-            </h3>
-            {byType.map((w) => {
-              const max = Math.max(...byType.map((x) => x.total));
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                <Scale className="h-3.5 w-3.5" /> In storage by waste type
+              </h3>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="h-7 text-[11px] w-auto min-w-[100px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="hazardous">Hazardous</SelectItem>
+                  <SelectItem value="non_hazardous">Non-Hazardous</SelectItem>
+                  <SelectItem value="e_waste">E-Waste</SelectItem>
+                  <SelectItem value="other_wastes">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {(typeFilter === "all" ? byType : byType.filter((w) => w.wasteCategory === typeFilter)).map((w) => {
+              const visible = typeFilter === "all" ? byType : byType.filter((x) => x.wasteCategory === typeFilter);
+              const max = Math.max(...visible.map((x) => x.total));
               const suffix = w.measureUnit === "litres" ? "Ltr" : "kg";
               const barColor = w.measureUnit === "litres"
                 ? "bg-accent"
@@ -344,24 +382,16 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
         </Card>
       )}
 
-
-      {/* Export buttons */}
-      <div className="grid grid-cols-2 gap-2">
-        <Button
-          variant="outline" size="sm"
-          disabled={periodFiltered.length === 0}
-          onClick={handleExportExcel}
-        >
-          <FileSpreadsheet className="h-4 w-4 mr-2" /> Export Excel
-        </Button>
-        <Button
-          variant="outline" size="sm"
-          disabled={periodFiltered.length === 0}
-          onClick={handleExportForm3}
-        >
-          <FileText className="h-4 w-4 mr-2" /> Form 3 (PDF)
-        </Button>
-      </div>
+      {/* Export options dialog */}
+      <ExportOptionsDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        initialFormat={exportFormat}
+        siteName={currentSite?.name ?? "Site"}
+        entries={entries}
+        batches={batches}
+        onExport={handleExport}
+      />
 
       {/* Quarterly disposal action */}
       {isManagerOrAdmin && activeEntries.length > 0 && (
@@ -489,25 +519,105 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
           </h3>
           {batches.map((b) => {
             const inBatch = entries.filter((e) => e.disposal_batch_id === b.id);
+            const status = (b as any).status ?? "approved";
+            const isPending = status === "pending";
+            const isRejected = status === "rejected";
             return (
-              <Card key={b.id}>
+              <Card key={b.id} className={
+                isPending ? "border-warning/40 bg-warning/5" :
+                isRejected ? "border-destructive/40 bg-destructive/5" :
+                "border-success/30"
+              }>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold">{b.disposed_date}</p>
-                      <p className="text-xs text-muted-foreground">{inBatch.length} entries disposed</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold">{b.disposed_date}</p>
+                        {isPending && <Badge variant="outline" className="border-warning/40 text-warning">Pending approval</Badge>}
+                        {isRejected && <Badge variant="outline" className="border-destructive/40 text-destructive">Rejected</Badge>}
+                        {!isPending && !isRejected && <Badge variant="outline" className="border-success/40 text-success">Approved</Badge>}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {inBatch.length > 0 ? `${inBatch.length} entries disposed` : `All active entries (${allActiveEntries.length}) pending`}
+                      </p>
                       {b.notes && <p className="text-xs text-muted-foreground mt-1 italic break-words">{b.notes}</p>}
+                      {isRejected && (b as any).rejection_reason && (
+                        <p className="text-xs text-destructive mt-1 italic break-words">Reason: {(b as any).rejection_reason}</p>
+                      )}
+                      {isPending && isManagerOrAdmin && onApproveDisposal && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="h-8 text-xs gap-1 bg-success hover:bg-success/90"
+                            onClick={async () => {
+                              try {
+                                await onApproveDisposal(b.id);
+                                toast.success("Disposal approved — entries marked as disposed");
+                              } catch (err: any) {
+                                toast.error(err.message ?? "Failed to approve");
+                              }
+                            }}
+                          >
+                            <CheckCircle className="h-3.5 w-3.5" /> Approve
+                          </Button>
+                          {rejectingId === b.id ? (
+                            <div className="flex gap-2 items-center w-full">
+                              <Input
+                                placeholder="Reason for rejection…"
+                                value={rejectReason}
+                                onChange={(e) => setRejectReason(e.target.value)}
+                                className="h-8 text-xs"
+                                maxLength={200}
+                              />
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-8 text-xs"
+                                onClick={async () => {
+                                  try {
+                                    await onRejectDisposal?.(b.id, rejectReason);
+                                    toast.success("Disposal rejected");
+                                    setRejectingId(null);
+                                    setRejectReason("");
+                                  } catch (err: any) {
+                                    toast.error(err.message ?? "Failed to reject");
+                                  }
+                                }}
+                              >
+                                Confirm
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setRejectingId(null); setRejectReason(""); }}>
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-xs gap-1 border-destructive/40 text-destructive"
+                              onClick={() => setRejectingId(b.id)}
+                            >
+                              <X className="h-3.5 w-3.5" /> Reject
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
-                      <CheckCircle className="h-5 w-5 text-success" />
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-xs gap-1"
-                        onClick={() => exportDisposalBatchPdf(b, inBatch, currentSite?.name ?? "Site")}
-                      >
-                        <Download className="h-3 w-3" /> Manifest
-                      </Button>
+                      {!isPending && (
+                        <CheckCircle className="h-5 w-5 text-success" />
+                      )}
+                      {inBatch.length > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1"
+                          onClick={() => exportDisposalBatchPdf(b, inBatch, currentSite?.name ?? "Site")}
+                        >
+                          <Download className="h-3 w-3" /> Manifest
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>

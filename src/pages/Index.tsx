@@ -30,7 +30,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const Index = () => {
   const { currentSite, sites, loading: siteLoading, isAdmin, refresh } = useSite();
   const { signOut } = useAuth();
-  const { entries, batches, isLoading, addEntry, updateEntry, deleteEntry, createDisposalBatch } = useWasteEntries();
+  const { entries, batches, isLoading, addEntry, updateEntry, deleteEntry, createDisposalBatch, approveDisposalBatch } = useWasteEntries();
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<WasteEntry | null>(null);
@@ -105,6 +105,8 @@ const Index = () => {
                 onDelete={(id) => deleteEntry.mutateAsync(id)}
                 onEdit={(e) => setEditEntry(e)}
                 onCreateDisposal={(p) => createDisposalBatch.mutateAsync(p)}
+                onApproveDisposal={(id) => approveDisposalBatch.mutateAsync({ batchId: id, action: "approve" })}
+                onRejectDisposal={(id, reason) => approveDisposalBatch.mutateAsync({ batchId: id, action: "reject", reason })}
               />
             )}
             {activeTab === "analytics" && <AnalyticsTab entries={entries} batches={batches} />}
