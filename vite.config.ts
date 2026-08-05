@@ -25,6 +25,7 @@ export default defineConfig(() => ({
       includeAssets: ["icon-192.png", "icon-512.png", "apple-touch-icon.png"],
       manifest: false, // we ship our own manifest.webmanifest
       workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//],
         globPatterns: ["**/*.{js,css,html,svg,png,ico,webp,woff2}"],
