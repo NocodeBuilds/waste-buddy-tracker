@@ -3,8 +3,9 @@
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync, readdirSync } from "node:fs";
 
-const SUPABASE_URL = "https://oakjtbkxjhxoeyaapibo.supabase.co";
-const SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ha2p0Ymt4amh4b2V5YWFwaWJvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTgzOTQzMywiZXhwIjoyMTAxNDE1NDMzfQ.kKxV2UidOb8-4IeZJO2W3FCWqAHm0DNGx-t9rkzfHAU";
+const SUPABASE_URL = process.env.NEW_SUPABASE_URL || "https://oakjtbkxjhxoeyaapibo.supabase.co";
+const SERVICE_ROLE_KEY = process.env.NEW_SERVICE_ROLE_KEY;
+if (!SERVICE_ROLE_KEY) { console.error("Set NEW_SERVICE_ROLE_KEY env var"); process.exit(1); }
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 
@@ -31,10 +32,10 @@ const DATA_DIR = new URL("./data/", import.meta.url);
 const files = readdirSync(DATA_DIR).filter(f => f.endsWith(".csv"));
 
 // Skip audit_log to avoid re-logging the import
-const skip = new Set(["audit_log.csv"]);
+const skip = new Set(["audit_log.csv", "site_locations.csv"]);
 const order = ["sites.csv", "profiles.csv", "site_locations.csv", "user_sites.csv", "user_roles.csv", "site_access_requests.csv", "disposal_batches.csv", "waste_entries.csv", "waste_entry_photos.csv"];
 
-const sorted = order.filter(f => files.includes(f));
+const sorted = order.filter(f => files.includes(f) && !skip.has(f));
 
 for (const file of sorted) {
   const table = file.replace(".csv", "");
@@ -54,16 +55,17 @@ for (const file of sorted) {
     return o;
   });
 
-  // Use upsert for profiles (auth trigger may have already created them)
-  const isUpsert = table === "profiles";
+  // Upsert for all tables (idempotent — handles partial imports)
+  const useUpsert = true;
+  const conflictCol = table === "site_locations" ? "is_common,code" : "id";
 
   // Insert in batches of 50
   const batchSize = 50;
   let ok = 0, fail = 0;
   for (let i = 0; i < cleaned.length; i += batchSize) {
     const batch = cleaned.slice(i, i + batchSize);
-    const { error } = isUpsert
-      ? await admin.from(table).upsert(batch, { onConflict: "id" })
+    const { error } = useUpsert
+      ? await admin.from(table).upsert(batch, { onConflict: conflictCol })
       : await admin.from(table).insert(batch);
     if (error) {
       console.error(`  batch ${Math.floor(i / batchSize) + 1} FAIL: ${error.message}`);
