@@ -72,7 +72,10 @@ export function useWasteEntries() {
       if (photos && photos.length > 0) {
         for (const file of photos) {
           const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-          const path = `${siteId}/${entryId}/${crypto.randomUUID()}.${ext}`;
+          const id = (typeof crypto !== "undefined" && crypto.randomUUID)
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+          const path = `${siteId}/${entryId}/${id}.${ext}`;
           const { error: upErr } = await supabase.storage
             .from("waste-photos")
             .upload(path, file, { contentType: file.type || "image/jpeg", upsert: false });

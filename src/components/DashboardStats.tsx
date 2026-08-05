@@ -83,7 +83,7 @@ function CategoryBlock({ entries, label, Icon, dot, textColor, unit, filterFn, t
   totalValue: number;
 }) {
   const catEntries = entries.filter((e) => !isDisposed(e) && filterFn(e));
-  if (catEntries.length === 0) return null;
+  const isEmpty = catEntries.length === 0;
   const ovd = catEntries.filter((e) => getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS);
   const wrn = catEntries.filter((e) => { const d = getDaysStored(e.generated_date); return d >= 70 && d < DISPOSAL_LIMIT_DAYS; });
   const saf = catEntries.filter((e) => getStatus(e) === "safe");
