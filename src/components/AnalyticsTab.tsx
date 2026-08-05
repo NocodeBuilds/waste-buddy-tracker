@@ -1,14 +1,14 @@
 import { useState, useMemo } from "react";
 import DashboardCard from "./dashboard/DashboardCard";
 import {
-  WasteEntry, getDaysStored, DISPOSAL_LIMIT_DAYS, isDisposed, DisposalBatch,
+  WasteEntry, getDaysStored, isDisposed, DisposalBatch,
   getMeasureUnit, sumByUnit, fmtNum,
   ALL_TIME_PERIOD, monthPeriod, rangePeriod, fyPeriod, currentFyStartYear,
   recentFinancialYears, recentMonthOptions, filterByPeriod,
   PeriodKind, AnalyticsPeriod,
 } from "@/lib/wasteTypes";
 import {
-  BarChart3, CalendarIcon, TrendingUp, AlertTriangle, Scale, Beaker, Droplets, Activity, X,
+  BarChart3, CalendarIcon, AlertTriangle, Scale, Beaker, Droplets, Activity, X,
 } from "lucide-react";
 import {
   Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Legend, CartesianGrid, PieChart, Pie, LineChart, Line,
@@ -63,20 +63,9 @@ export default function AnalyticsTab({ entries, batches }: Props) {
 
   // ── Key metrics ──────────────────────────────────────────────
 
-  const allDays = periodEntries.map((e) => getDaysStored(e.generated_date)).filter((d) => d >= 0);
-  const avgDays = allDays.length > 0
-    ? Math.round(allDays.reduce((a, b) => a + b, 0) / allDays.length)
-    : 0;
-
-  const oldest = periodActive.reduce<number | null>((max, e) => {
-    const d = getDaysStored(e.generated_date);
-    return max === null || d > max ? d : max;
-  }, null);
-  const daysToNextDisposal = oldest === null ? null : Math.max(0, DISPOSAL_LIMIT_DAYS - oldest);
-
   const lifetimeTotals = sumByUnit(periodEntries);
 
-  // ── 6-category totals ────────────────────────────────────────
+// ── 6-category totals ────────────────────────────────────────
 
   const hazSolidsKg = periodActive.filter((e) => e.waste_category === "hazardous" && getMeasureUnit(e.waste_type_id) === "kg")
     .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);

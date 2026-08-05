@@ -5,7 +5,7 @@ import { WasteEntry, WASTE_TYPES, getDaysStored, getStatus, DISPOSAL_LIMIT_DAYS,
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, CheckCircle, Loader2, FileSpreadsheet, FileText, Pencil, Download, Scale, ShieldAlert, Leaf, Beaker, Droplets, Battery, Recycle, CalendarIcon, X } from "lucide-react";
+import { Trash2, CheckCircle, Loader2, FileSpreadsheet, Pencil, Download, Scale, ShieldAlert, Leaf, Beaker, Droplets, Battery, Recycle, CalendarIcon, X } from "lucide-react";
 import { exportInventoryToExcel, exportForm3Pdf, exportDisposalBatchPdf } from "@/lib/wasteExports";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,6 +28,7 @@ import { useEntryPhotoCounts } from "@/hooks/useEntryPhotos";
 import { format } from "date-fns";
 import EntryPhotosButton from "./EntryPhotosButton";
 import { toast } from "sonner";
+import ExportOptionsDialog from "./ExportOptionsDialog";
 
 interface Props {
   entries: WasteEntry[];
@@ -57,6 +58,9 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
   const [dateOpen, setDateOpen] = useState(false);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"excel" | "pdf">("excel");
 
   const years = useMemo(() => {
     const cur = new Date().getFullYear();
@@ -133,29 +137,39 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
     }
   };
 
-  const handleExportExcel = () => {
-    if (periodFiltered.length === 0) {
-      toast.error("No data in the selected period to export");
-      return;
-    }
-    try {
-      exportInventoryToExcel(periodFiltered, currentSite?.name ?? "Site", period);
-      toast.success(`Excel exported — ${period.label}`);
-    } catch (err: any) {
-      toast.error(err.message ?? "Export failed");
-    }
+  const openExport = (fmt: "excel" | "pdf") => {
+    setExportFormat(fmt);
+    setExportOpen(true);
   };
 
-  const handleExportForm3 = () => {
-    if (periodFiltered.length === 0) {
-      toast.error("No data in the selected period to export");
-      return;
-    }
-    try {
-      exportForm3Pdf(periodFiltered, currentSite?.name ?? "Site", period);
-      toast.success(`Form 3 PDF exported — ${period.label}`);
-    } catch (err: any) {
-      toast.error(err.message ?? "Export failed");
+  const handleExport = (opts: {
+    format: "excel" | "pdf";
+    filteredEntries: WasteEntry[];
+    chosenBatch: DisposalBatch | null;
+    periodLabel: string;
+  }) => {
+    if (opts.format === "excel") {
+      if (periodFiltered.length === 0 && opts.filteredEntries.length === 0) {
+        toast.error("No data in the selected period to export");
+        return;
+      }
+      try {
+        exportInventoryToExcel(opts.filteredEntries, currentSite?.name ?? "Site", { label: opts.periodLabel, kind: "all" });
+        toast.success(`Excel exported — ${opts.periodLabel}`);
+      } catch (err: any) {
+        toast.error(err.message ?? "Export failed");
+      }
+    } else {
+      if (opts.filteredEntries.length === 0) {
+        toast.error("No data to export");
+        return;
+      }
+      try {
+        exportForm3Pdf(opts.filteredEntries, currentSite?.name ?? "Site", { label: opts.periodLabel, kind: "all" });
+        toast.success(`PDF exported — ${opts.periodLabel}`);
+      } catch (err: any) {
+        toast.error(err.message ?? "Export failed");
+      }
     }
   };
 
@@ -258,9 +272,14 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
 
       {/* Storage summary — matches "This Month" cards theme on home */}
       <div className="space-y-3">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          In storage by Category
-        </h3>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            In storage by Category
+          </h3>
+          <Button variant="outline" size="sm" onClick={() => openExport("excel")}>
+            <FileSpreadsheet className="h-4 w-4 mr-2" /> Export
+          </Button>
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <Card className="border-overdue/30">
             <CardContent className="p-3 flex flex-col items-center text-center gap-1">
@@ -323,11 +342,26 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
       {byType.length > 0 && (
         <Card>
           <CardContent className="p-4 space-y-2">
-            <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-              <Scale className="h-3.5 w-3.5" /> In storage by waste type
-            </h3>
-            {byType.map((w) => {
-              const max = Math.max(...byType.map((x) => x.total));
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                <Scale className="h-3.5 w-3.5" /> In storage by waste type
+              </h3>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="h-7 text-[11px] w-auto min-w-[100px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="hazardous">Hazardous</SelectItem>
+                  <SelectItem value="non_hazardous">Non-Hazardous</SelectItem>
+                  <SelectItem value="e_waste">E-Waste</SelectItem>
+                  <SelectItem value="other_wastes">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {(typeFilter === "all" ? byType : byType.filter((w) => w.wasteCategory === typeFilter)).map((w) => {
+              const visible = typeFilter === "all" ? byType : byType.filter((x) => x.wasteCategory === typeFilter);
+              const max = Math.max(...visible.map((x) => x.total));
               const suffix = w.measureUnit === "litres" ? "Ltr" : "kg";
               const barColor = w.measureUnit === "litres"
                 ? "bg-accent"
@@ -348,24 +382,16 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
         </Card>
       )}
 
-
-      {/* Export buttons */}
-      <div className="grid grid-cols-2 gap-2">
-        <Button
-          variant="outline" size="sm"
-          disabled={periodFiltered.length === 0}
-          onClick={handleExportExcel}
-        >
-          <FileSpreadsheet className="h-4 w-4 mr-2" /> Export Excel
-        </Button>
-        <Button
-          variant="outline" size="sm"
-          disabled={periodFiltered.length === 0}
-          onClick={handleExportForm3}
-        >
-          <FileText className="h-4 w-4 mr-2" /> Form 3 (PDF)
-        </Button>
-      </div>
+      {/* Export options dialog */}
+      <ExportOptionsDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        initialFormat={exportFormat}
+        siteName={currentSite?.name ?? "Site"}
+        entries={entries}
+        batches={batches}
+        onExport={handleExport}
+      />
 
       {/* Quarterly disposal action */}
       {isManagerOrAdmin && activeEntries.length > 0 && (
