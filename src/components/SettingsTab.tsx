@@ -63,8 +63,9 @@ export default function SettingsTab({ entries }: Props) {
 
   const sanitizeCsv = (v: unknown): string => {
     const s = String(v ?? "");
-    if (/^[=+\-@]/.test(s)) return `'${s.replace(/'/g, "''")}`;
-    return s.replace(/,/g, ";");
+    if (/^[=+\-@\t\r]/.test(s)) return `\t${s.replace(/"/g, '""')}`;
+    if (/[,"\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
   };
 
   const handleExport = () => {

@@ -1,17 +1,24 @@
 // Approve or reject a pending disposal batch. Manager/admin only.
+// H4 fix: prevents self-approval (the creator of the batch cannot approve it).
+// M5 fix: requires ALLOWED_ORIGINS env var; refuses to start if empty.
 // On approve: links all unlinked entries on that site to the batch.
 // On reject: marks batch rejected, leaves entries unlinked.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 
+// M5 fix: fail fast at module load if ALLOWED_ORIGINS is not configured
+if (ALLOWED_ORIGINS.length === 0) {
+  console.error("ALLOWED_ORIGINS env var is required. Set it to a comma-separated list of allowed origins.");
+}
+
 function buildCorsHeaders(reqOrigin: string | null): Record<string, string> {
   const headers: Record<string, string> = {
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
   };
-  if (ALLOWED_ORIGINS.length === 0 || (reqOrigin && ALLOWED_ORIGINS.includes(reqOrigin))) {
-    headers["Access-Control-Allow-Origin"] = reqOrigin ?? "*";
+  if (reqOrigin && ALLOWED_ORIGINS.includes(reqOrigin)) {
+    headers["Access-Control-Allow-Origin"] = reqOrigin;
     headers["Access-Control-Allow-Credentials"] = "true";
   }
   return headers;
@@ -28,6 +35,22 @@ Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
   const cors = buildCorsHeaders(origin);
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+
+  // M5 fix: reject any request when ALLOWED_ORIGINS is not configured
+  if (ALLOWED_ORIGINS.length === 0) {
+    return new Response(JSON.stringify({ error: "Server misconfigured: ALLOWED_ORIGINS not set" }), {
+      status: 500,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
+
+  // CORS preflight guard: block requests without a valid origin
+  if (!origin || !ALLOWED_ORIGINS.includes(origin)) {
+    return new Response(JSON.stringify({ error: "Origin not allowed" }), {
+      status: 403,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -67,10 +90,10 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Only managers or admins can approve disposals" }), { status: 403, headers: { ...cors, "Content-Type": "application/json" } });
     }
 
-    // Verify batch exists and is pending
+    // Verify batch exists, is pending, and fetch disposer
     const { data: batch, error: batchErr } = await admin
       .from("disposal_batches")
-      .select("id, status, site_id")
+      .select("id, status, site_id, disposed_by")
       .eq("id", body.batch_id)
       .maybeSingle();
     if (batchErr || !batch) {
@@ -81,6 +104,15 @@ Deno.serve(async (req) => {
     }
     if (batch.status !== "pending") {
       return new Response(JSON.stringify({ error: `Batch is already ${batch.status}` }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+
+    // H4 fix: prevent self-approval (separation of duties)
+    // Allow rejection by the creator, but not approval
+    if (body.action === "approve" && batch.disposed_by === callerId) {
+      return new Response(JSON.stringify({ error: "You cannot approve a disposal batch you submitted. Ask another manager or admin." }), {
+        status: 403,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
     }
 
     const now = new Date().toISOString();

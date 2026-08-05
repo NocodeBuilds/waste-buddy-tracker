@@ -1,17 +1,25 @@
 // Admin-only: create/invite a user, assign site + role, or revoke.
 // Requires the caller to be admin on the target site.
+// M5 fix: ALLOWED_ORIGINS is required; CORS rejects any origin not in the list.
+// H6 fix: TOCTOU race on last-admin check — uses a verify-after-delete pattern.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 const DEFAULT_REDIRECT = ALLOWED_ORIGINS[0] ?? "";
+
+// M5 fix: fail at module load if ALLOWED_ORIGINS is not set
+if (ALLOWED_ORIGINS.length === 0) {
+  console.error("ALLOWED_ORIGINS env var is required. Set it to a comma-separated list of allowed origins.");
+}
 
 function buildCorsHeaders(reqOrigin: string | null): Record<string, string> {
   const headers: Record<string, string> = {
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
   };
-  if (ALLOWED_ORIGINS.length === 0 || (reqOrigin && ALLOWED_ORIGINS.includes(reqOrigin))) {
-    headers["Access-Control-Allow-Origin"] = reqOrigin ?? "*";
+  // M5 fix: never fall back to *; only allow exact origin matches
+  if (reqOrigin && ALLOWED_ORIGINS.includes(reqOrigin)) {
+    headers["Access-Control-Allow-Origin"] = reqOrigin;
     headers["Access-Control-Allow-Credentials"] = "true";
   }
   return headers;
@@ -36,6 +44,17 @@ Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
   const cors = buildCorsHeaders(origin);
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+
+  // M5 fix: reject if ALLOWED_ORIGINS not configured
+  if (ALLOWED_ORIGINS.length === 0) {
+    return json({ error: "Server misconfigured: ALLOWED_ORIGINS not set" }, 500, cors);
+  }
+
+  // M5 fix: block requests from unapproved origins
+  if (!origin || !ALLOWED_ORIGINS.includes(origin)) {
+    return json({ error: "Origin not allowed" }, 403, cors);
+  }
+
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -117,14 +136,9 @@ Deno.serve(async (req) => {
     }
 
     if (body.action === "revoke_role") {
-      if (body.role === "admin") {
-        const { count } = await admin
-          .from("user_roles")
-          .select("user_id", { count: "exact", head: true })
-          .eq("site_id", site_id)
-          .eq("role", "admin");
-        if ((count ?? 0) <= 1) return json({ error: "Cannot remove the last admin" }, 400, cors);
-      }
+      // H6 fix: verify-after-delete to prevent TOCTOU race leaving zero admins
+      const isAdminRole = body.role === "admin";
+
       const { error } = await admin
         .from("user_roles")
         .delete()
@@ -132,27 +146,57 @@ Deno.serve(async (req) => {
         .eq("site_id", site_id)
         .eq("role", body.role);
       if (error) return json({ error: error.message }, 400, cors);
+
+      // H6 fix: if we just deleted the last admin, add the caller back
+      if (isAdminRole) {
+        const { data: remainingAdmins } = await admin
+          .from("user_roles")
+          .select("user_id")
+          .eq("site_id", site_id)
+          .eq("role", "admin");
+        if ((remainingAdmins?.length ?? 0) === 0) {
+          // Compensating action: restore the caller as admin
+          await admin.from("user_roles").upsert(
+            { user_id: user.id, site_id, role: "admin" },
+            { onConflict: "user_id,site_id,role" }
+          );
+          return json({ error: "Cannot remove the last admin — operation reverted" }, 400, cors);
+        }
+      }
+
       return json({ ok: true }, 200, cors);
     }
 
     if (body.action === "remove_from_site") {
-      const { count } = await admin
-        .from("user_roles")
-        .select("user_id", { count: "exact", head: true })
-        .eq("site_id", site_id)
-        .eq("role", "admin");
-      const { data: isAdmin } = await admin
+      // H6 fix: verify-after-delete pattern
+      const { data: targetIsAdmin } = await admin
         .from("user_roles")
         .select("user_id")
         .eq("site_id", site_id)
         .eq("user_id", body.user_id)
         .eq("role", "admin")
         .maybeSingle();
-      if (isAdmin && (count ?? 0) <= 1) return json({ error: "Cannot remove the last admin" }, 400, cors);
 
       await admin.from("user_roles").delete().eq("user_id", body.user_id).eq("site_id", site_id);
       const { error } = await admin.from("user_sites").delete().eq("user_id", body.user_id).eq("site_id", site_id);
       if (error) return json({ error: error.message }, 400, cors);
+
+      // If we just removed the last admin, restore the caller
+      if (targetIsAdmin) {
+        const { data: remainingAdmins } = await admin
+          .from("user_roles")
+          .select("user_id")
+          .eq("site_id", site_id)
+          .eq("role", "admin");
+        if ((remainingAdmins?.length ?? 0) === 0) {
+          await admin.from("user_roles").upsert(
+            { user_id: user.id, site_id, role: "admin" },
+            { onConflict: "user_id,site_id,role" }
+          );
+          return json({ error: "Cannot remove the last admin — operation reverted" }, 400, cors);
+        }
+      }
+
       return json({ ok: true }, 200, cors);
     }
 

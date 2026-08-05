@@ -10,8 +10,8 @@ import type { Site, Member, AccessRequest, AuditLogRow } from "@/types";
 export function useSites() {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ["sites", user?.id],
-    queryKeyHash: ["sites"],
+    // C2 fix: aligned query key with mutations' invalidation
+    queryKey: ["sites"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sites")
