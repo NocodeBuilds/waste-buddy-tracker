@@ -135,3 +135,21 @@
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
   }
 }
+
+/* Hide number input spinner arrows — scoped to entry form */
+.waste-form .no-spinner::-webkit-outer-spin-button,
+.waste-form .no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.waste-form .no-spinner[type="number"] {
+  -moz-appearance: textfield;
+}
+.waste-form input[type="number"].no-spinner {
+  -moz-appearance: textfield;
+}
+.waste-form input[type="number"].no-spinner::-webkit-outer-spin-button,
+.waste-form input[type="number"].no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

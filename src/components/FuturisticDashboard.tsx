@@ -68,7 +68,7 @@ export default function FuturisticDashboard({ entries }: Props) {
       {upcoming.length > 0 && (
         <Card className="border-border/50 bg-card/70 backdrop-blur">
           <CardContent className="p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5" /> Disposal Due
             </h3>
             <ul className="divide-y divide-border/50">
@@ -81,16 +81,16 @@ export default function FuturisticDashboard({ entries }: Props) {
                   ? "text-warning border-warning/40 bg-warning/10"
                   : "text-success border-success/40 bg-success/10";
                 return (
-                  <li key={e.id} className="py-2 flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium truncate">
-                        {wt?.name ?? e.waste_type_id} · <span className="font-mono text-muted-foreground">{e.location ?? "—"}</span>
+                  <li key={e.id} className="py-2.5 flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">
+                        {wt?.name ?? e.waste_type_id} <span className="font-mono text-muted-foreground">· {e.location ?? "—"}</span>
                       </p>
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {fmtNum(Number(e.weight_kg ?? 0))} {unitLabel(getMeasureUnit(e.waste_type_id))} · gen {e.generated_date}
                       </p>
                     </div>
-                    <Badge variant="outline" className={`text-[10px] font-mono ${tone}`}>
+                    <Badge variant="outline" className={`text-[11px] font-mono ${tone}`}>
                       {e.daysLeft >= 0 ? `${e.daysLeft}d left` : `${Math.abs(e.daysLeft)}d over`}
                     </Badge>
                   </li>
@@ -102,7 +102,7 @@ export default function FuturisticDashboard({ entries }: Props) {
       )}
 
       {upcoming.length === 0 && (
-        <div className="flex items-center justify-center gap-2 py-4 text-xs text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
           <AlertTriangle className="h-4 w-4 opacity-40" /> No active entries.
         </div>
       )}

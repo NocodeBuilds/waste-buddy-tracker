@@ -39,17 +39,26 @@ export default function InstallPrompt() {
     const dismissedAt = Number(localStorage.getItem(DISMISS_KEY) || 0);
     if (dismissedAt && Date.now() - dismissedAt < DISMISS_TTL_MS) return;
 
+    let visibleSet = false;
+
     if (isIOS()) {
       setPlatform("ios");
       setVisible(true);
+      visibleSet = true;
       return;
     }
 
+    let deferred: BeforeInstallPromptEvent | null = null;
+
     const onPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferred(e as BeforeInstallPromptEvent);
-      setVisible(true);
-      if (isAndroid()) setPlatform("android");
+      deferred = e as BeforeInstallPromptEvent;
+      if (!visibleSet) {
+        setDeferred(deferred);
+        setVisible(true);
+        visibleSet = true;
+        if (isAndroid()) setPlatform("android");
+      }
     };
     window.addEventListener("beforeinstallprompt", onPrompt);
 
@@ -57,7 +66,11 @@ export default function InstallPrompt() {
     window.addEventListener("appinstalled", onInstalled);
 
     const timer = setTimeout(() => {
-      setVisible(true);
+      if (!visibleSet) {
+        setVisible(true);
+        if (isAndroid()) setPlatform("android");
+        visibleSet = true;
+      }
     }, 1500);
 
     return () => {

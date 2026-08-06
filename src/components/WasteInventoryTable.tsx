@@ -59,6 +59,8 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [sortColumn, setSortColumn] = useState<string | null>("generated_date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [exportOpen, setExportOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<"excel" | "pdf">("excel");
 
@@ -91,11 +93,45 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
     return true;
   }).sort((a, b) => {
     const aD = isDisposed(a), bD = isDisposed(b);
-    if (!aD && !bD) return getDaysStored(b.generated_date) - getDaysStored(a.generated_date);
+    // Disposed entries always go to the bottom
     if (aD && !bD) return 1;
     if (!aD && bD) return -1;
-    return 0;
+    if (aD && bD) return 0;
+
+    if (!sortColumn) return 0;
+    const dir = sortDir === "asc" ? 1 : -1;
+    switch (sortColumn) {
+      case "location":
+        return dir * (a.location ?? "").localeCompare(b.location ?? "");
+      case "activity":
+        return dir * (a.activity_type ?? "").localeCompare(b.activity_type ?? "");
+      case "waste_type":
+        return dir * (a.waste_type_id ?? "").localeCompare(b.waste_type_id ?? "");
+      case "category":
+        return dir * (a.waste_category ?? "").localeCompare(b.waste_category ?? "");
+      case "weight":
+        return dir * (Number(b.weight_kg ?? 0) - Number(a.weight_kg ?? 0));
+      case "days":
+        return dir * (getDaysStored(b.generated_date) - getDaysStored(a.generated_date));
+      case "generated_date":
+      default:
+        return dir * (new Date(b.generated_date).getTime() - new Date(a.generated_date).getTime());
+    }
   });
+
+  const handleSort = (col: string) => {
+    if (sortColumn === col) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(col);
+      setSortDir("desc");
+    }
+  };
+
+  const SortIcon = ({ col }: { col: string }) => {
+    if (sortColumn !== col) return <span className="text-muted-foreground/40 ml-0.5">↕</span>;
+    return <span className="ml-0.5">{sortDir === "asc" ? "↑" : "↓"}</span>;
+  };
 
   const getWasteName = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.name || id;
   const totals = sumByUnit(activeEntries);
@@ -363,9 +399,16 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
               const visible = typeFilter === "all" ? byType : byType.filter((x) => x.wasteCategory === typeFilter);
               const max = Math.max(...visible.map((x) => x.total));
               const suffix = w.measureUnit === "litres" ? "Ltr" : "kg";
-              const barColor = w.measureUnit === "litres"
-                ? "bg-accent"
-                : w.wasteCategory === "hazardous" ? "bg-overdue" : w.wasteCategory === "other_wastes" ? "bg-amber-500" : "bg-success";
+              const isOil = w.id === "waste-oil" || w.id === "waste-grease";
+              const barColor = isOil
+                ? "bg-overdue"
+                : w.measureUnit === "litres"
+                  ? "bg-accent"
+                  : w.wasteCategory === "hazardous"
+                    ? "bg-overdue"
+                    : w.wasteCategory === "other_wastes"
+                      ? "bg-amber-500"
+                      : "bg-success";
               return (
                 <div key={w.id} className="flex items-center gap-2">
                   <span className="text-xs flex-1 truncate">{w.name}</span>
@@ -440,83 +483,17 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
         </AlertDialog>
       )}
 
-      <div className="rounded-lg border overflow-auto">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Location</TableHead>
-              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Activity</TableHead>
-              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Waste Type</TableHead>
-              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Cat.</TableHead>
-              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Qty</TableHead>
-              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Generated</TableHead>
-              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Days</TableHead>
-              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Status</TableHead>
-              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-center">Photos</TableHead>
-              {isManagerOrAdmin && <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Actions</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={isManagerOrAdmin ? 10 : 9} className="text-center py-8 text-muted-foreground">No entries found</TableCell></TableRow>
-            ) : (
-              filtered.map((entry) => {
-                const days = getDaysStored(entry.generated_date);
-                return (
-                  <TableRow key={entry.id} className={getStatus(entry) === "overdue" && !isDisposed(entry) ? "bg-overdue/5" : ""}>
-                    <TableCell className="font-mono font-semibold">{entry.location ?? "—"}</TableCell>
-                    <TableCell className="text-xs">{entry.activity_type === "preventive" ? "PM" : entry.activity_type === "breakdown" ? "BM" : entry.activity_type === "5s" ? "5S" : "OTH"}</TableCell>
-                    <TableCell className="max-w-[180px] truncate">{getWasteName(entry.waste_type_id)}</TableCell>
-                    <TableCell className="text-xs">
-                      <Badge variant="outline" className={entry.waste_category === "hazardous" ? "border-overdue/40 text-overdue" : entry.waste_category === "other_wastes" ? "border-amber-500/40 text-amber-600" : "border-success/40 text-success"}>
-                        {entry.waste_category === "hazardous" ? "HAZ" : entry.waste_category === "other_wastes" ? "OTHER" : "NON"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="whitespace-nowrap">
-                        <span className="font-semibold">{fmtNum(Number(entry.weight_kg ?? 0))}</span>{" "}
-                        <span className="text-xs text-muted-foreground">{unitLabel(getMeasureUnit(entry.waste_type_id))}</span>
-                      </div>
-                      {entry.piece_count != null && (
-                        <div className="text-[10px] text-muted-foreground">{entry.piece_count} pcs</div>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm">{entry.generated_date}</TableCell>
-                    <TableCell>
-                      <span className={days >= DISPOSAL_LIMIT_DAYS && !isDisposed(entry) ? "text-overdue font-bold" : days >= 70 && !isDisposed(entry) ? "text-warning font-semibold" : ""}>
-                        {isDisposed(entry) ? "—" : `${days}d`}
-                      </span>
-                    </TableCell>
-                    <TableCell>{statusBadge(entry)}</TableCell>
-                    <TableCell className="text-center">
-                      <EntryPhotosButton entryId={entry.id} count={photoCounts[entry.id] ?? 0} canDelete={isManagerOrAdmin} />
-                    </TableCell>
-                    {isManagerOrAdmin && (
-                      <TableCell className="text-right whitespace-nowrap">
-                        {!isDisposed(entry) && (
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => onEdit(entry)} aria-label="Edit">
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-overdue hover:bg-overdue/10" onClick={() => onDelete(entry.id)} aria-label="Delete">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Disposal history */}
+      {/* Disposal history — placed below Mark Quarterly button */}
       {batches.length > 0 && (
-        <div className="space-y-2 pt-2">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
-            Disposal History
-          </h3>
+        <div className="space-y-2 pt-1">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
+              Disposal History
+            </h3>
+            <span className="text-[10px] text-muted-foreground">
+              {batches.length} {batches.length === 1 ? "batch" : "batches"}
+            </span>
+          </div>
           {batches.map((b) => {
             const inBatch = entries.filter((e) => e.disposal_batch_id === b.id);
             const status = (b as any).status ?? "approved";
@@ -626,6 +603,104 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
           })}
         </div>
       )}
+
+      {/* All entries — at the bottom */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
+            All Entries
+          </h3>
+          <span className="text-[10px] text-muted-foreground">
+            {filtered.length} {filtered.length === 1 ? "entry" : "entries"}
+          </span>
+        </div>
+        <div className="rounded-lg border overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("location")}>
+                Location <SortIcon col="location" />
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("activity")}>
+                Activity <SortIcon col="activity" />
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("waste_type")}>
+                Waste Type <SortIcon col="waste_type" />
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("category")}>
+                Cat. <SortIcon col="category" />
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("weight")}>
+                Qty <SortIcon col="weight" />
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("generated_date")}>
+                Generated <SortIcon col="generated_date" />
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("days")}>
+                Days <SortIcon col="days" />
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Status</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-center">Photos</TableHead>
+              {isManagerOrAdmin && <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Actions</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.length === 0 ? (
+              <TableRow><TableCell colSpan={isManagerOrAdmin ? 10 : 9} className="text-center py-8 text-muted-foreground">No entries found</TableCell></TableRow>
+            ) : (
+              filtered.map((entry) => {
+                const days = getDaysStored(entry.generated_date);
+                return (
+                  <TableRow key={entry.id} className={getStatus(entry) === "overdue" && !isDisposed(entry) ? "bg-overdue/5" : ""}>
+                    <TableCell className="font-mono font-semibold">{entry.location ?? "—"}</TableCell>
+                    <TableCell className="text-xs">{entry.activity_type === "preventive" ? "PM" : entry.activity_type === "breakdown" ? "BM" : entry.activity_type === "5s" ? "5S" : "OTH"}</TableCell>
+                    <TableCell className="max-w-[180px] truncate">{getWasteName(entry.waste_type_id)}</TableCell>
+                    <TableCell className="text-xs">
+                      <Badge variant="outline" className={entry.waste_category === "hazardous" ? "border-overdue/40 text-overdue" : entry.waste_category === "other_wastes" ? "border-amber-500/40 text-amber-600" : "border-success/40 text-success"}>
+                        {entry.waste_category === "hazardous" ? "HAZ" : entry.waste_category === "other_wastes" ? "OTHER" : "NON"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="whitespace-nowrap">
+                        <span className="font-semibold">{fmtNum(Number(entry.weight_kg ?? 0))}</span>{" "}
+                        <span className="text-xs text-muted-foreground">{unitLabel(getMeasureUnit(entry.waste_type_id))}</span>
+                      </div>
+                      {entry.piece_count != null && (
+                        <div className="text-[10px] text-muted-foreground">{entry.piece_count} pcs</div>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">{entry.generated_date}</TableCell>
+                    <TableCell>
+                      <span className={days >= DISPOSAL_LIMIT_DAYS && !isDisposed(entry) ? "text-overdue font-bold" : days >= 70 && !isDisposed(entry) ? "text-warning font-semibold" : ""}>
+                        {isDisposed(entry) ? "—" : `${days}d`}
+                      </span>
+                    </TableCell>
+                    <TableCell>{statusBadge(entry)}</TableCell>
+                    <TableCell className="text-center">
+                      <EntryPhotosButton entryId={entry.id} count={photoCounts[entry.id] ?? 0} canDelete={isManagerOrAdmin} />
+                    </TableCell>
+                    {isManagerOrAdmin && (
+                      <TableCell className="text-right whitespace-nowrap">
+                        {!isDisposed(entry) && (
+                          <>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => onEdit(entry)} aria-label="Edit">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-overdue hover:bg-overdue/10" onClick={() => onDelete(entry.id)} aria-label="Delete">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        )}
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      </div>
     </div>
   );
 }

@@ -12,20 +12,22 @@ export function useEntryPhotos(entryId: string | undefined, enabled = true) {
   return useQuery({
     queryKey: ["waste_entry_photos", entryId],
     enabled: !!entryId && enabled,
+    // H3 fix: refetch before signed URLs expire (3600s → set staleTime to 55 min)
+    staleTime: 55 * 60_000,
     queryFn: async (): Promise<EntryPhoto[]> => {
       const { data, error } = await supabase
         .from("waste_entry_photos")
         .select("id, storage_path, created_at")
         .eq("waste_entry_id", entryId!)
         .order("created_at", { ascending: true });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       if (!data || data.length === 0) return [];
 
       const paths = data.map((r) => r.storage_path);
       const { data: signed, error: sErr } = await supabase.storage
         .from("waste-photos")
         .createSignedUrls(paths, 3600);
-      if (sErr) throw sErr;
+      if (sErr) throw new Error(sErr.message);
 
       return data.map((r, i) => ({
         id: r.id,
@@ -39,18 +41,20 @@ export function useEntryPhotos(entryId: string | undefined, enabled = true) {
 
 export function useEntryPhotoCounts(entryIds: string[]) {
   return useQuery({
-    queryKey: ["waste_entry_photo_counts", entryIds.slice().sort().join(",")],
+    queryKey: ["waste_entry_photo_counts", entryIds],
     enabled: entryIds.length > 0,
     queryFn: async (): Promise<Record<string, number>> => {
       const { data, error } = await supabase
         .from("waste_entry_photos")
         .select("waste_entry_id")
         .in("waste_entry_id", entryIds);
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       const counts: Record<string, number> = {};
-      (data ?? []).forEach((r: any) => {
+      // L1 fix: cast to the proper type instead of `any`
+      const rows = (data ?? []) as { waste_entry_id: string }[];
+      for (const r of rows) {
         counts[r.waste_entry_id] = (counts[r.waste_entry_id] ?? 0) + 1;
-      });
+      }
       return counts;
     },
   });
@@ -61,10 +65,14 @@ export function useDeletePhoto() {
   return useMutation({
     mutationFn: async (photo: { id: string; storage_path: string }) => {
       const { error: sErr } = await supabase.storage.from("waste-photos").remove([photo.storage_path]);
-      if (sErr) throw sErr;
+      if (sErr) throw new Error(sErr.message);
       const { error } = await supabase.from("waste_entry_photos").delete().eq("id", photo.id);
-      if (error) throw error;
+      if (error) throw new Error(error.message);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["waste_entry_photos"] }),
+    // H2 fix: invalidate BOTH photo list and photo counts queries
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["waste_entry_photos"] });
+      qc.invalidateQueries({ queryKey: ["waste_entry_photo_counts"] });
+    },
   });
 }

@@ -28,7 +28,7 @@ export function useSiteLocations() {
         .or(`site_id.eq.${siteId},is_common.eq.true`)
         .order("is_common", { ascending: true })
         .order("sort_order", { ascending: true });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       return (data ?? []) as SiteLocation[];
     },
   });

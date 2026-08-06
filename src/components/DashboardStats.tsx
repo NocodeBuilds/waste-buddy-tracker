@@ -204,7 +204,8 @@ export default function DashboardStats({ entries }: Props) {
       const items = thisMonthEntries.filter((e) => e.waste_type_id === wt.id);
       return { ...wt, total: sumWeight(items) };
     })
-    .filter((w) => w.total > 0);
+    .filter((w) => w.total > 0)
+    .sort((a, b) => b.total - a.total);
 
   const hazSolids = solidsThisMonth.filter((w) => w.wasteCategory === "hazardous");
   const nonHazSolids = solidsThisMonth.filter((w) => w.wasteCategory === "non_hazardous");
@@ -215,7 +216,8 @@ export default function DashboardStats({ entries }: Props) {
       const items = thisMonthEntries.filter((e) => e.waste_type_id === wt.id);
       return { ...wt, total: sumWeight(items) };
     })
-    .filter((w) => w.total > 0);
+    .filter((w) => w.total > 0)
+    .sort((a, b) => b.total - a.total);
 
   const batteryThisMonth = WASTE_TYPES
     .filter((wt) => wt.id === "used-batteries")
@@ -223,7 +225,8 @@ export default function DashboardStats({ entries }: Props) {
       const items = thisMonthEntries.filter((e) => e.waste_type_id === wt.id);
       return { ...wt, total: sumWeight(items) };
     })
-    .filter((w) => w.total > 0);
+    .filter((w) => w.total > 0)
+    .sort((a, b) => b.total - a.total);
 
   const otherWastesThisMonth = WASTE_TYPES
     .filter((wt) => wt.wasteCategory === "other_wastes")
@@ -231,7 +234,8 @@ export default function DashboardStats({ entries }: Props) {
       const items = thisMonthEntries.filter((e) => e.waste_type_id === wt.id);
       return { ...wt, total: sumWeight(items) };
     })
-    .filter((w) => w.total > 0);
+    .filter((w) => w.total > 0)
+    .sort((a, b) => b.total - a.total);
 
   const liquidThisMonth = WASTE_TYPES
     .filter((wt) => wt.measureUnit === "litres")
@@ -239,7 +243,8 @@ export default function DashboardStats({ entries }: Props) {
       const items = thisMonthEntries.filter((e) => e.waste_type_id === wt.id);
       return { ...wt, total: sumWeight(items) };
     })
-    .filter((w) => w.total > 0);
+    .filter((w) => w.total > 0)
+    .sort((a, b) => b.total - a.total);
 
   const hasAnyThisMonth = hazSolids.length > 0 || nonHazSolids.length > 0
     || liquidThisMonth.length > 0 || eWasteThisMonth.length > 0
@@ -249,19 +254,19 @@ export default function DashboardStats({ entries }: Props) {
     <div className="space-y-4">
       {/* ═══════════ SECTION A: Compliance overview ═══════════ */}
       <section>
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
           Compliance Status
         </h2>
         <div className="grid grid-cols-2 gap-3">
           <Card>
-            <CardContent className="p-3">
+            <CardContent className="p-4">
               <CategoryBlock entries={entries} label="Hazardous Solids" Icon={ShieldAlert} dot="bg-overdue" textColor="text-overdue" unit="kg"
                 filterFn={(e) => e.waste_category === "hazardous" && getMeasureUnit(e.waste_type_id) === "kg"}
                 totalValue={hazSolidsKg(entries)} />
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3">
+            <CardContent className="p-4">
               <CategoryBlock entries={entries} label="Non-Hazardous Solids" Icon={Leaf} dot="bg-success" textColor="text-success" unit="kg"
                 filterFn={(e) => e.waste_category === "non_hazardous" && getMeasureUnit(e.waste_type_id) === "kg"}
                 totalValue={nonHazSolidsKg(entries)} />
@@ -270,14 +275,14 @@ export default function DashboardStats({ entries }: Props) {
         </div>
         <div className="grid grid-cols-2 gap-3 mt-3">
           <Card>
-            <CardContent className="p-3">
+            <CardContent className="p-4">
               <CategoryBlock entries={entries} label="E-Waste" Icon={Trash2} dot="bg-orange-500" textColor="text-orange-500" unit="kg"
                 filterFn={(e) => e.waste_category === "e_waste" && e.waste_type_id !== "used-batteries"}
                 totalValue={eWasteKg(entries)} />
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3">
+            <CardContent className="p-4">
               <CategoryBlock entries={entries} label="Battery Waste" Icon={Battery} dot="bg-yellow-600" textColor="text-yellow-600" unit="kg"
                 filterFn={(e) => e.waste_type_id === "used-batteries"}
                 totalValue={batteryKg(entries)} />
@@ -286,14 +291,14 @@ export default function DashboardStats({ entries }: Props) {
         </div>
         <div className="grid grid-cols-2 gap-3 mt-3">
           <Card>
-            <CardContent className="p-3">
-              <CategoryBlock entries={entries} label="Liquid Waste" Icon={Droplets} dot="bg-cyan-500" textColor="text-cyan-500" unit="Ltr"
+            <CardContent className="p-4">
+              <CategoryBlock entries={entries} label="Liquid Waste" Icon={Droplets} dot="bg-cyan-500" textColor="text-cyan-500" unit="L"
                 filterFn={(e) => getMeasureUnit(e.waste_type_id) === "litres"}
                 totalValue={liquidLitres(entries)} />
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3">
+            <CardContent className="p-4">
               <CategoryBlock entries={entries} label="Other Wastes" Icon={Recycle} dot="bg-amber-600" textColor="text-amber-600" unit="kg"
                 filterFn={(e) => e.waste_category === "other_wastes" && getMeasureUnit(e.waste_type_id) === "kg"}
                 totalValue={otherWastesKg(entries)} />
@@ -304,63 +309,63 @@ export default function DashboardStats({ entries }: Props) {
 
       {/* ═══════════ SECTION B: This month ═══════════ */}
       <section className="space-y-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
           This Month
         </h2>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <Card className="border-overdue/30">
-            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+            <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <ShieldAlert className="h-5 w-5 text-overdue shrink-0" />
-                <p className="text-xl font-bold leading-tight">{fmtNum(hazSolidsKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
+                <p className="text-xl font-bold leading-tight">{fmtNum(hazSolidsKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
               </div>
-              <p className="text-[10px] text-muted-foreground">Hazardous Solids</p>
+              <p className="text-[11px] text-muted-foreground">Hazardous Solids</p>
             </CardContent>
           </Card>
           <Card className="border-success/30">
-            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+            <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <Leaf className="h-5 w-5 text-success shrink-0" />
-                <p className="text-xl font-bold leading-tight">{fmtNum(nonHazSolidsKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
+                <p className="text-xl font-bold leading-tight">{fmtNum(nonHazSolidsKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
               </div>
-              <p className="text-[10px] text-muted-foreground">Non-Hazardous Solids</p>
+              <p className="text-[11px] text-muted-foreground">Non-Hazardous Solids</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+            <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <Droplets className="h-5 w-5 text-cyan-500 shrink-0" />
-                <p className="text-xl font-bold leading-tight">{fmtNum(liquidLitres(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">L</span></p>
+                <p className="text-xl font-bold leading-tight">{fmtNum(liquidLitres(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">L</span></p>
               </div>
-              <p className="text-[10px] text-muted-foreground">Liquid Waste</p>
+              <p className="text-[11px] text-muted-foreground">Liquid Waste</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+            <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
-                <p className="text-xl font-bold leading-tight">{fmtNum(eWasteKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
+                <p className="text-xl font-bold leading-tight">{fmtNum(eWasteKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
               </div>
-              <p className="text-[10px] text-muted-foreground">E-Waste</p>
+              <p className="text-[11px] text-muted-foreground">E-Waste</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+            <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <Battery className="h-5 w-5 text-yellow-600 shrink-0" />
-                <p className="text-xl font-bold leading-tight">{fmtNum(batteryKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
+                <p className="text-xl font-bold leading-tight">{fmtNum(batteryKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
               </div>
-              <p className="text-[10px] text-muted-foreground">Battery Waste</p>
+              <p className="text-[11px] text-muted-foreground">Battery Waste</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+            <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <Recycle className="h-5 w-5 text-amber-600 shrink-0" />
-                <p className="text-xl font-bold leading-tight">{fmtNum(otherWastesKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
+                <p className="text-xl font-bold leading-tight">{fmtNum(otherWastesKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
               </div>
-              <p className="text-[10px] text-muted-foreground">Other Wastes</p>
+              <p className="text-[11px] text-muted-foreground">Other Wastes</p>
             </CardContent>
           </Card>
         </div>
@@ -369,19 +374,19 @@ export default function DashboardStats({ entries }: Props) {
           <>
             {hazSolids.length > 0 && (
               <DashboardCard>
-                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-2">
                   <ShieldAlert className="h-3.5 w-3.5 text-overdue" />
-                  Hazardous Solids This Month (kg)
+                  Hazardous Solids This Month
                 </h3>
                 {hazSolids.map((w) => {
                   const max = Math.max(...hazSolids.map((x) => x.total));
                   return (
-                    <div key={w.id} className="flex items-center gap-2">
+                    <div key={w.id} className="flex items-center gap-2 py-1">
                       <span className="text-xs flex-1 truncate">{w.name}</span>
                       <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
                         <div className="bg-overdue h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
                       </div>
-                      <span className="text-xs font-mono font-semibold w-16 text-right">{fmtNum(w.total)} kg</span>
+                      <span className="text-xs font-mono font-semibold w-[72px] text-right">{fmtNum(w.total)} kg</span>
                     </div>
                   );
                 })}
@@ -389,19 +394,19 @@ export default function DashboardStats({ entries }: Props) {
             )}
             {nonHazSolids.length > 0 && (
               <DashboardCard>
-                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-2">
                   <Leaf className="h-3.5 w-3.5 text-success" />
-                  Non-Hazardous Solids This Month (kg)
+                  Non-Hazardous Solids This Month
                 </h3>
                 {nonHazSolids.map((w) => {
                   const max = Math.max(...nonHazSolids.map((x) => x.total));
                   return (
-                    <div key={w.id} className="flex items-center gap-2">
+                    <div key={w.id} className="flex items-center gap-2 py-1">
                       <span className="text-xs flex-1 truncate">{w.name}</span>
                       <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
                         <div className="bg-success h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
                       </div>
-                      <span className="text-xs font-mono font-semibold w-16 text-right">{fmtNum(w.total)} kg</span>
+                      <span className="text-xs font-mono font-semibold w-[72px] text-right">{fmtNum(w.total)} kg</span>
                     </div>
                   );
                 })}
@@ -409,19 +414,20 @@ export default function DashboardStats({ entries }: Props) {
             )}
             {liquidThisMonth.length > 0 && (
               <DashboardCard>
-                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-2">
                   <Droplets className="h-3.5 w-3.5 text-cyan-500" />
-                  Liquid Waste This Month (L)
+                  Liquid Waste This Month
                 </h3>
                 {liquidThisMonth.map((w) => {
                   const max = Math.max(...liquidThisMonth.map((x) => x.total));
+                  const isOil = w.id === "waste-oil";
                   return (
-                    <div key={w.id} className="flex items-center gap-2">
+                    <div key={w.id} className="flex items-center gap-2 py-1">
                       <span className="text-xs flex-1 truncate">{w.name}</span>
                       <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
-                        <div className="bg-cyan-500 h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
+                        <div className={`${isOil ? "bg-overdue" : "bg-cyan-500"} h-full rounded-full`} style={{ width: `${(w.total / max) * 100}%` }} />
                       </div>
-                      <span className="text-xs font-mono font-semibold w-16 text-right">{fmtNum(w.total)} L</span>
+                      <span className="text-xs font-mono font-semibold w-[72px] text-right">{fmtNum(w.total)} L</span>
                     </div>
                   );
                 })}
@@ -429,19 +435,19 @@ export default function DashboardStats({ entries }: Props) {
             )}
             {eWasteThisMonth.length > 0 && (
               <DashboardCard>
-                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-2">
                   <Trash2 className="h-3.5 w-3.5 text-orange-500" />
-                  E-Waste This Month (kg)
+                  E-Waste This Month
                 </h3>
                 {eWasteThisMonth.map((w) => {
                   const max = Math.max(...eWasteThisMonth.map((x) => x.total));
                   return (
-                    <div key={w.id} className="flex items-center gap-2">
+                    <div key={w.id} className="flex items-center gap-2 py-1">
                       <span className="text-xs flex-1 truncate">{w.name}</span>
                       <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
                         <div className="bg-orange-500 h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
                       </div>
-                      <span className="text-xs font-mono font-semibold w-16 text-right">{fmtNum(w.total)} kg</span>
+                      <span className="text-xs font-mono font-semibold w-[72px] text-right">{fmtNum(w.total)} kg</span>
                     </div>
                   );
                 })}
@@ -449,19 +455,19 @@ export default function DashboardStats({ entries }: Props) {
             )}
             {batteryThisMonth.length > 0 && (
               <DashboardCard>
-                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-2">
                   <Battery className="h-3.5 w-3.5 text-yellow-600" />
-                  Battery Waste This Month (kg)
+                  Battery Waste This Month
                 </h3>
                 {batteryThisMonth.map((w) => {
                   const max = Math.max(...batteryThisMonth.map((x) => x.total));
                   return (
-                    <div key={w.id} className="flex items-center gap-2">
+                    <div key={w.id} className="flex items-center gap-2 py-1">
                       <span className="text-xs flex-1 truncate">{w.name}</span>
                       <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
                         <div className="bg-yellow-600 h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
                       </div>
-                      <span className="text-xs font-mono font-semibold w-16 text-right">{fmtNum(w.total)} kg</span>
+                      <span className="text-xs font-mono font-semibold w-[72px] text-right">{fmtNum(w.total)} kg</span>
                     </div>
                   );
                 })}
@@ -469,19 +475,19 @@ export default function DashboardStats({ entries }: Props) {
             )}
             {otherWastesThisMonth.length > 0 && (
               <DashboardCard>
-                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-2">
                   <Recycle className="h-3.5 w-3.5 text-amber-600" />
-                  Other Wastes This Month (kg)
+                  Other Wastes This Month
                 </h3>
                 {otherWastesThisMonth.map((w) => {
                   const max = Math.max(...otherWastesThisMonth.map((x) => x.total));
                   return (
-                    <div key={w.id} className="flex items-center gap-2">
+                    <div key={w.id} className="flex items-center gap-2 py-1">
                       <span className="text-xs flex-1 truncate">{w.name}</span>
                       <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
                         <div className="bg-amber-600 h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
                       </div>
-                      <span className="text-xs font-mono font-semibold w-16 text-right">{fmtNum(w.total)} kg</span>
+                      <span className="text-xs font-mono font-semibold w-[72px] text-right">{fmtNum(w.total)} kg</span>
                     </div>
                   );
                 })}
