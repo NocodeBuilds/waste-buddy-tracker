@@ -5,7 +5,7 @@
   "start_url": "/auth",
   "scope": "/",
   "display": "standalone",
-  "orientation": "any",
+  "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#10b981",
   "categories": ["productivity", "utilities", "business"],

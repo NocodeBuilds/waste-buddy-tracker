@@ -27,6 +27,13 @@ export const WASTE_TYPES: WasteType[] = [
   { id: "carbon-brush", name: "Carbon Brush Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
   { id: "oil-filters-misc", name: "Misc Oil Filters", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
   { id: "empty-containers", name: "Empty Chemical Containers", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
+  { id: "oil-hose", name: "Oil Hose", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
+  { id: "plastic-cartridge-perma", name: "Plastic Cartridge (PERMA)", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
+  { id: "plastic-cartridge-breather", name: "Plastic Cartridge (Gearbox Breather)", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
+  { id: "silica-gel", name: "Silica Gel", unit: "kg", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: false },
+  { id: "yaw-clipper-oil-seal", name: "Yaw Clipper Oil Seal", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
+  { id: "pitch-cylinder-oil-seal", name: "Pitch Cylinder Oil Seal", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
+  { id: "empty-tins", name: "Empty Tins (Zinc Spray, WD40 etc.)", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
   // Non-hazardous
   { id: "paper-waste", name: "Paper Waste", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false },
   { id: "packaging-waste", name: "Packaging Waste", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false },
