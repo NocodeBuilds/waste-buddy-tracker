@@ -59,7 +59,8 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"date_desc" | "date_asc" | "weight_desc" | "weight_asc" | "days_desc" | "type">("date_desc");
+  const [sortColumn, setSortColumn] = useState<string | null>("generated_date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [exportOpen, setExportOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<"excel" | "pdf">("excel");
 
@@ -92,28 +93,45 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
     return true;
   }).sort((a, b) => {
     const aD = isDisposed(a), bD = isDisposed(b);
-    // Disposed entries always go to the bottom regardless of sort
+    // Disposed entries always go to the bottom
     if (aD && !bD) return 1;
     if (!aD && bD) return -1;
-    if (aD && bD) {
-      return getDaysStored(b.generated_date) - getDaysStored(a.generated_date);
-    }
-    switch (sortBy) {
-      case "date_asc":
-        return new Date(a.generated_date).getTime() - new Date(b.generated_date).getTime();
-      case "weight_desc":
-        return Number(b.weight_kg ?? 0) - Number(a.weight_kg ?? 0);
-      case "weight_asc":
-        return Number(a.weight_kg ?? 0) - Number(b.weight_kg ?? 0);
-      case "days_desc":
-        return getDaysStored(b.generated_date) - getDaysStored(a.generated_date);
-      case "type":
-        return (a.waste_type_id || "").localeCompare(b.waste_type_id || "");
-      case "date_desc":
+    if (aD && bD) return 0;
+
+    if (!sortColumn) return 0;
+    const dir = sortDir === "asc" ? 1 : -1;
+    switch (sortColumn) {
+      case "location":
+        return dir * (a.location ?? "").localeCompare(b.location ?? "");
+      case "activity":
+        return dir * (a.activity_type ?? "").localeCompare(b.activity_type ?? "");
+      case "waste_type":
+        return dir * (a.waste_type_id ?? "").localeCompare(b.waste_type_id ?? "");
+      case "category":
+        return dir * (a.waste_category ?? "").localeCompare(b.waste_category ?? "");
+      case "weight":
+        return dir * (Number(b.weight_kg ?? 0) - Number(a.weight_kg ?? 0));
+      case "days":
+        return dir * (getDaysStored(b.generated_date) - getDaysStored(a.generated_date));
+      case "generated_date":
       default:
-        return getDaysStored(b.generated_date) - getDaysStored(a.generated_date);
+        return dir * (new Date(b.generated_date).getTime() - new Date(a.generated_date).getTime());
     }
   });
+
+  const handleSort = (col: string) => {
+    if (sortColumn === col) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(col);
+      setSortDir("desc");
+    }
+  };
+
+  const SortIcon = ({ col }: { col: string }) => {
+    if (sortColumn !== col) return <span className="text-muted-foreground/40 ml-0.5">↕</span>;
+    return <span className="ml-0.5">{sortDir === "asc" ? "↑" : "↓"}</span>;
+  };
 
   const getWasteName = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.name || id;
   const totals = sumByUnit(activeEntries);
@@ -205,20 +223,6 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
               <SelectItem value="active">In Storage</SelectItem>
               <SelectItem value="overdue">Overdue Only</SelectItem>
               <SelectItem value="disposed">Disposed</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-            <SelectTrigger className="h-7 text-[11px] w-auto min-w-[120px]">
-              <SelectValue placeholder="Sort" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="date_desc">Newest First</SelectItem>
-              <SelectItem value="date_asc">Oldest First</SelectItem>
-              <SelectItem value="weight_desc">Weight (High→Low)</SelectItem>
-              <SelectItem value="weight_asc">Weight (Low→High)</SelectItem>
-              <SelectItem value="days_desc">Days (Longest)</SelectItem>
-              <SelectItem value="type">By Type</SelectItem>
             </SelectContent>
           </Select>
 
@@ -614,13 +618,27 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Location</TableHead>
-              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Activity</TableHead>
-              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Waste Type</TableHead>
-              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Cat.</TableHead>
-              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Qty</TableHead>
-              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Generated</TableHead>
-              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Days</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("location")}>
+                Location <SortIcon col="location" />
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("activity")}>
+                Activity <SortIcon col="activity" />
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("waste_type")}>
+                Waste Type <SortIcon col="waste_type" />
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("category")}>
+                Cat. <SortIcon col="category" />
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("weight")}>
+                Qty <SortIcon col="weight" />
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("generated_date")}>
+                Generated <SortIcon col="generated_date" />
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("days")}>
+                Days <SortIcon col="days" />
+              </TableHead>
               <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Status</TableHead>
               <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-center">Photos</TableHead>
               {isManagerOrAdmin && <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Actions</TableHead>}
