@@ -162,21 +162,25 @@ const Index = () => {
 
       {/* Waste Entry Drawer */}
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent className="max-h-[90vh]">
-          <DrawerHeader className="flex items-center gap-2">
+        <DrawerContent className="max-h-[92vh] flex flex-col">
+          <DrawerHeader className="flex items-center gap-2 shrink-0">
             <DrawerClose asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </DrawerClose>
-            <div className="flex-1 text-left">
+            <div className="flex-1">
               <DrawerTitle>Log Waste Generation</DrawerTitle>
               <DrawerDescription>Record new waste from maintenance activity</DrawerDescription>
             </div>
           </DrawerHeader>
-          <div className="px-4 pb-6 overflow-y-auto">
+          <div className="px-4 pb-6 overflow-y-auto flex-1">
             <WasteEntryForm
-              onAdd={(entry) => addEntry.mutateAsync(entry)}
+              onAdd={async (entries) => {
+                for (const entry of entries) {
+                  await addEntry.mutateAsync(entry);
+                }
+              }}
               onClose={() => setDrawerOpen(false)}
             />
           </div>

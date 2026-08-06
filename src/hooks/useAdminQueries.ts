@@ -17,7 +17,7 @@ export function useSites() {
         .from("sites")
         .select("id, name, location")
         .order("name");
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       return data as Site[];
     },
     enabled: !!user?.id,
@@ -35,7 +35,7 @@ export function useMembers(siteId: string) {
         .from("user_sites")
         .select("user_id, user_roles (role)")
         .eq("site_id", siteId);
-      if (mErr) throw mErr;
+      if (mErr) throw new Error(mErr.message);
 
       const userIds = memberships.map((m) => m.user_id);
       if (userIds.length === 0) return [];
@@ -44,7 +44,7 @@ export function useMembers(siteId: string) {
         .from("profiles")
         .select("id, full_name, email")
         .in("id", userIds);
-      if (pErr) throw pErr;
+      if (pErr) throw new Error(pErr.message);
 
       const profileMap = new Map(profiles.map((p) => [p.id, p]));
 
@@ -75,7 +75,7 @@ export function useRequests(siteId: string) {
         .select("*")
         .eq("site_id", siteId)
         .order("created_at", { ascending: false });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       return data as AccessRequest[];
     },
     enabled: !!siteId,
@@ -95,7 +95,7 @@ export function useAuditLog(siteId: string) {
         .eq("site_id", siteId)
         .order("created_at", { ascending: false })
         .limit(100);
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       return data as AuditLogRow[];
     },
     enabled: !!siteId,
@@ -114,14 +114,17 @@ export function useCreateSite() {
         .insert({ name })
         .select()
         .single();
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sites"] });
       toast.success("Site created");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : JSON.stringify(e);
+      toast.error(msg || "Site creation failed");
+    },
   });
 }
 
@@ -135,14 +138,17 @@ export function useApproveRequest() {
         .eq("id", requestId)
         .select()
         .single();
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       return data;
     },
     onSuccess: (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: ["requests", vars.siteId] });
       toast.success("Request approved");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : JSON.stringify(e);
+      toast.error(msg || "Approval failed");
+    },
   });
 }
 
@@ -156,13 +162,16 @@ export function useRejectRequest() {
         .eq("id", requestId)
         .select()
         .single();
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       return data;
     },
     onSuccess: (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: ["requests", vars.siteId] });
       toast.success("Request rejected");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : JSON.stringify(e);
+      toast.error(msg || "Rejection failed");
+    },
   });
 }

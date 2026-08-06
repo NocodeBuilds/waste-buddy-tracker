@@ -60,7 +60,7 @@ export function useWasteEntries() {
         .select("*")
         .eq("site_id", siteId!)
         .order("generated_date", { ascending: false });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       return (data ?? []) as WasteEntry[];
     },
   });
@@ -74,7 +74,7 @@ export function useWasteEntries() {
         .select("*")
         .eq("site_id", siteId!)
         .order("disposed_date", { ascending: false });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       return (data ?? []) as DisposalBatchWithStatus[];
     },
   });
@@ -88,8 +88,9 @@ export function useWasteEntries() {
   };
 
   // H1 fix: added onError to all mutations
-  const onMutationError = (label: string) => (err: Error) => {
-    toast.error(err.message || `${label} failed`);
+  const onMutationError = (label: string) => (err: unknown) => {
+    const message = err instanceof Error ? err.message : JSON.stringify(err);
+    toast.error(message || `${label} failed`);
     console.error(`[useWasteEntries] ${label}:`, err);
   };
 
@@ -114,7 +115,7 @@ export function useWasteEntries() {
           })
           .select("id")
           .single();
-        if (error) throw error;
+        if (error) throw new Error(error.message);
         const entryId = inserted.id as string;
 
         if (photos && photos.length > 0) {
@@ -129,14 +130,14 @@ export function useWasteEntries() {
             const { error: upErr } = await supabase.storage
               .from("waste-photos")
               .upload(path, file, { contentType: file.type || "image/jpeg", upsert: false });
-            if (upErr) throw upErr;
+            if (upErr) throw new Error(upErr.message);
             const { error: rowErr } = await supabase.from("waste_entry_photos").insert({
               waste_entry_id: entryId,
               site_id: currentSiteId,
               storage_path: path,
               uploaded_by: currentUser.id,
             });
-            if (rowErr) throw rowErr;
+            if (rowErr) throw new Error(rowErr.message);
           }
         }
         return entryId;
@@ -148,8 +149,8 @@ export function useWasteEntries() {
         throw err;
       }
     },
-    onSuccess: (entryId, _vars) => {
-      toast.success("Waste entry logged");
+    onSuccess: (_entryId, _vars) => {
+      // Toast is handled by the form (one toast per log, not per entry)
       qc.invalidateQueries({ queryKey: ["waste_entries"] });
     },
     onError: onMutationError("Add entry"),
@@ -160,7 +161,7 @@ export function useWasteEntries() {
       const payload: typeof updates & { quantity?: number } = { ...updates };
       if (typeof updates.weight_kg === "number") payload.quantity = updates.weight_kg;
       const { error } = await supabase.from("waste_entries").update(payload).eq("id", id);
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       void targetSiteId;
     },
     onSuccess: (_d, vars) => {
@@ -173,7 +174,7 @@ export function useWasteEntries() {
   const deleteEntry = useMutation({
     mutationFn: async ({ id, siteId: targetSiteId }: DeleteEntryInput) => {
       const { error } = await supabase.from("waste_entries").delete().eq("id", id);
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       void targetSiteId;
     },
     onSuccess: (_d, vars) => {
@@ -198,7 +199,7 @@ export function useWasteEntries() {
         })
         .select("id")
         .single();
-      if (bErr) throw bErr;
+      if (bErr) throw new Error(bErr.message);
       return batch.id;
     },
     onSuccess: (_batchId, vars) => {

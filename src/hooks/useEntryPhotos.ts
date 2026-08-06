@@ -20,14 +20,14 @@ export function useEntryPhotos(entryId: string | undefined, enabled = true) {
         .select("id, storage_path, created_at")
         .eq("waste_entry_id", entryId!)
         .order("created_at", { ascending: true });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       if (!data || data.length === 0) return [];
 
       const paths = data.map((r) => r.storage_path);
       const { data: signed, error: sErr } = await supabase.storage
         .from("waste-photos")
         .createSignedUrls(paths, 3600);
-      if (sErr) throw sErr;
+      if (sErr) throw new Error(sErr.message);
 
       return data.map((r, i) => ({
         id: r.id,
@@ -48,7 +48,7 @@ export function useEntryPhotoCounts(entryIds: string[]) {
         .from("waste_entry_photos")
         .select("waste_entry_id")
         .in("waste_entry_id", entryIds);
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       const counts: Record<string, number> = {};
       // L1 fix: cast to the proper type instead of `any`
       const rows = (data ?? []) as { waste_entry_id: string }[];
@@ -65,9 +65,9 @@ export function useDeletePhoto() {
   return useMutation({
     mutationFn: async (photo: { id: string; storage_path: string }) => {
       const { error: sErr } = await supabase.storage.from("waste-photos").remove([photo.storage_path]);
-      if (sErr) throw sErr;
+      if (sErr) throw new Error(sErr.message);
       const { error } = await supabase.from("waste_entry_photos").delete().eq("id", photo.id);
-      if (error) throw error;
+      if (error) throw new Error(error.message);
     },
     // H2 fix: invalidate BOTH photo list and photo counts queries
     onSuccess: () => {
