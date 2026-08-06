@@ -119,6 +119,15 @@ export function useWasteEntries() {
         const entryId = inserted.id as string;
 
         if (photos && photos.length > 0) {
+          const MAX_FILE_MB = 25;
+          const bad = photos.filter((f) => !f.type.startsWith("image/"));
+          if (bad.length > 0) {
+            throw new Error(`Invalid file type: ${bad.map((f) => f.name).join(", ")}. Only images are allowed.`);
+          }
+          const tooBig = photos.filter((f) => f.size > MAX_FILE_MB * 1024 * 1024);
+          if (tooBig.length > 0) {
+            throw new Error(`File too large (max ${MAX_FILE_MB} MB): ${tooBig.map((f) => f.name).join(", ")}`);
+          }
           const compressed = await compressImages(photos);
           for (const file of compressed) {
             const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
@@ -173,9 +182,9 @@ export function useWasteEntries() {
 
   const deleteEntry = useMutation({
     mutationFn: async ({ id, siteId: targetSiteId }: DeleteEntryInput) => {
-      const { error } = await supabase.from("waste_entries").delete().eq("id", id);
+      if (!targetSiteId) throw new Error("No site selected");
+      const { error } = await supabase.from("waste_entries").delete().eq("id", id).eq("site_id", targetSiteId);
       if (error) throw new Error(error.message);
-      void targetSiteId;
     },
     onSuccess: (_d, vars) => {
       invalidateSite(vars.siteId);

@@ -682,13 +682,15 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
                     {isManagerOrAdmin && (
                       <TableCell className="text-right whitespace-nowrap">
                         {!isDisposed(entry) && (
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => onEdit(entry)} aria-label="Edit">
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
+                          <>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => onEdit(entry)} aria-label="Edit">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-overdue hover:bg-overdue/10" onClick={() => onDelete(entry.id)} aria-label="Delete">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
                         )}
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-overdue hover:bg-overdue/10" onClick={() => onDelete(entry.id)} aria-label="Delete">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
                       </TableCell>
                     )}
                   </TableRow>

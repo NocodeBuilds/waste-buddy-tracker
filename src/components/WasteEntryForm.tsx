@@ -241,10 +241,19 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
     setConfirmOpen(false);
     setSubmitting(true);
     try {
-      for (const entry of pendingEntries) {
-        await onAdd([entry]);
+      const results = await Promise.allSettled(
+        pendingEntries.map((entry) => onAdd([entry]))
+      );
+      const failed = results.filter((r) => r.status === "rejected");
+      const succeeded = results.filter((r) => r.status === "fulfilled").length;
+      if (failed.length > 0) {
+        const errMsgs = failed.map((r) => (r as PromiseRejectedResult).reason?.message || "Unknown").join("; ");
+        toast.error(`${succeeded} saved, ${failed.length} failed: ${errMsgs}`);
+        if (succeeded === 0) throw new Error(failed[0].reason?.message || "All entries failed");
       }
-      toast.success(`${pendingEntries.length} waste ${pendingEntries.length === 1 ? "entry" : "entries"} recorded`);
+      if (succeeded > 0) {
+        toast.success(`${succeeded} waste ${succeeded === 1 ? "entry" : "entries"} recorded`);
+      }
 
       // Reset form
       setGeneratedDate(getLocalDate());

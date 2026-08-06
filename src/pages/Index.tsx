@@ -134,7 +134,7 @@ const Index = () => {
               <WasteInventoryTable
                 entries={entries}
                 batches={batches}
-                onDelete={(id) => deleteEntry.mutateAsync(id)}
+                onDelete={(id) => deleteEntry.mutateAsync({ id, siteId: currentSite?.id ?? "" })}
                 onEdit={(e) => setEditEntry(e)}
                 onCreateDisposal={(p) => createDisposalBatch.mutateAsync(p)}
                 onApproveDisposal={(id) => approveDisposalBatch.mutateAsync({ batchId: id, action: "approve" })}

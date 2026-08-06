@@ -348,6 +348,23 @@ function SitesPanel({ sites, onChanged }: { sites: SiteRow[]; onChanged: () => P
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
+    const { count: entryCount } = await supabase
+      .from("waste_entries")
+      .select("*", { count: "exact", head: true })
+      .eq("site_id", deleteTarget.id);
+    const { count: batchCount } = await supabase
+      .from("disposal_batches")
+      .select("*", { count: "exact", head: true })
+      .eq("site_id", deleteTarget.id);
+    const { count: memberCount } = await supabase
+      .from("user_sites")
+      .select("*", { count: "exact", head: true })
+      .eq("site_id", deleteTarget.id);
+    const total = (entryCount ?? 0) + (batchCount ?? 0) + (memberCount ?? 0);
+    if (total > 0 && !confirm(
+      `"${deleteTarget.name}" has ${entryCount ?? 0} waste entries, ${batchCount ?? 0} disposal batches, and ${memberCount ?? 0} members. ` +
+      `Deleting the site will permanently remove all of them. This cannot be undone. Continue?`
+    )) return;
     const { error } = await supabase.from("sites").delete().eq("id", deleteTarget.id);
     if (error) return toast.error(error.message);
     toast.success("Deleted");
