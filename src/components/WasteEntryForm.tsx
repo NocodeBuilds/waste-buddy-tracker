@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
-import { Plus, Loader2, Camera, Image as ImageIcon, X, CalendarIcon, Trash2 } from "lucide-react";
+import { Plus, Loader2, Camera, X, CalendarIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { WASTE_TYPES, WasteCategory, unitLabel, getLocalDate } from "@/lib/wasteTypes";
@@ -175,7 +175,6 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
   const [pendingEntries, setPendingEntries] = useState<NewEntry[]>([]);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
-  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   // Revoke blob URLs
   useEffect(() => {
@@ -375,25 +374,21 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
           placeholder="Add notes..."
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="h-16 text-xs resize-none"
+          className="h-10 text-xs resize-none"
         />
       </div>
 
       {/* ── Photo Evidence ── */}
       <div className="space-y-1.5">
-        <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-          Photo Evidence (optional)
-        </Label>
-        <div className="grid grid-cols-2 gap-2">
-          <Button type="button" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => cameraInputRef.current?.click()}>
-            <Camera className="h-3.5 w-3.5" /> Camera
-          </Button>
-          <Button type="button" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => galleryInputRef.current?.click()}>
-            <ImageIcon className="h-3.5 w-3.5" /> Gallery
+        <div className="flex items-center justify-between gap-2">
+          <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+            Photo Evidence (optional)
+          </Label>
+          <Button type="button" variant="outline" className="h-7 text-[11px] gap-1 text-green-800 border-green-300 bg-green-50 hover:bg-green-100 hover:text-green-900 active:bg-green-200" onClick={() => cameraInputRef.current?.click()}>
+            <Camera className="h-3 w-3" /> Camera
           </Button>
         </div>
         <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFiles} className="sr-only" aria-hidden="true" tabIndex={-1} />
-        <input ref={galleryInputRef} type="file" accept="image/*" multiple onChange={handleFiles} className="sr-only" aria-hidden="true" tabIndex={-1} />
         {photos.length > 0 && (
           <div className="grid grid-cols-4 gap-1.5">
             {photos.map((f, idx) => (
@@ -409,14 +404,14 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
       </div>
 
       {/* ── Submit ── */}
-      <Button type="submit" className="w-full h-10 text-sm font-medium" disabled={submitting}>
+      <Button type="submit" variant="outline" className="w-full h-11 text-sm font-medium text-green-800 border-green-300 bg-green-50 hover:bg-green-100 hover:text-green-900 active:bg-green-200" disabled={submitting}>
         {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
         {`Record ${lines.length} Waste ${lines.length === 1 ? "Entry" : "Entries"}`}
       </Button>
 
       {/* ── Confirmation Dialog ── */}
       <Dialog open={confirmOpen} onOpenChange={(open) => { if (!open) handleCancelConfirm(); }}>
-        <DialogContent className="w-[95vw] max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-lg">
           <DialogHeader>
             <DialogTitle className="text-sm">Confirm Waste Log</DialogTitle>
             <DialogDescription className="text-xs">
@@ -446,13 +441,13 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
             })}
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button variant="outline" size="sm" className="h-8 text-xs flex-1" onClick={handleCancelConfirm} disabled={submitting}>
+          <DialogFooter className="gap-2 flex-row justify-end">
+            <Button variant="outline" size="sm" className="h-11 text-sm text-green-800 border-green-300 bg-green-50 hover:bg-green-100 hover:text-green-900 active:bg-green-200" onClick={handleCancelConfirm} disabled={submitting}>
               Edit
             </Button>
-            <Button size="sm" className="h-8 text-xs flex-1" onClick={handleConfirmSave} disabled={submitting}>
+            <Button variant="outline" size="sm" className="h-11 text-sm text-green-800 border-green-300 bg-green-50 hover:bg-green-100 hover:text-green-900 active:bg-green-200" onClick={handleConfirmSave} disabled={submitting}>
               {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
-              Confirm & Save
+              Confirm
             </Button>
           </DialogFooter>
         </DialogContent>
