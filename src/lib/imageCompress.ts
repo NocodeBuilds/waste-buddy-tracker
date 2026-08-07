@@ -6,6 +6,8 @@
 const MAX_DIMENSION = 1200;
 const JPEG_QUALITY = 0.7;
 
+import { devLog, devWarn } from "@/lib/devLog";
+
 /**
  * Compress an image File to JPEG.
  * Returns a new File at the compressed quality, or the original if compression fails.
@@ -55,13 +57,13 @@ export async function compressImage(file: File): Promise<File> {
       { type: "image/jpeg" }
     );
 
-    console.log(
+    devLog(
       `Compressed ${file.name}: ${(file.size / 1024).toFixed(0)}KB → ${(compressed.size / 1024).toFixed(0)}KB (${((1 - compressed.size / file.size) * 100).toFixed(0)}% reduction)`
     );
 
     return compressed;
   } catch (err) {
-    console.warn("Image compression failed, uploading original:", err);
+    devWarn("Image compression failed, uploading original:", err);
     return file;
   }
 }

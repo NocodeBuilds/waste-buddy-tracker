@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
 import { Site, Role } from "@/types";
@@ -23,8 +23,17 @@ export function SiteProvider({ children }: { children: ReactNode }) {
   const [currentSite, setCurrentSiteState] = useState<Site | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const loadSites = useCallback(async () => {
+    // Cancel any in-flight site request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    const signal = controller.signal;
     if (!user) {
       setSites([]);
       setCurrentSiteState(null);
@@ -33,19 +42,24 @@ export function SiteProvider({ children }: { children: ReactNode }) {
       return;
     }
     setLoading(true);
-    const { data: memberships } = await supabase
-      .from("user_sites")
-      .select("site_id, sites(id, name, location)")
-      .eq("user_id", user.id);
-    const siteList: Site[] =
-      memberships?.map((m: any) => m.sites).filter(Boolean) ?? [];
-    setSites(siteList);
+    try {
+      const { data: memberships } = await supabase
+        .from("user_sites")
+        .select("site_id, sites(id, name, location)")
+        .eq("user_id", user.id);
+      if (signal.aborted) return;
+      const siteList: Site[] =
+        memberships?.map((m: any) => m.sites).filter(Boolean) ?? [];
+      setSites(siteList);
 
-    // Restore preferred site
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const restored = siteList.find((s) => s.id === stored) ?? siteList[0] ?? null;
-    setCurrentSiteState(restored);
-    setLoading(false);
+      // Restore preferred site
+      const stored = localStorage.getItem(STORAGE_KEY);
+      const restored = siteList.find((s) => s.id === stored) ?? siteList[0] ?? null;
+      setCurrentSiteState(restored);
+      setLoading(false);
+    } catch {
+      if (!signal.aborted) setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => {

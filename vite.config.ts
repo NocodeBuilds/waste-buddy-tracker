@@ -7,6 +7,19 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig(() => ({
   preview: {
     port: 4173,
+    headers: {
+      "Content-Security-Policy": [
+        "default-src 'self'",
+        "script-src 'self' 'wasm-unsafe-eval'",  // wasm-unsafe-eval needed for sharp in some builds
+        "style-src 'self' 'unsafe-inline'",       // tailwind + shadcn inline styles
+        "img-src 'self' data: https:",
+        "connect-src 'self' https://*.supabase.co https://esm.sh https://*.vercel.app",
+        "font-src 'self' data:",
+        "object-src 'none'",
+        "frame-ancestors 'none'",
+        "base-uri 'self'",
+      ].join("; "),
+    },
   },
   server: {
     host: "::",
@@ -27,7 +40,7 @@ export default defineConfig(() => ({
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//],
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/api\/(health|status)/],
         globPatterns: ["**/*.{js,css,html,svg,png,ico,webp,woff2}"],
         // Bump cache version to force fresh install for all users
         additionalManifestEntries: [{ url: "/", revision: "v4" }],

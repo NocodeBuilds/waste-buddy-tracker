@@ -50,6 +50,20 @@ export default function AdminAuth() {
     const parsed = schema.safeParse({ email, password });
     if (!parsed.success) return toast.error(parsed.error.errors[0].message);
     setSubmitting(true);
+
+    // If the user is already logged in (e.g., confirmed their email in another tab),
+    // just run bootstrap directly.
+    if (session) {
+      const { error: bErr, data } = await supabase.functions.invoke("bootstrap-admin", {});
+      setSubmitting(false);
+      if (bErr || (data as any)?.error) {
+        return toast.error((data as any)?.error ?? bErr?.message ?? "Bootstrap failed.");
+      }
+      toast.success("You're the site admin. Welcome!");
+      navigate("/app");
+      return;
+    }
+
     const { error: suErr } = await supabase.auth.signUp({
       email,
       password,
@@ -59,15 +73,18 @@ export default function AdminAuth() {
       setSubmitting(false);
       return toast.error(suErr.message);
     }
+
+    // Try to sign in immediately — works if email confirmation is disabled.
+    // If it fails (email confirmation enabled), show clear next steps.
     const { error: siErr } = await supabase.auth.signInWithPassword({ email, password });
     if (siErr) {
       setSubmitting(false);
-      return toast.error(
-        suErr
-          ? "This email already has an account but the password doesn't match."
-          : siErr.message
+      return toast.info(
+        "Check your email to confirm your account, then sign in here to complete setup.",
+        { duration: 6000 }
       );
     }
+
     const { error: bErr, data } = await supabase.functions.invoke("bootstrap-admin", {});
     setSubmitting(false);
     if (bErr || (data as any)?.error) {

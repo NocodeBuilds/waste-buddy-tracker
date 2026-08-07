@@ -1,3 +1,5 @@
+import { devLog } from "@/lib/devLog";
+
 // Guarded service worker registration.
 // Never registers in dev or iframe. Supports ?sw=off kill switch.
 
@@ -38,7 +40,7 @@ export function registerAppServiceWorker() {
     caches.keys().then((names) => {
       const stale = names.filter((n) => !n.includes("v4"));
       if (stale.length > 0) {
-        console.log("[PWA] Clearing stale caches:", stale);
+        devLog("[PWA] Clearing stale caches:", stale);
         stale.forEach((n) => caches.delete(n));
       }
     }).catch(() => {});

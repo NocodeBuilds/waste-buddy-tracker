@@ -7,6 +7,8 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 let supabase;
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  // Surface misconfiguration in both dev and prod — this is a deployment-time error
+  // users will see as a crash, so the message must be informative in both modes.
   console.error('Missing Supabase credentials. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in your environment.');
   // Create a stub that throws helpful errors instead of crashing silently
   supabase = {

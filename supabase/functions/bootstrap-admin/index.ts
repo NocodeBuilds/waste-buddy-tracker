@@ -10,8 +10,8 @@ function buildCorsHeaders(reqOrigin: string | null): Record<string, string> {
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
   };
-  if (ALLOWED_ORIGINS.length === 0 || (reqOrigin && ALLOWED_ORIGINS.includes(reqOrigin))) {
-    headers["Access-Control-Allow-Origin"] = reqOrigin ?? "*";
+  if (reqOrigin && ALLOWED_ORIGINS.includes(reqOrigin)) {
+    headers["Access-Control-Allow-Origin"] = reqOrigin;
     headers["Access-Control-Allow-Credentials"] = "true";
   }
   return headers;

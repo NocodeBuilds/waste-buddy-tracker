@@ -6,6 +6,7 @@ import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { compressImages } from "@/lib/imageCompress";
 import { toast } from "sonner";
+import { devError } from "@/lib/devLog";
 
 // Extend DisposalBatch with status fields from DB
 interface DisposalBatchWithStatus extends DisposalBatch {
@@ -91,7 +92,7 @@ export function useWasteEntries() {
   const onMutationError = (label: string) => (err: unknown) => {
     const message = err instanceof Error ? err.message : JSON.stringify(err);
     toast.error(message || `${label} failed`);
-    console.error(`[useWasteEntries] ${label}:`, err);
+    devError(`[useWasteEntries] ${label}:`, err);
   };
 
   const addEntry = useMutation({
