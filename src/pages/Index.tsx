@@ -14,16 +14,11 @@ import EditWasteDialog from "@/components/EditWasteDialog";
 import { WasteEntry, DISPOSAL_LIMIT_DAYS, getDaysStored, isDisposed } from "@/lib/wasteTypes";
 
 import SiteSwitcher from "@/components/SiteSwitcher";
-import { Leaf, ArrowLeft, Loader2, Bell, Home, List, BarChart3, Settings, Plus, Shield } from "lucide-react";
+import { Leaf, Loader2, Bell, Home, List, BarChart3, Settings, Plus, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-  DrawerClose,
-} from "@/components/ui/drawer";
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAuth } from "@/contexts/AuthContext";
@@ -160,21 +155,14 @@ const Index = () => {
       />
 
 
-      {/* Waste Entry Drawer */}
-      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent className="max-h-[92vh] flex flex-col">
-          <DrawerHeader className="flex items-center gap-2 shrink-0">
-            <DrawerClose asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </DrawerClose>
-            <div className="flex-1">
-              <DrawerTitle>Log Waste Generation</DrawerTitle>
-              <DrawerDescription>Record new waste from maintenance activity</DrawerDescription>
-            </div>
-          </DrawerHeader>
-          <div className="px-4 pb-6 overflow-y-auto flex-1">
+      {/* Waste Entry Dialog */}
+      <Dialog open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-lg">
+          <DialogHeader>
+            <DialogTitle>Log Waste Generation</DialogTitle>
+            <DialogDescription>Record new waste from maintenance activity</DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1">
             <WasteEntryForm
               onAdd={async (entries) => {
                 for (const entry of entries) {
@@ -184,8 +172,8 @@ const Index = () => {
               onClose={() => setDrawerOpen(false)}
             />
           </div>
-        </DrawerContent>
-      </Drawer>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
