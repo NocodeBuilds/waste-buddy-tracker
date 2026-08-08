@@ -21,11 +21,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const { currentSite, sites, loading: siteLoading, isAdmin, refresh } = useSite();
-  const { signOut } = useAuth();
   const { entries, batches, isLoading, addEntry, updateEntry, deleteEntry, createDisposalBatch, approveDisposalBatch } = useWasteEntries();
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -55,7 +53,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground border-b sticky top-0 z-40">
+      <header className="fixed top-0 left-0 right-0 z-40 bg-primary text-primary-foreground border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
           <div className="bg-accent rounded-lg p-1.5">
             <Leaf className="h-5 w-5 text-accent-foreground" />
@@ -113,7 +111,7 @@ const Index = () => {
       </nav>
 
       {/* Main content */}
-      <main className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 pb-20 sm:pb-4 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
+      <main className="pt-[88px] px-3 sm:px-4 lg:px-6 py-3 sm:py-4 pb-20 sm:pb-4 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
