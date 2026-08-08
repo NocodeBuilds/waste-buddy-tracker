@@ -113,7 +113,7 @@ const Index = () => {
       </nav>
 
       {/* Main content */}
-      <main className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
+      <main className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 pb-20 sm:pb-4 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -131,9 +131,9 @@ const Index = () => {
                 batches={batches}
                 onDelete={(id) => deleteEntry.mutateAsync({ id, siteId: currentSite?.id ?? "" })}
                 onEdit={(e) => setEditEntry(e)}
-                onCreateDisposal={(p) => createDisposalBatch.mutateAsync(p)}
-                onApproveDisposal={(id) => approveDisposalBatch.mutateAsync({ batchId: id, action: "approve" })}
-                onRejectDisposal={(id, reason) => approveDisposalBatch.mutateAsync({ batchId: id, action: "reject", reason })}
+                onCreateDisposal={(p) => createDisposalBatch.mutateAsync({ ...p, siteId: currentSite?.id ?? "" })}
+                onApproveDisposal={(id) => approveDisposalBatch.mutateAsync({ batchId: id, action: "approve", siteId: currentSite?.id ?? "" })}
+                onRejectDisposal={(id, reason) => approveDisposalBatch.mutateAsync({ batchId: id, action: "reject", reason, siteId: currentSite?.id ?? "" })}
               />
             )}
             {activeTab === "analytics" && <AnalyticsTab entries={entries} batches={batches} />}
@@ -151,7 +151,10 @@ const Index = () => {
       <EditWasteDialog
         entry={editEntry}
         onClose={() => setEditEntry(null)}
-        onSave={(p) => updateEntry.mutateAsync(p)}
+        onSave={async (p) => {
+          const { id, ...updates } = p;
+          await updateEntry.mutateAsync({ id, siteId: currentSite?.id ?? "", updates });
+        }}
       />
 
 
