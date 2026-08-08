@@ -215,15 +215,13 @@ function SplitBarDialog({ open, onOpenChange, title, Icon, items, unit, barColor
   const max = items.length > 0 ? Math.max(...items.map((i) => i.total)) : 0;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Icon className={`h-4 w-4 ${textColor}`} />
-            {title}
-          </DialogTitle>
+      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto rounded-xl">
+        <DialogHeader className="items-center text-center">
+          <Icon className={`h-5 w-5 ${textColor}`} />
+          <DialogTitle>{title}</DialogTitle>
           <DialogDescription>Breakdown by waste type</DialogDescription>
         </DialogHeader>
-        <div className="py-2">
+        <div className="py-2 space-y-1">
           {items.length > 0 ? (
             items.map((item) => (
               <SplitBarRow key={item.name} name={item.name} total={item.total} max={max} unit={unit} barColor={barColor} />
@@ -372,7 +370,7 @@ export default function DashboardStats({ entries }: Props) {
         </h2>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <Card className="border-overdue/30 cursor-pointer active:scale-[0.97] transition-transform" onClick={() => setSplitBar("hazardous")}>
+          <Card className="border-overdue/30 tap-ripple cursor-pointer active:scale-[0.97] transition-transform" style={{ "--ripple-color": "rgba(239,68,68,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("hazardous")}>
             <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <ShieldAlert className="h-5 w-5 text-overdue shrink-0" />
@@ -381,7 +379,7 @@ export default function DashboardStats({ entries }: Props) {
               <p className="text-[11px] text-muted-foreground">Hazardous Solids</p>
             </CardContent>
           </Card>
-          <Card className="border-success/30 cursor-pointer active:scale-[0.97] transition-transform" onClick={() => setSplitBar("nonHazardous")}>
+          <Card className="border-success/30 tap-ripple cursor-pointer active:scale-[0.97] transition-transform" style={{ "--ripple-color": "rgba(34,197,94,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("nonHazardous")}>
             <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <Leaf className="h-5 w-5 text-success shrink-0" />
@@ -390,7 +388,7 @@ export default function DashboardStats({ entries }: Props) {
               <p className="text-[11px] text-muted-foreground">Non-Hazardous Solids</p>
             </CardContent>
           </Card>
-          <Card className="cursor-pointer active:scale-[0.97] transition-transform" onClick={() => setSplitBar("liquid")}>
+          <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-transform" style={{ "--ripple-color": "rgba(6,182,212,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("liquid")}>
             <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <Droplets className="h-5 w-5 text-cyan-500 shrink-0" />
@@ -399,7 +397,7 @@ export default function DashboardStats({ entries }: Props) {
               <p className="text-[11px] text-muted-foreground">Liquid Waste</p>
             </CardContent>
           </Card>
-          <Card className="cursor-pointer active:scale-[0.97] transition-transform" onClick={() => setSplitBar("ewaste")}>
+          <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-transform" style={{ "--ripple-color": "rgba(249,115,22,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("ewaste")}>
             <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
@@ -408,7 +406,7 @@ export default function DashboardStats({ entries }: Props) {
               <p className="text-[11px] text-muted-foreground">E-Waste</p>
             </CardContent>
           </Card>
-          <Card className="cursor-pointer active:scale-[0.97] transition-transform" onClick={() => setSplitBar("battery")}>
+          <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-transform" style={{ "--ripple-color": "rgba(202,138,4,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("battery")}>
             <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <Battery className="h-5 w-5 text-yellow-600 shrink-0" />
@@ -417,7 +415,7 @@ export default function DashboardStats({ entries }: Props) {
               <p className="text-[11px] text-muted-foreground">Battery Waste</p>
             </CardContent>
           </Card>
-          <Card className="cursor-pointer active:scale-[0.97] transition-transform" onClick={() => setSplitBar("other")}>
+          <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-transform" style={{ "--ripple-color": "rgba(217,119,6,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("other")}>
             <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <Recycle className="h-5 w-5 text-amber-600 shrink-0" />
