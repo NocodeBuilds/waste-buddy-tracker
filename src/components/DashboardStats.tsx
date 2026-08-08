@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import DashboardCard from "./dashboard/DashboardCard";
 import ComicBubble from "./ComicBubble";
@@ -7,8 +7,11 @@ import {
   getStatus, isDisposed, getMeasureUnit, fmtNum,
 } from "@/lib/wasteTypes";
 import {
-  Package, Beaker, ShieldAlert, Leaf, Trash2, Recycle, Battery, Droplets,
+  Package, ShieldAlert, Leaf, Trash2, Recycle, Battery, Droplets,
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 
 interface Props {
   entries: WasteEntry[];
@@ -191,6 +194,49 @@ function CategoryBlock({ entries, label, Icon, dot, textColor, unit, filterFn, t
   );
 }
 
+// ── Split bar dialog (shown on card tap) ──────────────────────
+
+function SplitBarRow({ name, total, max, unit, barColor }: { name: string; total: number; max: number; unit: string; barColor: string }) {
+  return (
+    <div className="flex items-center gap-2 py-1.5">
+      <span className="text-xs flex-1 truncate">{name}</span>
+      <div className="flex-[2] bg-muted rounded-full h-2.5 overflow-hidden">
+        <div className={`${barColor} h-full rounded-full transition-all duration-500`} style={{ width: `${max > 0 ? (total / max) * 100 : 0}%` }} />
+      </div>
+      <span className="text-xs font-mono font-semibold w-[72px] text-right">{fmtNum(total)} {unit}</span>
+    </div>
+  );
+}
+
+function SplitBarDialog({ open, onOpenChange, title, Icon, items, unit, barColor, textColor }: {
+  open: boolean; onOpenChange: (v: boolean) => void;
+  title: string; Icon: React.ElementType; items: { name: string; total: number }[]; unit: string; barColor: string; textColor: string;
+}) {
+  const max = items.length > 0 ? Math.max(...items.map((i) => i.total)) : 0;
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Icon className={`h-4 w-4 ${textColor}`} />
+            {title}
+          </DialogTitle>
+          <DialogDescription>Breakdown by waste type</DialogDescription>
+        </DialogHeader>
+        <div className="py-2">
+          {items.length > 0 ? (
+            items.map((item) => (
+              <SplitBarRow key={item.name} name={item.name} total={item.total} max={max} unit={unit} barColor={barColor} />
+            ))
+          ) : (
+            <p className="text-xs text-muted-foreground text-center py-4">No data this month</p>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function DashboardStats({ entries }: Props) {
   const active = entries.filter((e) => !isDisposed(e));
 
@@ -249,6 +295,18 @@ export default function DashboardStats({ entries }: Props) {
   const hasAnyThisMonth = hazSolids.length > 0 || nonHazSolids.length > 0
     || liquidThisMonth.length > 0 || eWasteThisMonth.length > 0
     || batteryThisMonth.length > 0 || otherWastesThisMonth.length > 0;
+
+  // Dialog state
+  const [splitBar, setSplitBar] = useState<string | null>(null);
+
+  const splitBarData: Record<string, { title: string; Icon: React.ElementType; items: { name: string; total: number }[]; unit: string; barColor: string; textColor: string }> = {
+    hazardous: { title: "Hazardous Solids", Icon: ShieldAlert, items: hazSolids.map((w) => ({ name: w.name, total: w.total })), unit: "kg", barColor: "bg-overdue", textColor: "text-overdue" },
+    nonHazardous: { title: "Non-Hazardous Solids", Icon: Leaf, items: nonHazSolids.map((w) => ({ name: w.name, total: w.total })), unit: "kg", barColor: "bg-success", textColor: "text-success" },
+    liquid: { title: "Liquid Waste", Icon: Droplets, items: liquidThisMonth.map((w) => ({ name: w.name, total: w.total })), unit: "L", barColor: "bg-cyan-500", textColor: "text-cyan-500" },
+    ewaste: { title: "E-Waste", Icon: Trash2, items: eWasteThisMonth.map((w) => ({ name: w.name, total: w.total })), unit: "kg", barColor: "bg-orange-500", textColor: "text-orange-500" },
+    battery: { title: "Battery Waste", Icon: Battery, items: batteryThisMonth.map((w) => ({ name: w.name, total: w.total })), unit: "kg", barColor: "bg-yellow-600", textColor: "text-yellow-600" },
+    other: { title: "Other Wastes", Icon: Recycle, items: otherWastesThisMonth.map((w) => ({ name: w.name, total: w.total })), unit: "kg", barColor: "bg-amber-600", textColor: "text-amber-600" },
+  };
 
   return (
     <div className="space-y-4">
@@ -314,7 +372,7 @@ export default function DashboardStats({ entries }: Props) {
         </h2>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <Card className="border-overdue/30">
+          <Card className="border-overdue/30 cursor-pointer active:scale-[0.97] transition-transform" onClick={() => setSplitBar("hazardous")}>
             <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <ShieldAlert className="h-5 w-5 text-overdue shrink-0" />
@@ -323,7 +381,7 @@ export default function DashboardStats({ entries }: Props) {
               <p className="text-[11px] text-muted-foreground">Hazardous Solids</p>
             </CardContent>
           </Card>
-          <Card className="border-success/30">
+          <Card className="border-success/30 cursor-pointer active:scale-[0.97] transition-transform" onClick={() => setSplitBar("nonHazardous")}>
             <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <Leaf className="h-5 w-5 text-success shrink-0" />
@@ -332,7 +390,7 @@ export default function DashboardStats({ entries }: Props) {
               <p className="text-[11px] text-muted-foreground">Non-Hazardous Solids</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="cursor-pointer active:scale-[0.97] transition-transform" onClick={() => setSplitBar("liquid")}>
             <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <Droplets className="h-5 w-5 text-cyan-500 shrink-0" />
@@ -341,7 +399,7 @@ export default function DashboardStats({ entries }: Props) {
               <p className="text-[11px] text-muted-foreground">Liquid Waste</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="cursor-pointer active:scale-[0.97] transition-transform" onClick={() => setSplitBar("ewaste")}>
             <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
@@ -350,7 +408,7 @@ export default function DashboardStats({ entries }: Props) {
               <p className="text-[11px] text-muted-foreground">E-Waste</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="cursor-pointer active:scale-[0.97] transition-transform" onClick={() => setSplitBar("battery")}>
             <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <Battery className="h-5 w-5 text-yellow-600 shrink-0" />
@@ -359,7 +417,7 @@ export default function DashboardStats({ entries }: Props) {
               <p className="text-[11px] text-muted-foreground">Battery Waste</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="cursor-pointer active:scale-[0.97] transition-transform" onClick={() => setSplitBar("other")}>
             <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
               <div className="flex items-center gap-2">
                 <Recycle className="h-5 w-5 text-amber-600 shrink-0" />
@@ -370,131 +428,15 @@ export default function DashboardStats({ entries }: Props) {
           </Card>
         </div>
 
-        {hasAnyThisMonth ? (
-          <>
-            {hazSolids.length > 0 && (
-              <DashboardCard>
-                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-2">
-                  <ShieldAlert className="h-3.5 w-3.5 text-overdue" />
-                  Hazardous Solids This Month
-                </h3>
-                {hazSolids.map((w) => {
-                  const max = Math.max(...hazSolids.map((x) => x.total));
-                  return (
-                    <div key={w.id} className="flex items-center gap-2 py-1">
-                      <span className="text-xs flex-1 truncate">{w.name}</span>
-                      <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
-                        <div className="bg-overdue h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
-                      </div>
-                      <span className="text-xs font-mono font-semibold w-[72px] text-right">{fmtNum(w.total)} kg</span>
-                    </div>
-                  );
-                })}
-              </DashboardCard>
-            )}
-            {nonHazSolids.length > 0 && (
-              <DashboardCard>
-                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-2">
-                  <Leaf className="h-3.5 w-3.5 text-success" />
-                  Non-Hazardous Solids This Month
-                </h3>
-                {nonHazSolids.map((w) => {
-                  const max = Math.max(...nonHazSolids.map((x) => x.total));
-                  return (
-                    <div key={w.id} className="flex items-center gap-2 py-1">
-                      <span className="text-xs flex-1 truncate">{w.name}</span>
-                      <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
-                        <div className="bg-success h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
-                      </div>
-                      <span className="text-xs font-mono font-semibold w-[72px] text-right">{fmtNum(w.total)} kg</span>
-                    </div>
-                  );
-                })}
-              </DashboardCard>
-            )}
-            {liquidThisMonth.length > 0 && (
-              <DashboardCard>
-                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-2">
-                  <Droplets className="h-3.5 w-3.5 text-cyan-500" />
-                  Liquid Waste This Month
-                </h3>
-                {liquidThisMonth.map((w) => {
-                  const max = Math.max(...liquidThisMonth.map((x) => x.total));
-                  const isOil = w.id === "waste-oil";
-                  return (
-                    <div key={w.id} className="flex items-center gap-2 py-1">
-                      <span className="text-xs flex-1 truncate">{w.name}</span>
-                      <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
-                        <div className={`${isOil ? "bg-overdue" : "bg-cyan-500"} h-full rounded-full`} style={{ width: `${(w.total / max) * 100}%` }} />
-                      </div>
-                      <span className="text-xs font-mono font-semibold w-[72px] text-right">{fmtNum(w.total)} L</span>
-                    </div>
-                  );
-                })}
-              </DashboardCard>
-            )}
-            {eWasteThisMonth.length > 0 && (
-              <DashboardCard>
-                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-2">
-                  <Trash2 className="h-3.5 w-3.5 text-orange-500" />
-                  E-Waste This Month
-                </h3>
-                {eWasteThisMonth.map((w) => {
-                  const max = Math.max(...eWasteThisMonth.map((x) => x.total));
-                  return (
-                    <div key={w.id} className="flex items-center gap-2 py-1">
-                      <span className="text-xs flex-1 truncate">{w.name}</span>
-                      <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
-                        <div className="bg-orange-500 h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
-                      </div>
-                      <span className="text-xs font-mono font-semibold w-[72px] text-right">{fmtNum(w.total)} kg</span>
-                    </div>
-                  );
-                })}
-              </DashboardCard>
-            )}
-            {batteryThisMonth.length > 0 && (
-              <DashboardCard>
-                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-2">
-                  <Battery className="h-3.5 w-3.5 text-yellow-600" />
-                  Battery Waste This Month
-                </h3>
-                {batteryThisMonth.map((w) => {
-                  const max = Math.max(...batteryThisMonth.map((x) => x.total));
-                  return (
-                    <div key={w.id} className="flex items-center gap-2 py-1">
-                      <span className="text-xs flex-1 truncate">{w.name}</span>
-                      <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
-                        <div className="bg-yellow-600 h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
-                      </div>
-                      <span className="text-xs font-mono font-semibold w-[72px] text-right">{fmtNum(w.total)} kg</span>
-                    </div>
-                  );
-                })}
-              </DashboardCard>
-            )}
-            {otherWastesThisMonth.length > 0 && (
-              <DashboardCard>
-                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-2">
-                  <Recycle className="h-3.5 w-3.5 text-amber-600" />
-                  Other Wastes This Month
-                </h3>
-                {otherWastesThisMonth.map((w) => {
-                  const max = Math.max(...otherWastesThisMonth.map((x) => x.total));
-                  return (
-                    <div key={w.id} className="flex items-center gap-2 py-1">
-                      <span className="text-xs flex-1 truncate">{w.name}</span>
-                      <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
-                        <div className="bg-amber-600 h-full rounded-full" style={{ width: `${(w.total / max) * 100}%` }} />
-                      </div>
-                      <span className="text-xs font-mono font-semibold w-[72px] text-right">{fmtNum(w.total)} kg</span>
-                    </div>
-                  );
-                })}
-              </DashboardCard>
-            )}
-          </>
-        ) : (
+        {splitBar && (
+          <SplitBarDialog
+            open={!!splitBar}
+            onOpenChange={(v) => { if (!v) setSplitBar(null); }}
+            {...splitBarData[splitBar]}
+          />
+        )}
+
+        {!hasAnyThisMonth && (
           <Card>
             <CardContent className="p-4 text-center text-xs text-muted-foreground flex flex-col items-center gap-1">
               <Package className="h-5 w-5 opacity-40" />
