@@ -51,7 +51,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-[52px] lg:pt-[96px]">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-40 bg-primary text-primary-foreground border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
@@ -81,7 +81,7 @@ const Index = () => {
       </header>
 
       {/* Desktop tab bar (hidden on mobile) */}
-      <nav className="hidden lg:flex items-center gap-1 border-b bg-card px-4 max-w-7xl mx-auto">
+      <nav className="hidden lg:flex fixed top-[52px] left-0 right-0 z-30 items-center gap-1 border-b bg-card px-4 max-w-7xl mx-auto">
         {[
           { id: "home" as TabId, label: "Home", icon: Home },
           { id: "inventory" as TabId, label: "Inventory", icon: List },
@@ -93,7 +93,7 @@ const Index = () => {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors",
+              "flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors",
               activeTab === tab.id
                 ? "border-accent text-accent"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -111,7 +111,7 @@ const Index = () => {
       </nav>
 
       {/* Main content */}
-      <main className="pt-[88px] px-3 sm:px-4 lg:px-6 py-3 sm:py-4 pb-20 sm:pb-4 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
+      <main className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 pb-20 sm:pb-4 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />

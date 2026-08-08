@@ -310,7 +310,7 @@ export default function DashboardStats({ entries }: Props) {
     <div className="space-y-4">
       {/* ═══════════ SECTION A: Compliance overview ═══════════ */}
       <section>
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+        <h2 className="text-sm font-semibold text-foreground/70 mb-3">
           Compliance Status
         </h2>
         <div className="grid grid-cols-2 gap-3">
@@ -365,7 +365,7 @@ export default function DashboardStats({ entries }: Props) {
 
       {/* ═══════════ SECTION B: This month ═══════════ */}
       <section className="space-y-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+        <h2 className="text-sm font-semibold text-foreground/70 mb-1">
           This Month
         </h2>
 
