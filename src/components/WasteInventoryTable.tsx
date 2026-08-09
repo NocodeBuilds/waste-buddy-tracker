@@ -395,7 +395,8 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
                 </SelectContent>
               </Select>
             </div>
-            {(typeFilter === "all" ? byType : byType.filter((w) => w.wasteCategory === typeFilter)).map((w) => {
+            <div className="max-h-[280px] overflow-y-auto space-y-2">
+              {(typeFilter === "all" ? byType : byType.filter((w) => w.wasteCategory === typeFilter)).map((w) => {
               const visible = typeFilter === "all" ? byType : byType.filter((x) => x.wasteCategory === typeFilter);
               const max = Math.max(...visible.map((x) => x.total));
               const suffix = w.measureUnit === "litres" ? "Ltr" : "kg";
@@ -421,6 +422,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
                 </div>
               );
             })}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -483,18 +485,23 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
         </AlertDialog>
       )}
 
-      {/* Disposal history — placed below Mark Quarterly button */}
-      {batches.length > 0 && (
-        <div className="space-y-2 pt-1">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
-              Disposal History
-            </h3>
+      {/* Disposal History / Manifest */}
+      <div className="space-y-2 pt-1">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-foreground/70 px-1">
+            Disposal History
+          </h3>
+          {batches.length > 0 && (
             <span className="text-[10px] text-muted-foreground">
               {batches.length} {batches.length === 1 ? "batch" : "batches"}
             </span>
-          </div>
-          {batches.map((b) => {
+          )}
+        </div>
+        {batches.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-6">No disposal records yet</p>
+        ) : (
+          <div className="space-y-2">
+            {batches.map((b) => {
             const inBatch = entries.filter((e) => e.disposal_batch_id === b.id);
             const status = (b as any).status ?? "approved";
             const isPending = status === "pending";
@@ -602,7 +609,8 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
             );
           })}
         </div>
-      )}
+        )}
+      </div>
 
       {/* All entries — at the bottom */}
       <div className="space-y-2">
@@ -614,7 +622,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
             {filtered.length} {filtered.length === 1 ? "entry" : "entries"}
           </span>
         </div>
-        <div className="rounded-lg border overflow-auto">
+        <div className="rounded-lg border overflow-auto max-h-[280px]">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">

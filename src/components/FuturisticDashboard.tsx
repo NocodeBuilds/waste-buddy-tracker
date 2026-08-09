@@ -85,11 +85,9 @@ export default function FuturisticDashboard({ entries }: Props) {
         <CardContent className="p-0">
           {/* Header with colored accent bar */}
           <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-            <div className="h-[3px] w-5 rounded-full bg-primary/60 shrink-0" />
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-              <Activity className="h-3.5 w-3.5 text-primary/70" /> This Week at a Glance
+            <h3 className="text-sm font-semibold text-foreground/70">
+              Latest entries
             </h3>
-            <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground">({weekLabel()})</span>
           </div>
 
           {weekEntries.length > 0 ? (
