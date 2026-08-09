@@ -21,11 +21,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const { currentSite, sites, loading: siteLoading, isAdmin, refresh } = useSite();
-  const { signOut } = useAuth();
   const { entries, batches, isLoading, addEntry, updateEntry, deleteEntry, createDisposalBatch, approveDisposalBatch } = useWasteEntries();
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -53,9 +51,9 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-[52px] lg:pt-[96px]">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground border-b sticky top-0 z-40">
+      <header className="fixed top-0 left-0 right-0 z-40 bg-primary text-primary-foreground border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
           <div className="bg-accent rounded-lg p-1.5">
             <Leaf className="h-5 w-5 text-accent-foreground" />
@@ -83,7 +81,7 @@ const Index = () => {
       </header>
 
       {/* Desktop tab bar (hidden on mobile) */}
-      <nav className="hidden lg:flex items-center gap-1 border-b bg-card px-4 max-w-7xl mx-auto">
+      <nav className="hidden lg:flex fixed top-[52px] left-0 right-0 z-30 items-center gap-1 border-b bg-card px-4 max-w-7xl mx-auto">
         {[
           { id: "home" as TabId, label: "Home", icon: Home },
           { id: "inventory" as TabId, label: "Inventory", icon: List },
@@ -95,7 +93,7 @@ const Index = () => {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors",
+              "flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors",
               activeTab === tab.id
                 ? "border-accent text-accent"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -113,7 +111,7 @@ const Index = () => {
       </nav>
 
       {/* Main content */}
-      <main className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
+      <main className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 pb-20 sm:pb-4 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -131,9 +129,9 @@ const Index = () => {
                 batches={batches}
                 onDelete={(id) => deleteEntry.mutateAsync({ id, siteId: currentSite?.id ?? "" })}
                 onEdit={(e) => setEditEntry(e)}
-                onCreateDisposal={(p) => createDisposalBatch.mutateAsync(p)}
-                onApproveDisposal={(id) => approveDisposalBatch.mutateAsync({ batchId: id, action: "approve" })}
-                onRejectDisposal={(id, reason) => approveDisposalBatch.mutateAsync({ batchId: id, action: "reject", reason })}
+                onCreateDisposal={(p) => createDisposalBatch.mutateAsync({ ...p, siteId: currentSite?.id ?? "" })}
+                onApproveDisposal={(id) => approveDisposalBatch.mutateAsync({ batchId: id, action: "approve", siteId: currentSite?.id ?? "" })}
+                onRejectDisposal={(id, reason) => approveDisposalBatch.mutateAsync({ batchId: id, action: "reject", reason, siteId: currentSite?.id ?? "" })}
               />
             )}
             {activeTab === "analytics" && <AnalyticsTab entries={entries} batches={batches} />}
@@ -151,7 +149,10 @@ const Index = () => {
       <EditWasteDialog
         entry={editEntry}
         onClose={() => setEditEntry(null)}
-        onSave={(p) => updateEntry.mutateAsync(p)}
+        onSave={async (p) => {
+          const { id, ...updates } = p;
+          await updateEntry.mutateAsync({ id, siteId: currentSite?.id ?? "", updates });
+        }}
       />
 
 

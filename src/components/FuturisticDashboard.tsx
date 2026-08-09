@@ -81,49 +81,63 @@ export default function FuturisticDashboard({ entries }: Props) {
       <DashboardStats entries={entries} />
 
       {/* This Week at a Glance */}
-      <Card className="border-border/50 bg-card/70 backdrop-blur">
-        <CardContent className="p-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
-            <Activity className="h-3.5 w-3.5" /> This Week at a Glance <span className="text-[10px] font-normal normal-case tracking-normal">({weekLabel()})</span>
-          </h3>
+      <Card className="border-border/50 bg-gradient-to-br from-card via-card to-primary/[0.02] overflow-hidden">
+        <CardContent className="p-0">
+          {/* Header with colored accent bar */}
+          <div className="flex items-center gap-2 px-4 pt-4 pb-2">
+            <div className="h-[3px] w-5 rounded-full bg-primary/60 shrink-0" />
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+              <Activity className="h-3.5 w-3.5 text-primary/70" /> This Week at a Glance
+            </h3>
+            <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground">({weekLabel()})</span>
+          </div>
 
           {weekEntries.length > 0 ? (
-            <div className="max-h-[240px] overflow-y-auto -mx-1 px-1">
-              <div className="w-full text-xs">
-                <div className="text-[10px] text-muted-foreground uppercase tracking-wider flex px-2 items-center gap-0">
-                  <div className="w-12 shrink-0 text-left truncate">Date</div>
-                  <div className="w-[110px] shrink-0 text-center truncate border-l border-border/40">Location</div>
-                  <div className="w-12 shrink-0 text-center truncate border-l border-border/40">HW</div>
-                  <div className="w-12 shrink-0 text-center truncate border-l border-border/40">NHW</div>
-                  <div className="w-12 shrink-0 text-center truncate border-l border-border/40">EW</div>
-                  <div className="w-12 shrink-0 text-center truncate border-l border-border/40">Other</div>
-                  <div className="w-12 shrink-0 text-center truncate border-l border-border/40">Liq</div>
+            <div className="max-h-[240px] overflow-y-auto px-3 pb-3">
+              {/* Sticky column headers */}
+              <div className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm border-b border-border/40 mb-1.5">
+                <div className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider flex items-center gap-0 pt-1.5 pb-1.5 px-1">
+                  <div className="w-12 shrink-0 text-left">Date</div>
+                  <div className="w-[110px] shrink-0 text-center">Loc</div>
+                  <div className="w-12 shrink-0 text-center">Haz</div>
+                  <div className="w-12 shrink-0 text-center">Non-Haz</div>
+                  <div className="w-12 shrink-0 text-center">E-Waste</div>
+                  <div className="w-12 shrink-0 text-center">Other</div>
+                  <div className="w-12 shrink-0 text-center">Liq</div>
                 </div>
-                <div className="divide-y divide-border/50">
-                  {weekEntries.map((entry) => {
-                    const isLiquid = ["any-liquid","waste-oil","waste-chemical","waste-water","waste-gas","liquid-chemical"].includes(entry.waste_type_id);
-                    const w = Number(entry.weight_kg ?? 0);
-                    return (
-                      <div key={entry.id} className="flex px-2 items-center gap-0">
-                        <div className="w-12 text-center font-mono text-xs text-muted-foreground shrink-0 truncate">
-                          {format(new Date(entry.generated_date + "T00:00:00"), "dd MMM")}
-                        </div>
-                        <div className="w-[110px] shrink-0 truncate border-l border-border/40">
-                          <span className="text-xs truncate block text-center">{entry.location || "—"}</span>
-                        </div>
-                        <div className="w-12 text-center font-mono text-xs shrink-0 truncate border-l border-border/40">{entry.waste_category === "hazardous" && !isLiquid ? fmtNum(w) : "—"}</div>
-                        <div className="w-12 text-center font-mono text-xs shrink-0 truncate border-l border-border/40">{entry.waste_category === "non_hazardous" && !isLiquid ? fmtNum(w) : "—"}</div>
-                        <div className="w-12 text-center font-mono text-xs shrink-0 truncate border-l border-border/40">{entry.waste_category === "e_waste" && !isLiquid ? fmtNum(w) : "—"}</div>
-                        <div className="w-12 text-center font-mono text-xs shrink-0 truncate border-l border-border/40">{entry.waste_category === "other_wastes" && !isLiquid ? fmtNum(w) : "—"}</div>
-                        <div className="w-12 text-center font-mono text-xs shrink-0 truncate border-l border-border/40">{isLiquid ? fmtNum(w) : "—"}</div>
+              </div>
+              {/* Data rows */}
+              <div className="space-y-0.5">
+                {weekEntries.map((entry) => {
+                  const isLiquid = ["any-liquid","waste-oil","waste-chemical","waste-water","waste-gas","liquid-chemical"].includes(entry.waste_type_id);
+                  const w = Number(entry.weight_kg ?? 0);
+                  const catColor = entry.waste_category === "hazardous" ? "overdue"
+                    : entry.waste_category === "non_hazardous" ? "success"
+                    : entry.waste_category === "e_waste" ? "orange-500"
+                    : entry.waste_category === "other_wastes" ? "amber-600"
+                    : isLiquid ? "cyan-500" : "foreground";
+                  const valCls = `text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md bg-${catColor}/[0.08] text-${catColor}`;
+                  const emptyCls = "text-[11px] font-mono text-muted-foreground/50 px-1.5 py-0.5";
+                  return (
+                    <div key={entry.id} className="flex items-center gap-0 py-1 hover:bg-foreground/[0.02] rounded-lg transition-colors">
+                      <div className="w-12 shrink-0 text-center">
+                        <span className="text-[11px] font-mono text-muted-foreground">{format(new Date(entry.generated_date + "T00:00:00"), "dd MMM")}</span>
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="w-[110px] shrink-0 text-center">
+                        <span className="text-[11px] truncate block">{entry.location || "—"}</span>
+                      </div>
+                      <div className="w-12 text-center">{entry.waste_category === "hazardous" && !isLiquid ? <span className={valCls}>{fmtNum(w)}</span> : <span className={emptyCls}>—</span>}</div>
+                      <div className="w-12 text-center">{entry.waste_category === "non_hazardous" && !isLiquid ? <span className={valCls}>{fmtNum(w)}</span> : <span className={emptyCls}>—</span>}</div>
+                      <div className="w-12 text-center">{entry.waste_category === "e_waste" && !isLiquid ? <span className={valCls}>{fmtNum(w)}</span> : <span className={emptyCls}>—</span>}</div>
+                      <div className="w-12 text-center">{entry.waste_category === "other_wastes" && !isLiquid ? <span className={valCls}>{fmtNum(w)}</span> : <span className={emptyCls}>—</span>}</div>
+                      <div className="w-12 text-center">{isLiquid ? <span className="text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md bg-cyan-500/[0.08] text-cyan-500">{fmtNum(w)}</span> : <span className={emptyCls}>—</span>}</div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
+            <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
               <AlertTriangle className="h-4 w-4 opacity-40" /> No entries recorded this week.
             </div>
           )}
