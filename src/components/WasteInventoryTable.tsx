@@ -211,9 +211,14 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h3 className="text-lg font-bold flex items-center gap-2 whitespace-nowrap">Waste Inventory</h3>
-        <div className="flex items-center gap-1.5 flex-wrap">
+      {/* Header row */}
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-lg font-bold">Waste Inventory</h3>
+      </div>
+
+      {/* Compact filter bar */}
+      <div className="rounded-lg border bg-card p-3 space-y-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
             <SelectTrigger className="h-7 text-[11px] w-auto min-w-[120px]">
               <SelectValue />
@@ -232,66 +237,69 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Time</SelectItem>
-              <SelectItem value="month">Month</SelectItem>
+              <SelectItem value="month">This Month</SelectItem>
               <SelectItem value="range">Custom Range</SelectItem>
               <SelectItem value="fy">Financial Year</SelectItem>
             </SelectContent>
           </Select>
+        </div>
 
-          {periodKind === "month" && (
-            <>
-              <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
-                <SelectTrigger className="h-7 text-[11px] w-auto"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {years.slice(-6).map((y) => (
-                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
-                <SelectTrigger className="h-7 text-[11px] w-auto"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {monthOpts.filter((o) => o.year === selectedYear).map((o) => (
-                    <SelectItem key={o.monthIndex} value={String(o.monthIndex)}>{o.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </>
-          )}
+        {/* Conditional sub-filters — compact row */}
+        {periodKind === "month" && (
+          <div className="flex items-center gap-2">
+            <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+              <SelectTrigger className="h-7 text-[11px] w-auto"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {years.slice(-6).map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
+              <SelectTrigger className="h-7 text-[11px] w-auto"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {monthOpts.filter((o) => o.year === selectedYear).map((o) => (
+                  <SelectItem key={o.monthIndex} value={String(o.monthIndex)}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
-          {periodKind === "range" && (
-            <>
-              <Popover open={rangeOpenStart} onOpenChange={setRangeOpenStart}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-7 text-[11px] font-normal px-2">
-                    <CalendarIcon className="mr-1 h-3 w-3" />
-                    {rangeStart || "From"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={rangeStart ? new Date(rangeStart + "T00:00:00") : undefined} onSelect={(d) => { if (d) { setRangeStart(format(d, "yyyy-MM-dd")); setRangeOpenStart(false); }}} />
-                </PopoverContent>
-              </Popover>
-              <Popover open={rangeOpenEnd} onOpenChange={setRangeOpenEnd}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-7 text-[11px] font-normal px-2">
-                    <CalendarIcon className="mr-1 h-3 w-3" />
-                    {rangeEnd || "To"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={rangeEnd ? new Date(rangeEnd + "T00:00:00") : undefined} onSelect={(d) => { if (d) { setRangeEnd(format(d, "yyyy-MM-dd")); setRangeOpenEnd(false); }}} />
-                </PopoverContent>
-              </Popover>
-              {(rangeStart || rangeEnd) && (
-                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setRangeStart(""); setRangeEnd(""); }}>
-                  <X className="h-3 w-3" />
+        {periodKind === "range" && (
+          <div className="flex items-center gap-2">
+            <Popover open={rangeOpenStart} onOpenChange={setRangeOpenStart}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 text-[11px] font-normal px-2">
+                  <CalendarIcon className="mr-1 h-3 w-3" />
+                  {rangeStart || "From"}
                 </Button>
-              )}
-            </>
-          )}
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={rangeStart ? new Date(rangeStart + "T00:00:00") : undefined} onSelect={(d) => { if (d) { setRangeStart(format(d, "yyyy-MM-dd")); setRangeOpenStart(false); }}} />
+              </PopoverContent>
+            </Popover>
+            <Popover open={rangeOpenEnd} onOpenChange={setRangeOpenEnd}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 text-[11px] font-normal px-2">
+                  <CalendarIcon className="mr-1 h-3 w-3" />
+                  {rangeEnd || "To"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={rangeEnd ? new Date(rangeEnd + "T00:00:00") : undefined} onSelect={(d) => { if (d) { setRangeEnd(format(d, "yyyy-MM-dd")); setRangeOpenEnd(false); }}} />
+              </PopoverContent>
+            </Popover>
+            {(rangeStart || rangeEnd) && (
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setRangeStart(""); setRangeEnd(""); }}>
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        )}
 
-          {periodKind === "fy" && (
+        {periodKind === "fy" && (
+          <div className="flex items-center gap-2">
             <Select value={String(selectedFy)} onValueChange={(v) => setSelectedFy(Number(v))}>
               <SelectTrigger className="h-7 text-[11px] w-auto">
                 <SelectValue />
@@ -302,8 +310,8 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
                 ))}
               </SelectContent>
             </Select>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Storage summary — matches "This Month" cards theme on home */}
@@ -378,27 +386,13 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
       {byType.length > 0 && (
         <Card>
           <CardContent className="p-4 space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                <Scale className="h-3.5 w-3.5" /> In storage by waste type
+            <div>
+              <h3 className="text-sm font-semibold text-foreground/70 flex items-center gap-1.5">
+                <Scale className="h-3.5 w-3.5 text-primary/70" /> In storage by waste type
               </h3>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="h-7 text-[11px] w-auto min-w-[100px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="hazardous">Hazardous</SelectItem>
-                  <SelectItem value="non_hazardous">Non-Hazardous</SelectItem>
-                  <SelectItem value="e_waste">E-Waste</SelectItem>
-                  <SelectItem value="other_wastes">Other</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
-            <div className="max-h-[280px] overflow-y-auto space-y-2">
-              {(typeFilter === "all" ? byType : byType.filter((w) => w.wasteCategory === typeFilter)).map((w) => {
-              const visible = typeFilter === "all" ? byType : byType.filter((x) => x.wasteCategory === typeFilter);
-              const max = Math.max(...visible.map((x) => x.total));
+            {byType.map((w) => {
+              const max = Math.max(...byType.map((x) => x.total));
               const suffix = w.measureUnit === "litres" ? "Ltr" : "kg";
               const isOil = w.id === "waste-oil" || w.id === "waste-grease";
               const barColor = isOil
@@ -422,7 +416,6 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
                 </div>
               );
             })}
-            </div>
           </CardContent>
         </Card>
       )}
