@@ -81,7 +81,7 @@ const Index = () => {
       </header>
 
       {/* Desktop tab bar (hidden on mobile) */}
-      <nav className="hidden lg:flex fixed top-[52px] left-0 right-0 z-30 items-center gap-1 border-b bg-card px-4 max-w-7xl mx-auto">
+      <nav className="hidden lg:flex fixed top-[52px] left-0 right-0 z-30 items-center gap-1 border-b bg-card/95 backdrop-blur-sm px-4 max-w-7xl mx-auto">
         {[
           { id: "home" as TabId, label: "Home", icon: Home },
           { id: "inventory" as TabId, label: "Inventory", icon: List },
@@ -93,30 +93,61 @@ const Index = () => {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors",
+              "relative flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors rounded-t-md",
               activeTab === tab.id
-                ? "border-accent text-accent"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? "text-accent"
+                : "text-muted-foreground hover:text-foreground hover:bg-foreground/5"
             )}
           >
+            {/* Animated active indicator */}
+            {activeTab === tab.id && (
+              <span className="absolute -bottom-[1px] left-2 right-2 h-[2px] bg-accent rounded-full" />
+            )}
             <tab.icon className="h-4 w-4" />
             {tab.label}
           </button>
         ))}
         <div className="ml-auto">
-          <Button onClick={() => setDrawerOpen(true)} size="sm" className="gap-2">
+          <Button onClick={() => setDrawerOpen(true)} size="sm" className="gap-2 transition-all hover:shadow-md hover:shadow-accent/20">
             <Plus className="h-4 w-4" /> Log Entry
           </Button>
         </div>
       </nav>
 
       {/* Main content */}
-      <main className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 pb-20 sm:pb-4 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      <main className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 pb-20 lg:pb-4 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
+        {isLoading || siteLoading ? (
+        <div className="space-y-4">
+          {/* Skeleton header */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="h-7 w-40 bg-muted/60 rounded-md animate-pulse" />
+            <div className="h-8 w-24 bg-muted/60 rounded-md animate-pulse" />
           </div>
-        ) : (
+          {/* Skeleton stat cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-lg border bg-card p-3 space-y-2">
+                <div className="h-3 w-16 bg-muted/60 rounded animate-pulse" />
+                <div className="h-6 w-12 bg-muted/40 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+          {/* Skeleton chart area */}
+          <div className="rounded-lg border bg-card p-4 space-y-3">
+            <div className="h-4 w-32 bg-muted/60 rounded animate-pulse" />
+            <div className="h-[200px] bg-muted/30 rounded-md animate-pulse" />
+          </div>
+          {/* Skeleton table */}
+          <div className="rounded-lg border bg-card p-4 space-y-2">
+            <div className="h-4 w-36 bg-muted/60 rounded animate-pulse" />
+            <div className="space-y-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-10 bg-muted/30 rounded-md animate-pulse" />
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
           <>
             {activeTab === "home" && (
               <>
@@ -158,13 +189,12 @@ const Index = () => {
 
       {/* Waste Entry Dialog */}
       <Dialog open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-lg">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Log Waste Generation</DialogTitle>
             <DialogDescription>Record new waste from maintenance activity</DialogDescription>
           </DialogHeader>
-          <div className="overflow-y-auto flex-1">
-            <WasteEntryForm
+          <WasteEntryForm
               onAdd={async (entries) => {
                 for (const entry of entries) {
                   await addEntry.mutateAsync(entry);
@@ -172,7 +202,6 @@ const Index = () => {
               }}
               onClose={() => setDrawerOpen(false)}
             />
-          </div>
         </DialogContent>
       </Dialog>
     </div>

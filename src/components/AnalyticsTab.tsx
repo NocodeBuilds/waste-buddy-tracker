@@ -268,7 +268,8 @@ export default function AnalyticsTab({ entries, batches }: Props) {
         <DashboardCard>
           <div className="flex flex-col items-center gap-2 py-6 text-center text-muted-foreground">
             <AlertTriangle className="h-8 w-8 opacity-40" />
-            <p className="text-sm">No entries in the selected period.</p>
+            <p className="text-sm font-medium">No entries in the selected period.</p>
+            <p className="text-xs text-muted-foreground/70">Try a different period filter, or tap <strong>Log</strong> to add waste entries.</p>
           </div>
         </DashboardCard>
       )}

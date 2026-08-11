@@ -647,7 +647,12 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={isManagerOrAdmin ? 10 : 9} className="text-center py-8 text-muted-foreground">No entries found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={isManagerOrAdmin ? 10 : 9} className="text-center py-10">
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <p className="text-sm font-medium">No waste entries found</p>
+                  <p className="text-xs text-muted-foreground/70">Try changing the filter, or tap <strong>Log</strong> to add your first entry.</p>
+                </div>
+              </TableCell></TableRow>
             ) : (
               filtered.map((entry) => {
                 const days = getDaysStored(entry.generated_date);
