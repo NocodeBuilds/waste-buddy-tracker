@@ -5,7 +5,7 @@ import { WasteEntry, WASTE_TYPES, getDaysStored, getStatus, DISPOSAL_LIMIT_DAYS,
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, CheckCircle, Loader2, FileSpreadsheet, Pencil, Download, Scale, ShieldAlert, Leaf, Beaker, Droplets, Battery, Recycle, CalendarIcon, X } from "lucide-react";
+import { Trash2, CheckCircle, Loader2, FileSpreadsheet, Pencil, Download, Scale, ShieldAlert, Leaf, Beaker, Droplets, Battery, Recycle, CalendarIcon, X, ChevronDown } from "lucide-react";
 import { exportInventoryToExcel, exportForm3Pdf, exportDisposalBatchPdf } from "@/lib/wasteExports";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,6 +29,9 @@ import { format } from "date-fns";
 import EntryPhotosButton from "./EntryPhotosButton";
 import { toast } from "sonner";
 import ExportOptionsDialog from "./ExportOptionsDialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
   entries: WasteEntry[];
@@ -63,6 +66,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [exportOpen, setExportOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<"excel" | "pdf">("excel");
+  const [byTypeOpen, setByTypeOpen] = useState(false);
 
   const years = useMemo(() => {
     const cur = new Date().getFullYear();
@@ -385,38 +389,76 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
       {/* Weight / volume by waste type (in storage) */}
       {byType.length > 0 && (
         <Card>
-          <CardContent className="p-4 space-y-2">
-            <div>
-              <h3 className="text-sm font-semibold text-foreground/70 flex items-center gap-1.5">
-                <Scale className="h-3.5 w-3.5 text-primary/70" /> In storage by waste type
-              </h3>
-            </div>
-            {byType.map((w) => {
-              const max = Math.max(...byType.map((x) => x.total));
-              const suffix = w.measureUnit === "litres" ? "Ltr" : "kg";
-              const isOil = w.id === "waste-oil" || w.id === "waste-grease";
-              const barColor = isOil
-                ? "bg-overdue"
-                : w.measureUnit === "litres"
-                  ? "bg-accent"
-                  : w.wasteCategory === "hazardous"
-                    ? "bg-overdue"
-                    : w.wasteCategory === "other_wastes"
-                      ? "bg-amber-500"
-                      : "bg-success";
-              return (
-                <div key={w.id} className="flex items-center gap-2">
-                  <span className="text-xs flex-1 truncate">{w.name}</span>
-                  <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
-                    <div className={`${barColor} h-full rounded-full`} style={{ width: `${(w.total / max) * 100}%` }} />
-                  </div>
-                  <span className="text-xs font-mono font-semibold w-20 text-right">
-                    {fmtNum(w.total)} {suffix}
+          <Collapsible open={byTypeOpen} onOpenChange={setByTypeOpen}>
+            <CardContent className="p-4 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <Scale className="h-3.5 w-3.5 text-primary/70" />
+                  <h3 className="text-sm font-semibold text-foreground/70">
+                    In storage by waste type
+                  </h3>
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    ({byType.length})
                   </span>
                 </div>
-              );
-            })}
-          </CardContent>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1 text-muted-foreground hover:text-foreground">
+                    {byTypeOpen ? "Hide" : "Show"}
+                    <motion.div
+                      animate={{ rotate: byTypeOpen ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </motion.div>
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+              <AnimatePresence initial={false}>
+                {byTypeOpen && (
+                  <CollapsibleContent forceMount>
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <ScrollArea className="max-h-[240px] -mx-1 px-1">
+                        <div className="space-y-2 py-1">
+                          {byType.map((w) => {
+                            const max = Math.max(...byType.map((x) => x.total));
+                            const suffix = w.measureUnit === "litres" ? "Ltr" : "kg";
+                            const isOil = w.id === "waste-oil" || w.id === "waste-grease";
+                            const barColor = isOil
+                              ? "bg-overdue"
+                              : w.measureUnit === "litres"
+                                ? "bg-accent"
+                                : w.wasteCategory === "hazardous"
+                                  ? "bg-overdue"
+                                  : w.wasteCategory === "other_wastes"
+                                    ? "bg-amber-500"
+                                    : "bg-success";
+                            return (
+                              <div key={w.id} className="flex items-center gap-2">
+                                <span className="text-xs flex-1 truncate">{w.name}</span>
+                                <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
+                                  <div className={`${barColor} h-full rounded-full`} style={{ width: `${(w.total / max) * 100}%` }} />
+                                </div>
+                                <span className="text-xs font-mono font-semibold w-20 text-right">
+                                  {fmtNum(w.total)} {suffix}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <ScrollBar orientation="vertical" />
+                      </ScrollArea>
+                    </motion.div>
+                  </CollapsibleContent>
+                )}
+              </AnimatePresence>
+            </CardContent>
+          </Collapsible>
         </Card>
       )}
 
