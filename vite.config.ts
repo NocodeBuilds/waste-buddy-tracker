@@ -30,7 +30,7 @@ export default defineConfig(() => ({
         navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//],
         globPatterns: ["**/*.{js,css,html,svg,png,ico,webp,woff2}"],
         // Bump cache version to force fresh install for all users
-        additionalManifestEntries: [{ url: "/", revision: "v4" }],
+        additionalManifestEntries: [{ url: "/", revision: "v5" }],
         runtimeCaching: [
           {
             urlPattern: ({ request }) => request.mode === "navigate",

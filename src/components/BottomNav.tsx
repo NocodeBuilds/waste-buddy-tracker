@@ -1,5 +1,7 @@
+import { motion } from "framer-motion";
 import { Home, List, BarChart3, Settings, Plus, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { scaleTap } from "@/lib/animations";
 
 export type TabId = "home" | "inventory" | "analytics" | "settings" | "admin";
 
@@ -29,16 +31,19 @@ export default function BottomNav({ activeTab, onTabChange, onAddClick, isAdmin,
     : baseTabs;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border safe-area-bottom">
-      <div className="flex items-end justify-around px-2 pt-1 pb-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t border-border safe-area-bottom">
+      <div className="flex items-end justify-around px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {tabs.slice(0, 2).map((tab) => (
-          <button
+          <motion.button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={cn(
               "relative flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg transition-colors min-w-[56px]",
               activeTab === tab.id ? "text-accent" : "text-muted-foreground"
             )}
+            variants={scaleTap}
+            whileHover="hover"
+            whileTap="tap"
           >
             <tab.icon className="h-5 w-5" />
             {tab.id === "inventory" && overdueCount > 0 && (
@@ -47,29 +52,38 @@ export default function BottomNav({ activeTab, onTabChange, onAddClick, isAdmin,
               </span>
             )}
             <span className="text-[10px] font-medium">{tab.label}</span>
-          </button>
+          </motion.button>
         ))}
 
         {/* Center FAB */}
-        <button onClick={onAddClick} className="flex flex-col items-center -mt-4">
-          <div className="bg-accent text-accent-foreground rounded-full p-3 shadow-lg shadow-accent/30">
+        <motion.button
+          onClick={onAddClick}
+          className="flex flex-col items-center -mt-4"
+          variants={scaleTap}
+          whileHover="hover"
+          whileTap="tap"
+        >
+          <div className="bg-accent text-accent-foreground rounded-full p-3 shadow-lg shadow-accent/30 transition-shadow hover:shadow-xl hover:shadow-accent/40">
             <Plus className="h-6 w-6" />
           </div>
           <span className="text-[10px] font-medium text-accent mt-0.5">Log</span>
-        </button>
+        </motion.button>
 
         {tabs.slice(2).map((tab) => (
-          <button
+          <motion.button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={cn(
               "flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg transition-colors min-w-[56px]",
               activeTab === tab.id ? "text-accent" : "text-muted-foreground"
             )}
+            variants={scaleTap}
+            whileHover="hover"
+            whileTap="tap"
           >
             <tab.icon className="h-5 w-5" />
             <span className="text-[10px] font-medium">{tab.label}</span>
-          </button>
+          </motion.button>
         ))}
       </div>
     </nav>

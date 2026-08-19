@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import { WasteEntry, fmtNum, getLocalDate } from "@/lib/wasteTypes";
@@ -75,8 +76,43 @@ export default function FuturisticDashboard({ entries }: Props) {
       .sort((a, b) => b.generated_date.localeCompare(a.generated_date));
   }, [entries]);
 
+  const reduceMotion = useReducedMotion();
+
   return (
     <div className="space-y-4">
+      {/* ── Soft background spotlight ── */}
+      {!reduceMotion && (
+        <div className="relative -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 mb-2 overflow-hidden rounded-b-2xl">
+          {/* Green radial glow — very restrained */}
+          <motion.div
+            className="absolute -top-20 right-[10%] w-[400px] h-[400px] rounded-full pointer-events-none"
+            style={{
+              background: "radial-gradient(circle, hsl(142 50% 25% / 0.07) 0%, transparent 70%)",
+              filter: "blur(40px)",
+            }}
+            animate={{
+              x: [0, 15, -8, 0],
+              y: [0, -10, 8, 0],
+              scale: [1, 1.03, 0.98, 1],
+            }}
+            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          />
+          <motion.div
+            className="absolute -bottom-16 left-[5%] w-[300px] h-[300px] rounded-full pointer-events-none"
+            style={{
+              background: "radial-gradient(circle, hsl(142 70% 42% / 0.04) 0%, transparent 70%)",
+              filter: "blur(30px)",
+            }}
+            animate={{
+              x: [0, -10, 6, 0],
+              y: [0, 8, -12, 0],
+              scale: [1, 0.97, 1.02, 1],
+            }}
+            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+          />
+        </div>
+      )}
+
       {/* Two-section summary (cumulative + this month) */}
       <DashboardStats entries={entries} />
 
@@ -85,11 +121,9 @@ export default function FuturisticDashboard({ entries }: Props) {
         <CardContent className="p-0">
           {/* Header with colored accent bar */}
           <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-            <div className="h-[3px] w-5 rounded-full bg-primary/60 shrink-0" />
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-              <Activity className="h-3.5 w-3.5 text-primary/70" /> This Week at a Glance
+            <h3 className="text-sm font-semibold text-foreground/70">
+              Latest entries
             </h3>
-            <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground">({weekLabel()})</span>
           </div>
 
           {weekEntries.length > 0 ? (

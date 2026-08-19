@@ -404,7 +404,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
       </div>
 
       {/* ── Submit ── */}
-      <Button type="submit" variant="outline" className="w-full h-11 text-sm font-medium text-green-800 border-green-300 bg-green-50 hover:bg-green-100 hover:text-green-900 active:bg-green-200" disabled={submitting}>
+      <Button type="submit" className="w-full text-sm font-medium" disabled={submitting}>
         {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
         {`Record ${lines.length} Waste ${lines.length === 1 ? "Entry" : "Entries"}`}
       </Button>

@@ -43,3 +43,13 @@ dist-ssr
 .env.production
 .env.staging
 .env
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# E2E environment variables (contain credentials)
+.env.e2e

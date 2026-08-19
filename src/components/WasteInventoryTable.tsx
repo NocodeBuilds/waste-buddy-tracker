@@ -5,7 +5,7 @@ import { WasteEntry, WASTE_TYPES, getDaysStored, getStatus, DISPOSAL_LIMIT_DAYS,
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, CheckCircle, Loader2, FileSpreadsheet, Pencil, Download, Scale, ShieldAlert, Leaf, Beaker, Droplets, Battery, Recycle, CalendarIcon, X } from "lucide-react";
+import { Trash2, CheckCircle, Loader2, FileSpreadsheet, Pencil, Download, Scale, ShieldAlert, Leaf, Beaker, Droplets, Battery, Recycle, CalendarIcon, X, ChevronDown } from "lucide-react";
 import { exportInventoryToExcel, exportForm3Pdf, exportDisposalBatchPdf } from "@/lib/wasteExports";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,6 +29,9 @@ import { format } from "date-fns";
 import EntryPhotosButton from "./EntryPhotosButton";
 import { toast } from "sonner";
 import ExportOptionsDialog from "./ExportOptionsDialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
   entries: WasteEntry[];
@@ -63,6 +66,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [exportOpen, setExportOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<"excel" | "pdf">("excel");
+  const [byTypeOpen, setByTypeOpen] = useState(false);
 
   const years = useMemo(() => {
     const cur = new Date().getFullYear();
@@ -211,9 +215,14 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h3 className="text-lg font-bold flex items-center gap-2 whitespace-nowrap">Waste Inventory</h3>
-        <div className="flex items-center gap-1.5 flex-wrap">
+      {/* Header row */}
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-lg font-bold">Waste Inventory</h3>
+      </div>
+
+      {/* Compact filter bar */}
+      <div className="rounded-lg border bg-card p-3 space-y-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
             <SelectTrigger className="h-7 text-[11px] w-auto min-w-[120px]">
               <SelectValue />
@@ -232,66 +241,69 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Time</SelectItem>
-              <SelectItem value="month">Month</SelectItem>
+              <SelectItem value="month">This Month</SelectItem>
               <SelectItem value="range">Custom Range</SelectItem>
               <SelectItem value="fy">Financial Year</SelectItem>
             </SelectContent>
           </Select>
+        </div>
 
-          {periodKind === "month" && (
-            <>
-              <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
-                <SelectTrigger className="h-7 text-[11px] w-auto"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {years.slice(-6).map((y) => (
-                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
-                <SelectTrigger className="h-7 text-[11px] w-auto"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {monthOpts.filter((o) => o.year === selectedYear).map((o) => (
-                    <SelectItem key={o.monthIndex} value={String(o.monthIndex)}>{o.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </>
-          )}
+        {/* Conditional sub-filters — compact row */}
+        {periodKind === "month" && (
+          <div className="flex items-center gap-2">
+            <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+              <SelectTrigger className="h-7 text-[11px] w-auto"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {years.slice(-6).map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
+              <SelectTrigger className="h-7 text-[11px] w-auto"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {monthOpts.filter((o) => o.year === selectedYear).map((o) => (
+                  <SelectItem key={o.monthIndex} value={String(o.monthIndex)}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
-          {periodKind === "range" && (
-            <>
-              <Popover open={rangeOpenStart} onOpenChange={setRangeOpenStart}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-7 text-[11px] font-normal px-2">
-                    <CalendarIcon className="mr-1 h-3 w-3" />
-                    {rangeStart || "From"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={rangeStart ? new Date(rangeStart + "T00:00:00") : undefined} onSelect={(d) => { if (d) { setRangeStart(format(d, "yyyy-MM-dd")); setRangeOpenStart(false); }}} />
-                </PopoverContent>
-              </Popover>
-              <Popover open={rangeOpenEnd} onOpenChange={setRangeOpenEnd}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-7 text-[11px] font-normal px-2">
-                    <CalendarIcon className="mr-1 h-3 w-3" />
-                    {rangeEnd || "To"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={rangeEnd ? new Date(rangeEnd + "T00:00:00") : undefined} onSelect={(d) => { if (d) { setRangeEnd(format(d, "yyyy-MM-dd")); setRangeOpenEnd(false); }}} />
-                </PopoverContent>
-              </Popover>
-              {(rangeStart || rangeEnd) && (
-                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setRangeStart(""); setRangeEnd(""); }}>
-                  <X className="h-3 w-3" />
+        {periodKind === "range" && (
+          <div className="flex items-center gap-2">
+            <Popover open={rangeOpenStart} onOpenChange={setRangeOpenStart}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 text-[11px] font-normal px-2">
+                  <CalendarIcon className="mr-1 h-3 w-3" />
+                  {rangeStart || "From"}
                 </Button>
-              )}
-            </>
-          )}
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={rangeStart ? new Date(rangeStart + "T00:00:00") : undefined} onSelect={(d) => { if (d) { setRangeStart(format(d, "yyyy-MM-dd")); setRangeOpenStart(false); }}} />
+              </PopoverContent>
+            </Popover>
+            <Popover open={rangeOpenEnd} onOpenChange={setRangeOpenEnd}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 text-[11px] font-normal px-2">
+                  <CalendarIcon className="mr-1 h-3 w-3" />
+                  {rangeEnd || "To"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={rangeEnd ? new Date(rangeEnd + "T00:00:00") : undefined} onSelect={(d) => { if (d) { setRangeEnd(format(d, "yyyy-MM-dd")); setRangeOpenEnd(false); }}} />
+              </PopoverContent>
+            </Popover>
+            {(rangeStart || rangeEnd) && (
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setRangeStart(""); setRangeEnd(""); }}>
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        )}
 
-          {periodKind === "fy" && (
+        {periodKind === "fy" && (
+          <div className="flex items-center gap-2">
             <Select value={String(selectedFy)} onValueChange={(v) => setSelectedFy(Number(v))}>
               <SelectTrigger className="h-7 text-[11px] w-auto">
                 <SelectValue />
@@ -302,8 +314,8 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
                 ))}
               </SelectContent>
             </Select>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Storage summary — matches "This Month" cards theme on home */}
@@ -377,51 +389,76 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
       {/* Weight / volume by waste type (in storage) */}
       {byType.length > 0 && (
         <Card>
-          <CardContent className="p-4 space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                <Scale className="h-3.5 w-3.5" /> In storage by waste type
-              </h3>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="h-7 text-[11px] w-auto min-w-[100px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="hazardous">Hazardous</SelectItem>
-                  <SelectItem value="non_hazardous">Non-Hazardous</SelectItem>
-                  <SelectItem value="e_waste">E-Waste</SelectItem>
-                  <SelectItem value="other_wastes">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {(typeFilter === "all" ? byType : byType.filter((w) => w.wasteCategory === typeFilter)).map((w) => {
-              const visible = typeFilter === "all" ? byType : byType.filter((x) => x.wasteCategory === typeFilter);
-              const max = Math.max(...visible.map((x) => x.total));
-              const suffix = w.measureUnit === "litres" ? "Ltr" : "kg";
-              const isOil = w.id === "waste-oil" || w.id === "waste-grease";
-              const barColor = isOil
-                ? "bg-overdue"
-                : w.measureUnit === "litres"
-                  ? "bg-accent"
-                  : w.wasteCategory === "hazardous"
-                    ? "bg-overdue"
-                    : w.wasteCategory === "other_wastes"
-                      ? "bg-amber-500"
-                      : "bg-success";
-              return (
-                <div key={w.id} className="flex items-center gap-2">
-                  <span className="text-xs flex-1 truncate">{w.name}</span>
-                  <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
-                    <div className={`${barColor} h-full rounded-full`} style={{ width: `${(w.total / max) * 100}%` }} />
-                  </div>
-                  <span className="text-xs font-mono font-semibold w-20 text-right">
-                    {fmtNum(w.total)} {suffix}
+          <Collapsible open={byTypeOpen} onOpenChange={setByTypeOpen}>
+            <CardContent className="p-4 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <Scale className="h-3.5 w-3.5 text-primary/70" />
+                  <h3 className="text-sm font-semibold text-foreground/70">
+                    In storage by waste type
+                  </h3>
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    ({byType.length})
                   </span>
                 </div>
-              );
-            })}
-          </CardContent>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1 text-muted-foreground hover:text-foreground">
+                    {byTypeOpen ? "Hide" : "Show"}
+                    <motion.div
+                      animate={{ rotate: byTypeOpen ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </motion.div>
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+              <AnimatePresence initial={false}>
+                {byTypeOpen && (
+                  <CollapsibleContent forceMount>
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <ScrollArea className="max-h-[240px] -mx-1 px-1">
+                        <div className="space-y-2 py-1">
+                          {byType.map((w) => {
+                            const max = Math.max(...byType.map((x) => x.total));
+                            const suffix = w.measureUnit === "litres" ? "Ltr" : "kg";
+                            const isOil = w.id === "waste-oil" || w.id === "waste-grease";
+                            const barColor = isOil
+                              ? "bg-overdue"
+                              : w.measureUnit === "litres"
+                                ? "bg-accent"
+                                : w.wasteCategory === "hazardous"
+                                  ? "bg-overdue"
+                                  : w.wasteCategory === "other_wastes"
+                                    ? "bg-amber-500"
+                                    : "bg-success";
+                            return (
+                              <div key={w.id} className="flex items-center gap-2">
+                                <span className="text-xs flex-1 truncate">{w.name}</span>
+                                <div className="flex-[2] bg-muted rounded-full h-2 overflow-hidden">
+                                  <div className={`${barColor} h-full rounded-full`} style={{ width: `${(w.total / max) * 100}%` }} />
+                                </div>
+                                <span className="text-xs font-mono font-semibold w-20 text-right">
+                                  {fmtNum(w.total)} {suffix}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <ScrollBar orientation="vertical" />
+                      </ScrollArea>
+                    </motion.div>
+                  </CollapsibleContent>
+                )}
+              </AnimatePresence>
+            </CardContent>
+          </Collapsible>
         </Card>
       )}
 
@@ -483,18 +520,23 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
         </AlertDialog>
       )}
 
-      {/* Disposal history — placed below Mark Quarterly button */}
-      {batches.length > 0 && (
-        <div className="space-y-2 pt-1">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
-              Disposal History
-            </h3>
+      {/* Disposal History / Manifest */}
+      <div className="space-y-2 pt-1">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-foreground/70 px-1">
+            Disposal History
+          </h3>
+          {batches.length > 0 && (
             <span className="text-[10px] text-muted-foreground">
               {batches.length} {batches.length === 1 ? "batch" : "batches"}
             </span>
-          </div>
-          {batches.map((b) => {
+          )}
+        </div>
+        {batches.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-6">No disposal records yet</p>
+        ) : (
+          <div className="space-y-2">
+            {batches.map((b) => {
             const inBatch = entries.filter((e) => e.disposal_batch_id === b.id);
             const status = (b as any).status ?? "approved";
             const isPending = status === "pending";
@@ -602,7 +644,8 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
             );
           })}
         </div>
-      )}
+        )}
+      </div>
 
       {/* All entries — at the bottom */}
       <div className="space-y-2">
@@ -614,7 +657,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
             {filtered.length} {filtered.length === 1 ? "entry" : "entries"}
           </span>
         </div>
-        <div className="rounded-lg border overflow-auto">
+        <div className="rounded-lg border overflow-auto max-h-[280px]">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
@@ -646,7 +689,12 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={isManagerOrAdmin ? 10 : 9} className="text-center py-8 text-muted-foreground">No entries found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={isManagerOrAdmin ? 10 : 9} className="text-center py-10">
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <p className="text-sm font-medium">No waste entries found</p>
+                  <p className="text-xs text-muted-foreground/70">Try changing the filter, or tap <strong>Log</strong> to add your first entry.</p>
+                </div>
+              </TableCell></TableRow>
             ) : (
               filtered.map((entry) => {
                 const days = getDaysStored(entry.generated_date);

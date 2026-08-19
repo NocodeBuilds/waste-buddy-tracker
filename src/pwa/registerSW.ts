@@ -2,6 +2,7 @@
 // Never registers in dev or iframe. Supports ?sw=off kill switch.
 
 const APP_SW_PATH = "/sw.js";
+const CACHE_VERSION = "wastebuddy-v2";
 
 async function unregisterAppSW() {
   if (!("serviceWorker" in navigator)) return;
@@ -33,10 +34,9 @@ export function registerAppServiceWorker() {
   }
 
   // Force-clear any stale service worker from a previous deployment
-  // This fixes the white-screen issue when a new deploy changes start_url or routes
   if ("caches" in window) {
     caches.keys().then((names) => {
-      const stale = names.filter((n) => !n.includes("v4"));
+      const stale = names.filter((n) => n !== CACHE_VERSION);
       if (stale.length > 0) {
         console.log("[PWA] Clearing stale caches:", stale);
         stale.forEach((n) => caches.delete(n));

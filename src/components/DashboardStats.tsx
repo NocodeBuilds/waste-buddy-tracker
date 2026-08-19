@@ -307,8 +307,8 @@ export default function DashboardStats({ entries }: Props) {
   };
 
   return (
-    <div className="space-y-4">
-      {/* ═══════════ SECTION A: Compliance overview ═══════════ */}
+    <div className="relative space-y-4">
+      {/* ── Compliance overview ─────────────────────────────────── */}
       <section>
         <h2 className="text-sm font-semibold text-foreground/70 mb-3">
           Compliance Status
@@ -370,60 +370,87 @@ export default function DashboardStats({ entries }: Props) {
         </h2>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <Card className="border-overdue/30 tap-ripple cursor-pointer active:scale-[0.97] transition-transform" style={{ "--ripple-color": "rgba(239,68,68,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("hazardous")}>
-            <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="h-5 w-5 text-overdue shrink-0" />
-                <p className="text-xl font-bold leading-tight">{fmtNum(hazSolidsKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+          {solidsThisMonth.length === 0 && liquidThisMonth.length === 0 && eWasteThisMonth.length === 0 && batteryThisMonth.length === 0 && otherWastesThisMonth.length === 0 ? (
+            <div
+              className="col-span-full"
+            >
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground flex flex-col items-center gap-2">
+                  <Package className="h-6 w-6 opacity-40" />
+                  <p className="text-xs">No waste generated this month yet.</p>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <>
+              <div>
+                <Card className="border-overdue/30 tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-overdue/50" style={{ "--ripple-color": "rgba(239,68,68,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("hazardous")}>
+                  <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <ShieldAlert className="h-5 w-5 text-overdue shrink-0" />
+                      <p className="text-xl font-bold leading-tight">{fmtNum(hazSolidsKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">Hazardous Solids</p>
+                  </CardContent>
+                </Card>
               </div>
-              <p className="text-[11px] text-muted-foreground">Hazardous Solids</p>
-            </CardContent>
-          </Card>
-          <Card className="border-success/30 tap-ripple cursor-pointer active:scale-[0.97] transition-transform" style={{ "--ripple-color": "rgba(34,197,94,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("nonHazardous")}>
-            <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
-              <div className="flex items-center gap-2">
-                <Leaf className="h-5 w-5 text-success shrink-0" />
-                <p className="text-xl font-bold leading-tight">{fmtNum(nonHazSolidsKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+              <div>
+                <Card className="border-success/30 tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-success/50" style={{ "--ripple-color": "rgba(34,197,94,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("nonHazardous")}>
+                  <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <Leaf className="h-5 w-5 text-success shrink-0" />
+                      <p className="text-xl font-bold leading-tight">{fmtNum(nonHazSolidsKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">Non-Hazardous Solids</p>
+                  </CardContent>
+                </Card>
               </div>
-              <p className="text-[11px] text-muted-foreground">Non-Hazardous Solids</p>
-            </CardContent>
-          </Card>
-          <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-transform" style={{ "--ripple-color": "rgba(6,182,212,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("liquid")}>
-            <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
-              <div className="flex items-center gap-2">
-                <Droplets className="h-5 w-5 text-cyan-500 shrink-0" />
-                <p className="text-xl font-bold leading-tight">{fmtNum(liquidLitres(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">L</span></p>
+              <div>
+                <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-cyan-500/50" style={{ "--ripple-color": "rgba(6,182,212,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("liquid")}>
+                  <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <Droplets className="h-5 w-5 text-cyan-500 shrink-0" />
+                      <p className="text-xl font-bold leading-tight">{fmtNum(liquidLitres(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">L</span></p>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">Liquid Waste</p>
+                  </CardContent>
+                </Card>
               </div>
-              <p className="text-[11px] text-muted-foreground">Liquid Waste</p>
-            </CardContent>
-          </Card>
-          <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-transform" style={{ "--ripple-color": "rgba(249,115,22,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("ewaste")}>
-            <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
-              <div className="flex items-center gap-2">
-                <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
-                <p className="text-xl font-bold leading-tight">{fmtNum(eWasteKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+              <div>
+                <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-orange-500/50" style={{ "--ripple-color": "rgba(249,115,22,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("ewaste")}>
+                  <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
+                      <p className="text-xl font-bold leading-tight">{fmtNum(eWasteKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">E-Waste</p>
+                  </CardContent>
+                </Card>
               </div>
-              <p className="text-[11px] text-muted-foreground">E-Waste</p>
-            </CardContent>
-          </Card>
-          <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-transform" style={{ "--ripple-color": "rgba(202,138,4,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("battery")}>
-            <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
-              <div className="flex items-center gap-2">
-                <Battery className="h-5 w-5 text-yellow-600 shrink-0" />
-                <p className="text-xl font-bold leading-tight">{fmtNum(batteryKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+              <div>
+                <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-yellow-600/50" style={{ "--ripple-color": "rgba(202,138,4,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("battery")}>
+                  <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <Battery className="h-5 w-5 text-yellow-600 shrink-0" />
+                      <p className="text-xl font-bold leading-tight">{fmtNum(batteryKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">Battery Waste</p>
+                  </CardContent>
+                </Card>
               </div>
-              <p className="text-[11px] text-muted-foreground">Battery Waste</p>
-            </CardContent>
-          </Card>
-          <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-transform" style={{ "--ripple-color": "rgba(217,119,6,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("other")}>
-            <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
-              <div className="flex items-center gap-2">
-                <Recycle className="h-5 w-5 text-amber-600 shrink-0" />
-                <p className="text-xl font-bold leading-tight">{fmtNum(otherWastesKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+              <div>
+                <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-amber-600/50" style={{ "--ripple-color": "rgba(217,119,6,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("other")}>
+                  <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <Recycle className="h-5 w-5 text-amber-600 shrink-0" />
+                      <p className="text-xl font-bold leading-tight">{fmtNum(otherWastesKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">Other Wastes</p>
+                  </CardContent>
+                </Card>
               </div>
-              <p className="text-[11px] text-muted-foreground">Other Wastes</p>
-            </CardContent>
-          </Card>
+            </>
+          )}
         </div>
 
         {splitBar && (
