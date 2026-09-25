@@ -1,0 +1,379 @@
+<!DOCTYPE html><html class="h-full" lang="en" style=""><svg class="inline-defs-container" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><title>WasteBuddy Enterprise</title><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-secondary-container": "#006f67", "liq-border": "#bae6fd", "surface-container-low": "#eff4ff", "on-error-container": "#93000a", "other-text": "#64748b", "on-background": "#0b1c30", "on-surface": "#0b1c30", "primary-fixed-dim": "#79db8d", "haz-bg": "#fef2f2", "card-surface": "#ffffff", "primary-container": "#dcfce7", "on-tertiary-fixed": "#001d31", "on-primary-fixed-variant": "#005323", "on-primary-fixed": "#00210a", "surface": "#f8f9ff", "on-tertiary-fixed-variant": "#004b73", "surface-bright": "#f8f9ff", "elec-bg": "#fff7ed", "error-container": "#ffdad6", "safe-border": "#a7f3d0", "surface-container-lowest": "#ffffff", "on-secondary-fixed-variant": "#00504a", "error": "#ba1a1a", "tertiary-container": "#0075b1", "on-tertiary": "#ffffff", "text-secondary": "#475569", "text-muted": "#94a3b8", "on-secondary": "#ffffff", "on-error": "#ffffff", "primary-deep": "#166534", "on-primary-container": "#d3ffd5", "safe-bg": "#ecfdf5", "liq-text": "#0284c7", "surface-container-high": "#dce9ff", "secondary-fixed-dim": "#80d5cb", "secondary": "#006a63", "elec-text": "#ea580c", "text-primary": "#0f172a", "haz-border": "#fecaca", "secondary-container": "#99efe5", "surface-container": "#e5eeff", "haz-text": "#dc2626", "other-border": "#e2e8f0", "border-dim": "#cbd5e1", "border-default": "#e2e8f0", "outline": "#6f7a6e", "inverse-surface": "#213145", "on-surface-variant": "#3f493f", "tertiary-fixed": "#cce5ff", "surface-dim": "#cbdbf5", "secondary-fixed": "#9cf2e8", "safe-text": "#059669", "outline-variant": "#becabc", "canvas-bg": "#f8fafc", "elec-border": "#fed7aa", "tertiary-fixed-dim": "#93ccff", "surface-tint": "#006d30", "liq-bg": "#f0f9ff", "on-secondary-fixed": "#00201d", "primary-fixed": "#95f8a7", "batt-bg": "#fffbeb", "background": "#f8f9ff", "primary-dark": "#14532d", "surface-variant": "#d3e4fe", "primary": "#00652c", "other-bg": "#f1f5f9", "batt-border": "#fde68a", "primary-fab": "#16a34a", "inverse-on-surface": "#eaf1ff", "on-tertiary-container": "#ecf4ff", "tertiary": "#005b8c", "surface-container-highest": "#d3e4fe", "on-primary": "#ffffff", "batt-text": "#d97706", "inverse-primary": "#79db8d" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-desktop": "2rem", "gutter": "0.75rem", "gutter-desktop": "1.5rem", "space-xs": "0.25rem", "margin": "1rem", "space-md": "0.75rem", "space-xl": "1.5rem", "space-sm": "0.5rem", "space-lg": "1rem" }, fontFamily: { "headline-lg-mobile": ["Inter"], "label-caps": ["Inter"], "headline-lg": ["Inter"], "body-lg": ["Inter"], "metric-display": ["Inter"], "headline-sm": ["Inter"], "body-sm": ["Inter"], "label-md": ["Inter"], "headline-md": ["Inter"], "body-md": ["Inter"] }, fontSize: { "headline-lg-mobile": ["22px", { "lineHeight": "28px", "fontWeight": "700" }], "label-caps": ["11px", { "lineHeight": "14px", "fontWeight": "700" }], "headline-lg": ["30px", { "lineHeight": "38px", "fontWeight": "700" }], "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }], "metric-display": ["24px", { "lineHeight": "28px", "fontWeight": "700" }], "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }], "body-sm": ["11px", { "lineHeight": "16px", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }], "headline-md": ["20px", { "lineHeight": "26px", "fontWeight": "600" }], "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }] } } } }</script><style>@layer base { html, body { width: 100vw; margin: 0; padding: 0; } body { overscroll-behavior-y: none; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style></head><body class="bg-canvas-bg font-body-md text-text-primary min-h-screen flex flex-col antialiased selection:bg-primary-container selection:text-primary-dark"><header class="fixed top-0 w-full z-50 bg-primary-dark/95 backdrop-blur-xl shadow-[0_2px_12px_rgba(20,83,45,0.25)] pt-safe"><div class="flex items-center justify-between px-4 py-3 bg-[#166534] text-white shadow-[0_2px_12px_rgba(20,83,45,0.25)]"><div class="flex items-center gap-2 min-w-0"><div class="w-8 h-8 rounded-lg bg-emerald-700/60 flex items-center justify-center text-emerald-300 shrink-0"><span class="material-symbols-outlined text-[20px]">eco</span></div><div class="flex items-center min-w-0"><span class="text-[18px] font-bold text-white tracking-tight truncate">Waste<span class="text-[#4ade80] font-bold">Buddy</span></span></div></div><div class="flex items-center gap-2 shrink-0"><button class="bg-[#14532d]/60 border border-white/20 text-white text-xs font-semibold px-2.5 py-1 rounded-lg flex items-center gap-1.5 active:scale-95 transition-transform"><span class="material-symbols-outlined text-[15px] text-emerald-300">apartment</span><span class="truncate max-w-[110px]">Molagavalli 1 &amp; 2</span><span class="material-symbols-outlined text-[14px] text-white/80">expand_more</span></button><button class="relative w-8 h-8 rounded-full bg-emerald-700/60 hover:bg-emerald-700 flex items-center justify-center text-white transition-colors" aria-label="Notifications"><span class="material-symbols-outlined text-[18px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-[#166534]"></span></button><button class="w-8 h-8 rounded-full bg-emerald-700/60 hover:bg-emerald-700 flex items-center justify-center text-white border border-white/20 transition-colors" aria-label="User Profile"><span class="material-symbols-outlined text-[18px]">person</span></button></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-24 px-margin bg-canvas-bg"><div class="flex flex-col w-full gap-space-lg">
+<script>
+    (function syncNav() {
+      const navLinks = document.querySelectorAll('nav a[data-path]');
+      navLinks.forEach(link => {
+        if (link.getAttribute('data-path') === 'compliance-analytics') {
+          link.classList.remove('text-other-text');
+          link.classList.add('text-primary-deep', 'font-semibold');
+        } else {
+          link.classList.remove('text-primary-deep', 'font-semibold');
+          link.classList.add('text-other-text');
+        }
+      });
+    })();
+  </script>
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">analytics</span>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-text-primary">Operational Overview</h1>
+</div>
+<div class="flex items-center gap-1.5 px-space-xs py-1 rounded-full bg-safe-bg text-safe-text">
+<span class="w-2 h-2 rounded-full bg-safe-text animate-pulse"></span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider">CPCB Validated</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary">Statutory manifests &amp; waste telemetry across Wind Farm Units 1 &amp; 2</p>
+</div>
+<div class="flex items-center p-1 rounded-xl bg-surface-container gap-1 shadow-sm">
+<button class="flex-1 py-1.5 rounded-lg text-center font-label-md text-label-md transition-all bg-card-surface text-primary-dark shadow-sm" id="btn-all" onclick="setTimeframe('all')">
+      All Time
+    </button>
+<button class="flex-1 py-1.5 rounded-lg text-center font-label-md text-label-md transition-all text-text-secondary hover:text-text-primary" id="btn-30d" onclick="setTimeframe('30d')">
+      Last 30 Days
+    </button>
+<button class="flex-1 py-1.5 rounded-lg text-center font-label-md text-label-md transition-all text-text-secondary hover:text-text-primary" id="btn-fy" onclick="setTimeframe('fy')">
+      This FY
+    </button>
+</div>
+<div class="grid grid-cols-2 gap-gutter">
+<div class="flex flex-col p-space-md rounded-xl bg-card-surface shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-md text-label-md text-text-secondary">Solid Waste</span>
+<div class="w-7 h-7 rounded-lg bg-primary-container text-primary-deep flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">scale</span>
+</div>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="font-metric-display text-metric-display text-text-primary" id="metric-solid">330.97</span>
+<span class="font-label-md text-label-md text-text-muted">kg</span>
+</div>
+<div class="flex items-center gap-1 mt-space-xs">
+<span class="font-label-caps text-label-caps text-safe-text bg-safe-bg px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">verified</span> Safe Vaulted
+        </span>
+</div>
+</div>
+<div class="flex flex-col p-space-md rounded-xl bg-card-surface shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-md text-label-md text-text-secondary">Liquid Waste</span>
+<div class="w-7 h-7 rounded-lg bg-liq-bg text-liq-text flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">science</span>
+</div>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="font-metric-display text-metric-display text-text-primary" id="metric-liquid">17.00</span>
+<span class="font-label-md text-label-md text-text-muted">L</span>
+</div>
+<div class="flex items-center gap-1 mt-space-xs">
+<span class="font-label-caps text-label-caps text-liq-text bg-liq-bg px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">opacity</span> Lube &amp; Coolant
+        </span>
+</div>
+</div>
+</div>
+<div class="flex flex-col p-space-lg rounded-xl bg-card-surface shadow-sm gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-text-secondary text-[20px]">pie_chart</span>
+<h2 class="font-headline-sm text-headline-sm text-text-primary">By Category</h2>
+</div>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded-full bg-surface-container text-text-secondary uppercase">
+        5 Types
+      </span>
+</div>
+<div class="flex items-center justify-center py-space-xs">
+<div class="relative w-44 h-44 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90 transform" viewBox="0 0 120 120">
+<!-- Background track -->
+<circle cx="60" cy="60" fill="transparent" r="48" stroke="#f1f5f9" stroke-width="14"></circle>
+<!-- Hazardous Solids: 94.7% (Circumference ~ 301.6) -> 285.6 -->
+<circle class="transition-all duration-700" cx="60" cy="60" fill="transparent" id="donut-haz" r="48" stroke="#dc2626" stroke-dasharray="301.6" stroke-dashoffset="16" stroke-linecap="round" stroke-width="14"></circle>
+<!-- Liquid Waste: 4.9% -> offset 16 - 14.8 = 1.2 -->
+<circle class="transition-all duration-700" cx="60" cy="60" fill="transparent" id="donut-liq" r="48" stroke="#0284c7" stroke-dasharray="14.8 286.8" stroke-dashoffset="16" stroke-width="14"></circle>
+<!-- Battery: 0.3% -->
+<circle class="transition-all duration-700" cx="60" cy="60" fill="transparent" id="donut-batt" r="48" stroke="#d97706" stroke-dasharray="1.5 300.1" stroke-dashoffset="1.2" stroke-width="14"></circle>
+<!-- Safe / Non-Haz: 0.1% -->
+<circle class="transition-all duration-700" cx="60" cy="60" fill="transparent" id="donut-safe" r="48" stroke="#059669" stroke-dasharray="1 300.6" stroke-dashoffset="-0.3" stroke-width="14"></circle>
+</svg>
+<div class="absolute flex flex-col items-center justify-center pointer-events-none text-center">
+<span class="font-headline-sm text-headline-sm text-text-primary tracking-tight">347.97</span>
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Gross Total</span>
+<span class="font-body-sm text-[10px] text-haz-text font-bold mt-0.5">94.7% HAZ</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<div class="flex flex-col p-2 rounded-lg bg-haz-bg">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-2.5 h-2.5 rounded-full bg-haz-text shrink-0"></span>
+<span class="font-label-caps text-label-caps text-haz-text uppercase truncate">Hazardous</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="font-headline-sm text-headline-sm text-text-primary">329.57</span>
+<span class="font-body-sm text-body-sm text-text-muted">kg (94.7%)</span>
+</div>
+</div>
+<div class="flex flex-col p-2 rounded-lg bg-liq-bg">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-2.5 h-2.5 rounded-full bg-liq-text shrink-0"></span>
+<span class="font-label-caps text-label-caps text-liq-text uppercase truncate">Liquid Waste</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="font-headline-sm text-headline-sm text-text-primary">17.0</span>
+<span class="font-body-sm text-body-sm text-text-muted">L (4.9%)</span>
+</div>
+</div>
+<div class="flex flex-col p-2 rounded-lg bg-batt-bg">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-2.5 h-2.5 rounded-full bg-batt-text shrink-0"></span>
+<span class="font-label-caps text-label-caps text-batt-text uppercase truncate">Lead Acid / Batt</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="font-headline-sm text-headline-sm text-text-primary">1.00</span>
+<span class="font-body-sm text-body-sm text-text-muted">kg (0.3%)</span>
+</div>
+</div>
+<div class="flex flex-col p-2 rounded-lg bg-safe-bg">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-2.5 h-2.5 rounded-full bg-safe-text shrink-0"></span>
+<span class="font-label-caps text-label-caps text-safe-text uppercase truncate">Non-Hazardous</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="font-headline-sm text-headline-sm text-text-primary">0.40</span>
+<span class="font-body-sm text-body-sm text-text-muted">kg (0.1%)</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col p-space-lg rounded-xl bg-card-surface shadow-sm gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-batt-text text-[20px]">timelapse</span>
+<h2 class="font-headline-sm text-headline-sm text-text-primary">Statutory Aging</h2>
+</div>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded-full bg-batt-bg text-batt-text uppercase font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">alarm</span> 90-Day Limit Watch
+      </span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary">
+      CPCB Rule 8 stipulates high-risk wastes must be dispatched via licensed TSDF prior to 90 continuous storage days.
+    </p>
+<div class="flex flex-col gap-space-sm">
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-center text-body-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-safe-text"></span>
+<span class="font-label-md text-label-md text-text-primary">0 - 30 Days</span>
+<span class="font-label-caps text-label-caps text-safe-text bg-safe-bg px-1 rounded">Fresh</span>
+</div>
+<span class="font-label-md text-label-md text-text-primary font-semibold">145 kg</span>
+</div>
+<div class="w-full h-2.5 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full rounded-full bg-safe-text transition-all duration-500" style="width: 44%;"></div>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-center text-body-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-batt-text"></span>
+<span class="font-label-md text-label-md text-text-primary">31 - 60 Days</span>
+<span class="font-label-caps text-label-caps text-batt-text bg-batt-bg px-1 rounded">Moderate</span>
+</div>
+<span class="font-label-md text-label-md text-text-primary font-semibold">185 kg + 2 L</span>
+</div>
+<div class="w-full h-2.5 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full rounded-full bg-batt-text transition-all duration-500" style="width: 56%;"></div>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-center text-body-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-other-text"></span>
+<span class="font-label-md text-label-md text-text-muted">61 - 89 Days</span>
+<span class="font-label-caps text-label-caps text-other-text bg-other-bg px-1 rounded">Critical Window</span>
+</div>
+<span class="font-label-md text-label-md text-text-muted font-medium">0 kg (Clear)</span>
+</div>
+<div class="w-full h-2.5 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full rounded-full bg-other-border" style="width: 0%;"></div>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-center text-body-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-haz-text"></span>
+<span class="font-label-md text-label-md text-text-muted">≥ 90 Days (Overdue)</span>
+<span class="font-label-caps text-label-caps text-safe-text bg-safe-bg px-1 rounded">Zero Breach</span>
+</div>
+<span class="font-label-md text-label-md text-safe-text font-bold">0 kg</span>
+</div>
+<div class="w-full h-2.5 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full rounded-full bg-haz-text" style="width: 0%;"></div>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-xs p-2.5 rounded-lg bg-safe-bg text-safe-text text-body-sm">
+<span class="material-symbols-outlined text-[18px] shrink-0">check_circle</span>
+<span class="">Storage limits conform with State Pollution Control Board 90-day retention threshold.</span>
+</div>
+</div>
+<div class="flex flex-col p-space-lg rounded-xl bg-card-surface shadow-sm gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary-deep text-[20px]">show_chart</span>
+<h2 class="font-headline-sm text-headline-sm text-text-primary">12-Week Generation Trend</h2>
+</div>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-primary-container text-primary-dark">
+        PM Spikes
+      </span>
+</div>
+<div class="w-full h-32 flex flex-col justify-end relative pt-2">
+<svg class="w-full h-full overflow-visible" viewBox="0 0 320 80">
+<defs>
+<linearGradient id="trendGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#16a34a" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#16a34a" stop-opacity="0.0"></stop>
+</linearGradient>
+</defs>
+<!-- Trend Area -->
+<path d="M 0 65 L 28 62 L 56 60 L 84 55 L 112 25 L 140 38 L 168 50 L 196 15 L 224 45 L 252 52 L 280 30 L 320 40 L 320 80 L 0 80 Z" fill="url(#trendGradient)"></path>
+<!-- Trend Line -->
+<path d="M 0 65 L 28 62 L 56 60 L 84 55 L 112 25 L 140 38 L 168 50 L 196 15 L 224 45 L 252 52 L 280 30 L 320 40" fill="none" stroke="#16a34a" stroke-linecap="round" stroke-width="2.5"></path>
+<!-- Peak markers -->
+<circle cx="112" cy="25" fill="#14532d" r="3.5"></circle>
+<circle cx="196" cy="15" fill="#dc2626" r="4"></circle>
+<text fill="#dc2626" font-family="Inter" font-size="8" font-weight="700" x="180" y="10">PM Peak</text>
+<circle cx="280" cy="30" fill="#14532d" r="3.5"></circle>
+</svg>
+<div class="flex justify-between items-center text-text-muted font-label-caps text-[10px] mt-1">
+<span class="">W01</span>
+<span class="">W03</span>
+<span class="">W05 (PM)</span>
+<span class="">W07 (Q-Audit)</span>
+<span class="">W09</span>
+<span class="">W12</span>
+</div>
+</div>
+<div class="flex flex-col gap-space-xs pt-space-xs">
+<div class="flex items-center justify-between pb-1">
+<span class="font-label-caps text-label-caps uppercase text-text-secondary">Top Generator Turbine Assets</span>
+<span class="font-label-caps text-label-caps text-text-muted">Total wt</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-5 h-5 rounded-full bg-primary-container text-primary-dark font-label-caps text-label-caps flex items-center justify-center font-bold">1</span>
+<span class="material-symbols-outlined text-text-secondary text-[16px]">wind_power</span>
+<span class="font-label-md text-label-md text-text-primary font-semibold">KCTRE12</span>
+<span class="font-label-caps text-label-caps px-1.5 py-0.2 rounded bg-white text-text-secondary">Nacelle PM</span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="font-label-md text-label-md text-text-primary font-bold">44.00</span>
+<span class="font-body-sm text-body-sm text-text-muted">kg</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-5 h-5 rounded-full bg-surface-container text-text-secondary font-label-caps text-label-caps flex items-center justify-center font-bold">2</span>
+<span class="material-symbols-outlined text-text-secondary text-[16px]">wind_power</span>
+<span class="font-label-md text-label-md text-text-primary font-semibold">GML139</span>
+<span class="font-label-caps text-label-caps px-1.5 py-0.2 rounded bg-white text-text-secondary">Gearbox Flush</span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="font-label-md text-label-md text-text-primary font-bold">37.00</span>
+<span class="font-body-sm text-body-sm text-text-muted">kg</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-5 h-5 rounded-full bg-surface-container text-text-secondary font-label-caps text-label-caps flex items-center justify-center font-bold">3</span>
+<span class="material-symbols-outlined text-text-secondary text-[16px]">wind_power</span>
+<span class="font-label-md text-label-md text-text-primary font-semibold">GML49</span>
+<span class="font-label-caps text-label-caps px-1.5 py-0.2 rounded bg-white text-text-secondary">Brake Filter</span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="font-label-md text-label-md text-text-primary font-bold">24.00</span>
+<span class="font-body-sm text-body-sm text-text-muted">kg</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-5 h-5 rounded-full bg-surface-container text-text-secondary font-label-caps text-label-caps flex items-center justify-center font-bold">4</span>
+<span class="material-symbols-outlined text-text-secondary text-[16px]">wind_power</span>
+<span class="font-label-md text-label-md text-text-primary font-semibold">GML70</span>
+<span class="font-label-caps text-label-caps px-1.5 py-0.2 rounded bg-white text-text-secondary">Hydraulic Seal</span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="font-label-md text-label-md text-text-primary font-bold">22.00</span>
+<span class="font-body-sm text-body-sm text-text-muted">kg</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-5 h-5 rounded-full bg-surface-container text-text-secondary font-label-caps text-label-caps flex items-center justify-center font-bold">5</span>
+<span class="material-symbols-outlined text-text-secondary text-[16px]">wind_power</span>
+<span class="font-label-md text-label-md text-text-primary font-semibold">GML73</span>
+<span class="font-label-caps text-label-caps px-1.5 py-0.2 rounded bg-white text-text-secondary">Yaw Bearing</span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="font-label-md text-label-md text-text-primary font-bold">21.00</span>
+<span class="font-body-sm text-body-sm text-text-muted">kg</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col p-space-md rounded-xl bg-gradient-to-br from-primary-dark to-primary-deep text-on-primary shadow-sm gap-space-sm relative overflow-hidden">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<div class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-primary-fixed">
+<span class="material-symbols-outlined text-[20px]">verified_user</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-white leading-tight">PCB Audit Assurance</span>
+<span class="font-label-caps text-label-caps text-primary-fixed tracking-wider uppercase">100% Manifested</span>
+</div>
+</div>
+<button class="px-space-sm py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white font-label-md text-label-md transition-colors flex items-center gap-1 shrink-0">
+<span class="">Form 10</span>
+<span class="material-symbols-outlined text-[14px]">download</span>
+</button>
+</div>
+<div class="p-2.5 rounded-lg bg-white/10 backdrop-blur-sm flex items-start gap-2">
+<span class="material-symbols-outlined text-primary-fixed text-[18px] shrink-0 mt-0.5">policy</span>
+<p class="font-body-sm text-body-sm text-white/90">
+        State Pollution Control Board &amp; Central Pollution Control Board (Rule 9) synchronized. Annual return filing ready for FY 2024-25.
+      </p>
+</div>
+</div>
+<script>
+    function setTimeframe(type) {
+      const btnAll = document.getElementById('btn-all');
+      const btn30d = document.getElementById('btn-30d');
+      const btnFy = document.getElementById('btn-fy');
+      const solidEl = document.getElementById('metric-solid');
+      const liqEl = document.getElementById('metric-liquid');
+
+      [btnAll, btn30d, btnFy].forEach(btn => {
+        btn.className = 'flex-1 py-1.5 rounded-lg text-center font-label-md text-label-md transition-all text-text-secondary hover:text-text-primary';
+      });
+
+      if (type === 'all') {
+        btnAll.className = 'flex-1 py-1.5 rounded-lg text-center font-label-md text-label-md transition-all bg-card-surface text-primary-dark shadow-sm';
+        solidEl.textContent = '330.97';
+        liqEl.textContent = '17.00';
+      } else if (type === '30d') {
+        btn30d.className = 'flex-1 py-1.5 rounded-lg text-center font-label-md text-label-md transition-all bg-card-surface text-primary-dark shadow-sm';
+        solidEl.textContent = '68.40';
+        liqEl.textContent = '4.50';
+      } else if (type === 'fy') {
+        btnFy.className = 'flex-1 py-1.5 rounded-lg text-center font-label-md text-label-md transition-all bg-card-surface text-primary-dark shadow-sm';
+        solidEl.textContent = '294.10';
+        liqEl.textContent = '15.20';
+      }
+    }
+  </script>
+</div></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-card-surface/95 backdrop-blur-xl shadow-[0_-4px_16px_rgba(15,23,42,0.06)]" data-active-classes="text-primary-deep font-semibold"><div class="flex items-center justify-around h-16 px-space-xs relative"><a class="flex-1 flex flex-col items-center justify-center h-full min-h-[48px] gap-0.5 text-other-text transition-colors" data-path="dashboard-overview" href="#"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-label-md text-label-md text-[11px]">Home</span></a><a class="flex-1 flex flex-col items-center justify-center h-full min-h-[48px] gap-0.5 text-other-text transition-colors" data-path="manifest-inventory" href="#"><span class="material-symbols-outlined text-[22px]">inventory_2</span><span class="font-label-md text-label-md text-[11px]">Inventory</span></a><div class="flex-1 flex items-center justify-center"><a class="relative -top-3 w-13 h-13 w-[52px] h-[52px] rounded-full bg-primary-fab hover:bg-primary-deep active:scale-95 text-on-primary flex items-center justify-center shadow-[0_8px_20px_-4px_rgba(22,163,74,0.45)] transition-all" data-path="quick-log-entry" href="#"><span class="material-symbols-outlined text-[28px]">add</span></a></div><a aria-current="page" class="flex-1 flex flex-col items-center justify-center h-full min-h-[48px] gap-0.5 transition-colors text-primary-deep font-semibold" data-path="compliance-analytics" href="#"><span class="material-symbols-outlined text-[22px]">bar_chart</span><span class="font-label-md text-label-md text-[11px]">Analytics</span></a><a class="flex-1 flex flex-col items-center justify-center h-full min-h-[48px] gap-0.5 text-other-text transition-colors" data-path="facility-settings" href="#"><span class="material-symbols-outlined text-[22px]">settings</span><span class="font-label-md text-label-md text-[11px]">Settings</span></a></div></nav>
+
+</body></html>

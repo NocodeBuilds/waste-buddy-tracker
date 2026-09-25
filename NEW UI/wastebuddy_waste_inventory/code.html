@@ -1,0 +1,516 @@
+<!DOCTYPE html><html class="h-full" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><title>WasteBuddy Enterprise</title><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-secondary-container": "#006f67", "liq-border": "#bae6fd", "surface-container-low": "#eff4ff", "on-error-container": "#93000a", "other-text": "#64748b", "on-background": "#0b1c30", "on-surface": "#0b1c30", "primary-fixed-dim": "#79db8d", "haz-bg": "#fef2f2", "card-surface": "#ffffff", "primary-container": "#dcfce7", "on-tertiary-fixed": "#001d31", "on-primary-fixed-variant": "#005323", "on-primary-fixed": "#00210a", "surface": "#f8f9ff", "on-tertiary-fixed-variant": "#004b73", "surface-bright": "#f8f9ff", "elec-bg": "#fff7ed", "error-container": "#ffdad6", "safe-border": "#a7f3d0", "surface-container-lowest": "#ffffff", "on-secondary-fixed-variant": "#00504a", "error": "#ba1a1a", "tertiary-container": "#0075b1", "on-tertiary": "#ffffff", "text-secondary": "#475569", "text-muted": "#94a3b8", "on-secondary": "#ffffff", "on-error": "#ffffff", "primary-deep": "#166534", "on-primary-container": "#d3ffd5", "safe-bg": "#ecfdf5", "liq-text": "#0284c7", "surface-container-high": "#dce9ff", "secondary-fixed-dim": "#80d5cb", "secondary": "#006a63", "elec-text": "#ea580c", "text-primary": "#0f172a", "haz-border": "#fecaca", "secondary-container": "#99efe5", "surface-container": "#e5eeff", "haz-text": "#dc2626", "other-border": "#e2e8f0", "border-dim": "#cbd5e1", "border-default": "#e2e8f0", "outline": "#6f7a6e", "inverse-surface": "#213145", "on-surface-variant": "#3f493f", "tertiary-fixed": "#cce5ff", "surface-dim": "#cbdbf5", "secondary-fixed": "#9cf2e8", "safe-text": "#059669", "outline-variant": "#becabc", "canvas-bg": "#f8fafc", "elec-border": "#fed7aa", "tertiary-fixed-dim": "#93ccff", "surface-tint": "#006d30", "liq-bg": "#f0f9ff", "on-secondary-fixed": "#00201d", "primary-fixed": "#95f8a7", "batt-bg": "#fffbeb", "background": "#f8f9ff", "primary-dark": "#14532d", "surface-variant": "#d3e4fe", "primary": "#00652c", "other-bg": "#f1f5f9", "batt-border": "#fde68a", "primary-fab": "#16a34a", "inverse-on-surface": "#eaf1ff", "on-tertiary-container": "#ecf4ff", "tertiary": "#005b8c", "surface-container-highest": "#d3e4fe", "on-primary": "#ffffff", "batt-text": "#d97706", "inverse-primary": "#79db8d" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-desktop": "2rem", "gutter": "0.75rem", "gutter-desktop": "1.5rem", "space-xs": "0.25rem", "margin": "1rem", "space-md": "0.75rem", "space-xl": "1.5rem", "space-sm": "0.5rem", "space-lg": "1rem" }, fontFamily: { "headline-lg-mobile": ["Inter"], "label-caps": ["Inter"], "headline-lg": ["Inter"], "body-lg": ["Inter"], "metric-display": ["Inter"], "headline-sm": ["Inter"], "body-sm": ["Inter"], "label-md": ["Inter"], "headline-md": ["Inter"], "body-md": ["Inter"] }, fontSize: { "headline-lg-mobile": ["22px", { "lineHeight": "28px", "fontWeight": "700" }], "label-caps": ["11px", { "lineHeight": "14px", "fontWeight": "700" }], "headline-lg": ["30px", { "lineHeight": "38px", "fontWeight": "700" }], "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }], "metric-display": ["24px", { "lineHeight": "28px", "fontWeight": "700" }], "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }], "body-sm": ["11px", { "lineHeight": "16px", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }], "headline-md": ["20px", { "lineHeight": "26px", "fontWeight": "600" }], "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }] } } } }</script><style>@layer base { html, body { width: 100vw; margin: 0; padding: 0; } body { overscroll-behavior-y: none; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style></head><body class="bg-canvas-bg font-body-md text-text-primary min-h-screen flex flex-col antialiased selection:bg-primary-container selection:text-primary-dark"><header class="fixed top-0 w-full z-50 bg-primary-dark/95 backdrop-blur-xl shadow-[0_2px_12px_rgba(20,83,45,0.25)] pt-safe"><div class="h-16 px-space-lg flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><div class="w-9 h-9 rounded-lg bg-primary-deep/60 flex items-center justify-center text-on-primary shrink-0"><span class="material-symbols-outlined text-[20px]">eco</span></div><div class="flex items-center gap-space-xs min-w-0"><span class="font-headline-sm text-headline-sm text-on-primary tracking-tight truncate">Waste<span class="text-[#4ade80] font-bold">Buddy</span></span></div></div><div class="flex items-center gap-space-xs shrink-0"><button class="h-9 px-space-sm bg-white/10 hover:bg-white/15 active:bg-white/20 rounded-lg flex items-center gap-space-xs text-on-primary transition-colors max-w-[130px]"><span class="material-symbols-outlined text-[16px] text-primary-fixed">apartment</span><span class="font-label-md text-label-md truncate text-white/95">Molagavalli 1 &amp; 2</span><span class="material-symbols-outlined text-[16px] text-white/70">expand_more</span></button><button class="relative w-11 h-11 flex items-center justify-center text-white/90 hover:text-white rounded-lg transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-haz-text"></span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-24 px-margin bg-canvas-bg"><div class="flex flex-col w-full pb-6 space-y-space-md">
+<!-- Controls & Export Action Bar -->
+<section class="flex items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs flex-wrap flex-1 min-w-0">
+<div class="relative">
+<button class="h-9 px-space-sm bg-surface-container-lowest shadow-sm rounded-xl flex items-center gap-1.5 text-text-primary active:bg-surface-container-low transition-all" id="storageFilterBtn" onclick="toggleDropdown('storageMenu')">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-md text-label-md font-semibold">In Storage</span>
+<span class="material-symbols-outlined text-[16px] text-text-secondary">expand_more</span>
+</button>
+<div class="hidden absolute top-10 left-0 z-30 w-44 bg-surface-container-lowest shadow-xl rounded-xl p-space-xs space-y-1" id="storageMenu">
+<button class="w-full text-left px-space-sm py-1.5 rounded-lg bg-primary-container text-on-primary-fixed-variant font-label-md text-label-md flex items-center justify-between">
+<span class="">In Storage</span>
+<span class="material-symbols-outlined text-[16px]">check</span>
+</button>
+<button class="w-full text-left px-space-sm py-1.5 rounded-lg hover:bg-surface-container-low text-text-secondary font-label-md text-label-md">Dispatched (Out)</button>
+<button class="w-full text-left px-space-sm py-1.5 rounded-lg hover:bg-surface-container-low text-text-secondary font-label-md text-label-md">Under Treatment</button>
+<button class="w-full text-left px-space-sm py-1.5 rounded-lg hover:bg-surface-container-low text-text-secondary font-label-md text-label-md">All Streams</button>
+</div>
+</div>
+<div class="relative">
+<button class="h-9 px-space-sm bg-surface-container-lowest shadow-sm rounded-xl flex items-center gap-1.5 text-text-primary active:bg-surface-container-low transition-all" id="dateFilterBtn" onclick="toggleDropdown('dateMenu')">
+<span class="material-symbols-outlined text-[16px] text-text-secondary">calendar_today</span>
+<span class="font-label-md text-label-md font-medium">All Time</span>
+<span class="material-symbols-outlined text-[16px] text-text-secondary">expand_more</span>
+</button>
+<div class="hidden absolute top-10 left-0 z-30 w-40 bg-surface-container-lowest shadow-xl rounded-xl p-space-xs space-y-1" id="dateMenu">
+<button class="w-full text-left px-space-sm py-1.5 rounded-lg hover:bg-surface-container-low text-text-secondary font-label-md text-label-md">Last 7 Days</button>
+<button class="w-full text-left px-space-sm py-1.5 rounded-lg hover:bg-surface-container-low text-text-secondary font-label-md text-label-md">Current Month</button>
+<button class="w-full text-left px-space-sm py-1.5 rounded-lg hover:bg-surface-container-low text-text-secondary font-label-md text-label-md">Quarter to Date</button>
+<button class="w-full text-left px-space-sm py-1.5 rounded-lg bg-primary-container text-on-primary-fixed-variant font-label-md text-label-md flex items-center justify-between">
+<span class="">All Time</span>
+<span class="material-symbols-outlined text-[16px]">check</span>
+</button>
+</div>
+</div>
+</div>
+<button class="h-9 px-space-sm bg-surface-container-lowest shadow-sm rounded-xl flex items-center gap-1.5 text-text-secondary active:scale-95 transition-all" onclick="openExportModal()">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span class="font-label-md text-label-md font-semibold">Export</span>
+</button>
+</section>
+<!-- Live Balance Summary: 3x2 Stream Telemetry Grid -->
+<section class="space-y-space-xs">
+<div class="flex items-center justify-between px-0.5">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label-caps text-label-caps uppercase text-text-secondary tracking-wider">Live Plant Stream Balance</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted">PCB Limit: 90 Days</span>
+</div>
+<div class="grid grid-cols-2 gap-space-xs">
+<!-- Card HAZ -->
+<div class="bg-card-surface rounded-xl p-space-sm shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-haz-bg text-haz-text font-label-caps text-label-caps">HAZ</span>
+<span class="material-symbols-outlined text-haz-text text-[18px]" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div class="mt-2">
+<div class="flex items-baseline gap-1">
+<span class="font-metric-display text-metric-display text-text-primary">329.57</span>
+<span class="font-label-md text-label-md text-text-muted">kg</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary truncate">Hazardous Solids</p>
+</div>
+</div>
+<!-- Card SAFE -->
+<div class="bg-card-surface rounded-xl p-space-sm shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-safe-bg text-safe-text font-label-caps text-label-caps">SAFE</span>
+<span class="material-symbols-outlined text-safe-text text-[18px]" style="font-variation-settings: 'FILL' 1;">eco</span>
+</div>
+<div class="mt-2">
+<div class="flex items-baseline gap-1">
+<span class="font-metric-display text-metric-display text-text-primary">0.20</span>
+<span class="font-label-md text-label-md text-text-muted">kg</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary truncate">Non-Haz Solids</p>
+</div>
+</div>
+<!-- Card LIQ -->
+<div class="bg-card-surface rounded-xl p-space-sm shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-liq-bg text-liq-text font-label-caps text-label-caps">LIQ</span>
+<span class="material-symbols-outlined text-liq-text text-[18px]" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+</div>
+<div class="mt-2">
+<div class="flex items-baseline gap-1">
+<span class="font-metric-display text-metric-display text-text-primary">17.00</span>
+<span class="font-label-md text-label-md text-text-muted">L</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary truncate">Liquid Waste</p>
+</div>
+</div>
+<!-- Card ELEC -->
+<div class="bg-card-surface rounded-xl p-space-sm shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-elec-bg text-elec-text font-label-caps text-label-caps">ELEC</span>
+<span class="material-symbols-outlined text-elec-text text-[18px]">memory</span>
+</div>
+<div class="mt-2">
+<div class="flex items-baseline gap-1">
+<span class="font-metric-display text-metric-display text-text-primary">0.20</span>
+<span class="font-label-md text-label-md text-text-muted">kg</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary truncate">Electrical &amp; E-Waste</p>
+</div>
+</div>
+<!-- Card BATT -->
+<div class="bg-card-surface rounded-xl p-space-sm shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-batt-bg text-batt-text font-label-caps text-label-caps">BATT</span>
+<span class="material-symbols-outlined text-batt-text text-[18px]">battery_charging_full</span>
+</div>
+<div class="mt-2">
+<div class="flex items-baseline gap-1">
+<span class="font-metric-display text-metric-display text-text-primary">1.00</span>
+<span class="font-label-md text-label-md text-text-muted">kg</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary truncate">Lead Acid / Li-Ion</p>
+</div>
+</div>
+<!-- Card IDLE / OTHER -->
+<div class="bg-card-surface rounded-xl p-space-sm shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-other-bg text-other-text font-label-caps text-label-caps">OTHER</span>
+<span class="material-symbols-outlined text-other-text text-[18px]">category</span>
+</div>
+<div class="mt-2">
+<div class="flex items-baseline gap-1">
+<span class="font-metric-display text-metric-display text-text-primary">0.00</span>
+<span class="font-label-md text-label-md text-text-muted">kg</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary truncate">Recyclable Inert</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Collapsible Bar: 13 Specific Sub-categories -->
+<section class="bg-card-surface rounded-xl shadow-sm overflow-hidden transition-all duration-200">
+<button class="w-full px-space-sm py-2.5 flex items-center justify-between text-left active:bg-surface-container-low transition-colors" onclick="toggleAccordion('typeBreakdown', 'arrowIcon')">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<span class="font-body-md text-body-md font-semibold text-text-primary truncate">In storage by waste type (13 types)</span>
+</div>
+<div class="flex items-center gap-1 text-text-secondary shrink-0">
+<span class="font-label-md text-label-md">Details</span>
+<span class="material-symbols-outlined text-[18px] transition-transform duration-200" id="arrowIcon">expand_more</span>
+</div>
+</button>
+<div class="hidden px-space-sm pb-space-sm space-y-2 bg-surface-container-lowest" id="typeBreakdown">
+<div class="h-[1px] w-full bg-surface-container mb-2"></div>
+<div class="grid grid-cols-1 gap-1.5 text-text-secondary">
+<div class="flex items-center justify-between py-1 px-2 rounded bg-canvas-bg font-label-md text-label-md">
+<span class="truncate">Oily Cotton Rags (Sch I - 5.1)</span>
+<span class="font-semibold text-text-primary shrink-0 ml-2">214.2 kg</span>
+</div>
+<div class="flex items-center justify-between py-1 px-2 rounded bg-canvas-bg font-label-md text-label-md">
+<span class="truncate">Used Gearbox Lubricant (Sch I - 5.1)</span>
+<span class="font-semibold text-text-primary shrink-0 ml-2">17.0 L</span>
+</div>
+<div class="flex items-center justify-between py-1 px-2 rounded bg-canvas-bg font-label-md text-label-md">
+<span class="truncate">Spent Hydraulic Filters (Sch I - 35.1)</span>
+<span class="font-semibold text-text-primary shrink-0 ml-2">115.37 kg</span>
+</div>
+<div class="flex items-center justify-between py-1 px-2 rounded bg-canvas-bg font-label-md text-label-md">
+<span class="truncate">Scrap Metal Swarf &amp; Bolts</span>
+<span class="font-semibold text-text-primary shrink-0 ml-2">0.2 kg</span>
+</div>
+<div class="flex items-center justify-between py-1 px-2 rounded bg-canvas-bg font-label-md text-label-md">
+<span class="truncate">Decommissioned Control Relays</span>
+<span class="font-semibold text-text-primary shrink-0 ml-2">0.2 kg</span>
+</div>
+<div class="flex items-center justify-between py-1 px-2 rounded bg-canvas-bg font-label-md text-label-md">
+<span class="truncate">UPS VRLA Valve Regulated Cells</span>
+<span class="font-semibold text-text-primary shrink-0 ml-2">1.0 kg</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Search & Category Filters -->
+<section class="space-y-space-xs">
+<div class="relative w-full">
+<span class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-text-muted">
+<span class="material-symbols-outlined text-[18px]">search</span>
+</span>
+<input class="w-full h-11 pl-9 pr-9 bg-card-surface rounded-xl shadow-sm text-text-primary font-body-md text-body-md placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary transition-all" id="searchInput" placeholder="Search turbine (e.g. GML139), activity, manifest..." type="text">
+<button class="absolute inset-y-0 right-3 flex items-center text-text-muted hover:text-text-primary" onclick="clearSearch()">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Quick Filter Pills -->
+<div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+<button class="filter-pill shrink-0 px-3 py-1 rounded-full bg-primary-deep text-on-primary font-label-md text-label-md font-semibold transition-all" onclick="filterStream('all', this)">All</button>
+<button class="filter-pill shrink-0 px-3 py-1 rounded-full bg-card-surface text-text-secondary hover:bg-surface-container-low font-label-md text-label-md transition-all" onclick="filterStream('HAZ', this)">Hazardous</button>
+<button class="filter-pill shrink-0 px-3 py-1 rounded-full bg-card-surface text-text-secondary hover:bg-surface-container-low font-label-md text-label-md transition-all" onclick="filterStream('LIQ', this)">Liquid</button>
+<button class="filter-pill shrink-0 px-3 py-1 rounded-full bg-card-surface text-text-secondary hover:bg-surface-container-low font-label-md text-label-md flex items-center gap-1 transition-all" onclick="filterStream('aging', this)">
+<span class="w-1.5 h-1.5 rounded-full bg-haz-text"></span>
+<span class="">Aging &gt;45d</span>
+</button>
+<button class="filter-pill shrink-0 px-3 py-1 rounded-full bg-card-surface text-text-secondary hover:bg-surface-container-low font-label-md text-label-md transition-all" onclick="filterStream('BATT', this)">Batteries</button>
+</div>
+</section>
+<!-- Entries Ledger: Dense Audit Cards -->
+<section class="space-y-space-xs">
+<div class="flex items-center justify-between px-0.5">
+<span class="font-label-caps text-label-caps uppercase text-text-secondary tracking-wider">Inventory Manifest Ledger</span>
+<span class="font-body-sm text-body-sm text-text-muted">4 Active Lots</span>
+</div>
+<!-- Record Card 1 -->
+<article class="waste-row bg-card-surface rounded-xl p-space-sm shadow-sm space-y-2" data-aging="56" data-category="HAZ" data-search="gml139 pm preventive oily cotton rags">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[18px]">wind_power</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<h3 class="font-headline-sm text-headline-sm text-text-primary truncate">GML139</h3>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-low text-text-secondary font-label-caps text-label-caps">PM</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted truncate">Preventive Maintenance • WTG Sector 4</p>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-haz-bg text-haz-text font-label-caps text-label-caps shrink-0">HAZ</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-baseline gap-1">
+<span class="font-metric-display text-metric-display text-text-primary">5.0</span>
+<span class="font-label-md text-label-md text-text-muted">kg</span>
+<span class="font-body-sm text-body-sm text-text-secondary ml-1">• Oily Rags</span>
+</div>
+<!-- PCB Statutory Age Pill -->
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-haz-bg text-haz-text">
+<span class="w-1.5 h-1.5 rounded-full bg-haz-text animate-ping"></span>
+<span class="font-label-md text-label-md font-semibold">56d in store</span>
+</div>
+</div>
+<!-- Statutory Timeline indicator -->
+<div class="space-y-1">
+<div class="flex justify-between text-body-sm font-body-sm text-text-muted">
+<span class="">Logged: 2026-08-14</span>
+<span class="text-haz-text font-semibold">34d left to dispatch</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-haz-text rounded-full" style="width: 62%;"></div>
+</div>
+</div>
+</article>
+<!-- Record Card 2 -->
+<article class="waste-row bg-card-surface rounded-xl p-space-sm shadow-sm space-y-2" data-aging="55" data-category="LIQ" data-search="kctre07 bm breakdown synthetic gear oil liquid">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-tertiary text-[18px]">build</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<h3 class="font-headline-sm text-headline-sm text-text-primary truncate">KCTRE07</h3>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-low text-text-secondary font-label-caps text-label-caps">BM</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted truncate">Breakdown Maintenance • Yaw Bearing</p>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-liq-bg text-liq-text font-label-caps text-label-caps shrink-0">LIQ</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-baseline gap-1">
+<span class="font-metric-display text-metric-display text-text-primary">15.0</span>
+<span class="font-label-md text-label-md text-text-muted">L</span>
+<span class="font-body-sm text-body-sm text-text-secondary ml-1">• Synth Gear Oil</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-batt-bg text-batt-text">
+<span class="w-1.5 h-1.5 rounded-full bg-batt-text"></span>
+<span class="font-label-md text-label-md font-semibold">55d in store</span>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between text-body-sm font-body-sm text-text-muted">
+<span class="">Logged: 2026-08-02</span>
+<span class="text-batt-text font-medium">35d left to dispatch</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-batt-text rounded-full" style="width: 61%;"></div>
+</div>
+</div>
+</article>
+<!-- Record Card 3 -->
+<article class="waste-row bg-card-surface rounded-xl p-space-sm shadow-sm space-y-2" data-aging="49" data-category="HAZ" data-search="gml55 pm preventive spent lube filters">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[18px]">wind_power</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<h3 class="font-headline-sm text-headline-sm text-text-primary truncate">GML55</h3>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-low text-text-secondary font-label-caps text-label-caps">PM</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted truncate">Preventive Maintenance • Hub Assembly</p>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-haz-bg text-haz-text font-label-caps text-label-caps shrink-0">HAZ</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-baseline gap-1">
+<span class="font-metric-display text-metric-display text-text-primary">3.0</span>
+<span class="font-label-md text-label-md text-text-muted">kg</span>
+<span class="font-body-sm text-body-sm text-text-secondary ml-1">• Lube Cartridges</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-batt-bg text-batt-text">
+<span class="w-1.5 h-1.5 rounded-full bg-batt-text"></span>
+<span class="font-label-md text-label-md font-semibold">49d in store</span>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between text-body-sm font-body-sm text-text-muted">
+<span class="">Logged: 2026-07-27</span>
+<span class="text-batt-text font-medium">41d left to dispatch</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-batt-text rounded-full" style="width: 54%;"></div>
+</div>
+</div>
+</article>
+<!-- Record Card 4 -->
+<article class="waste-row bg-card-surface rounded-xl p-space-sm shadow-sm space-y-2" data-aging="37" data-category="SAFE" data-search="gml73 pm preventive packaging seals non-hazardous">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[18px]">wind_power</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<h3 class="font-headline-sm text-headline-sm text-text-primary truncate">GML73</h3>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-low text-text-secondary font-label-caps text-label-caps">PM</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted truncate">Preventive Maintenance • Transformer Pad</p>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-safe-bg text-safe-text font-label-caps text-label-caps shrink-0">SAFE</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-baseline gap-1">
+<span class="font-metric-display text-metric-display text-text-primary">0.4</span>
+<span class="font-label-md text-label-md text-text-muted">kg</span>
+<span class="font-body-sm text-body-sm text-text-secondary ml-1">• Rubber Seals</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-safe-bg text-safe-text">
+<span class="w-1.5 h-1.5 rounded-full bg-safe-text"></span>
+<span class="font-label-md text-label-md font-semibold">37d in store</span>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between text-body-sm font-body-sm text-text-muted">
+<span class="">Logged: 2026-07-15</span>
+<span class="text-safe-text font-medium">53d left to dispatch</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-safe-text rounded-full" style="width: 41%;"></div>
+</div>
+</div>
+</article>
+</section>
+<!-- Export Manifest Modal Scrim -->
+<div class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4" id="exportModal">
+<div class="w-full sm:max-w-md bg-card-surface rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden animate-in slide-in-from-bottom duration-200">
+<div class="p-space-lg space-y-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary-container text-primary-deep flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">description</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-text-primary">Export Manifest</h2>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container-low text-text-secondary flex items-center justify-center hover:bg-surface-container" onclick="closeExportModal()">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<p class="font-body-md text-body-md text-text-secondary">
+          Generate statutory compliance manifests formatted to State Pollution Control Board (SPCB) Form-10 register specifications.
+        </p>
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-text-secondary font-medium">Export Format</label>
+<div class="grid grid-cols-2 gap-2">
+<label class="p-space-sm rounded-xl bg-primary-container text-on-primary-fixed-variant flex items-center gap-2 cursor-pointer">
+<input checked="" class="accent-primary" name="format" type="radio">
+<span class="font-label-md text-label-md font-semibold">Form-10 (PDF)</span>
+</label>
+<label class="p-space-sm rounded-xl bg-surface-container-low text-text-secondary flex items-center gap-2 cursor-pointer">
+<input class="accent-primary" name="format" type="radio">
+<span class="font-label-md text-label-md font-semibold">Excel (.xlsx)</span>
+</label>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-text-secondary font-medium">Target Waste Category</label>
+<select class="w-full h-11 px-3 bg-surface-container-low rounded-lg text-text-primary font-body-md text-body-md focus:outline-none">
+<option>All Storage Streams (Combined)</option>
+<option>Hazardous Wastes Only (HAZ)</option>
+<option>Batteries &amp; E-Waste</option>
+<option>Liquid Waste Streams (LIQ)</option>
+</select>
+</div>
+<div class="pt-2 flex flex-col gap-2">
+<button class="w-full h-11 bg-primary text-on-primary font-headline-sm text-headline-sm rounded-xl shadow-sm hover:bg-primary-deep flex items-center justify-center gap-2 transition-all" onclick="triggerDownload()">
+<span class="material-symbols-outlined text-[20px]">download</span>
+<span class="">Download Form-10 Ledger</span>
+</button>
+<button class="w-full h-11 bg-card-surface text-text-secondary font-label-md text-label-md rounded-xl hover:bg-surface-container-low transition-all" onclick="closeExportModal()">
+            Cancel
+          </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function toggleDropdown(menuId) {
+    const el = document.getElementById(menuId);
+    const isHidden = el.classList.contains('hidden');
+    document.querySelectorAll('[id$="Menu"]').forEach(m => m.classList.add('hidden'));
+    if (isHidden) {
+      el.classList.remove('hidden');
+    }
+  }
+
+  function toggleAccordion(accId, arrowId) {
+    const acc = document.getElementById(accId);
+    const arrow = document.getElementById(arrowId);
+    if (acc.classList.contains('hidden')) {
+      acc.classList.remove('hidden');
+      arrow.classList.add('rotate-180');
+    } else {
+      acc.classList.add('hidden');
+      arrow.classList.remove('rotate-180');
+    }
+  }
+
+  function openExportModal() {
+    document.getElementById('exportModal').classList.remove('hidden');
+  }
+
+  function closeExportModal() {
+    document.getElementById('exportModal').classList.add('hidden');
+  }
+
+  function triggerDownload() {
+    const btn = event.currentTarget;
+    btn.innerHTML = '<span class="material-symbols-outlined text-[20px] animate-spin">refresh</span> Generating Manifest...';
+    setTimeout(() => {
+      btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">check</span> Download Complete!';
+      setTimeout(() => {
+        closeExportModal();
+        btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">download</span> Download Form-10 Ledger';
+      }, 900);
+    }, 1200);
+  }
+
+  function filterStream(type, btn) {
+    document.querySelectorAll('.filter-pill').forEach(pill => {
+      pill.className = 'filter-pill shrink-0 px-3 py-1 rounded-full bg-card-surface text-text-secondary hover:bg-surface-container-low font-label-md text-label-md transition-all';
+    });
+    btn.className = 'filter-pill shrink-0 px-3 py-1 rounded-full bg-primary-deep text-on-primary font-label-md text-label-md font-semibold transition-all';
+
+    const rows = document.querySelectorAll('.waste-row');
+    rows.forEach(row => {
+      if (type === 'all') {
+        row.style.display = 'block';
+      } else if (type === 'aging') {
+        const aging = parseInt(row.getAttribute('data-aging') || '0', 10);
+        row.style.display = aging > 45 ? 'block' : 'none';
+      } else {
+        const cat = row.getAttribute('data-category');
+        row.style.display = cat === type ? 'block' : 'none';
+      }
+    });
+  }
+
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', function(e) {
+      const term = e.target.value.toLowerCase().trim();
+      const rows = document.querySelectorAll('.waste-row');
+      rows.forEach(row => {
+        const searchData = row.getAttribute('data-search') || '';
+        if (searchData.includes(term)) {
+          row.style.display = 'block';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  }
+
+  function clearSearch() {
+    if (searchInput) {
+      searchInput.value = '';
+      searchInput.dispatchEvent(new Event('input'));
+    }
+  }
+
+  window.addEventListener('click', function(e) {
+    if (!e.target.closest('#storageFilterBtn') && !e.target.closest('#storageMenu')) {
+      const menu = document.getElementById('storageMenu');
+      if (menu) menu.classList.add('hidden');
+    }
+    if (!e.target.closest('#dateFilterBtn') && !e.target.closest('#dateMenu')) {
+      const menu = document.getElementById('dateMenu');
+      if (menu) menu.classList.add('hidden');
+    }
+  });
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-card-surface/95 backdrop-blur-xl shadow-[0_-4px_16px_rgba(15,23,42,0.06)]" data-active-classes="text-primary-deep font-semibold"><div class="flex items-center justify-around h-16 px-space-xs relative"><a class="flex-1 flex flex-col items-center justify-center h-full min-h-[48px] gap-0.5 text-other-text transition-colors" data-path="dashboard-overview" href="#"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-label-md text-label-md text-[11px]">Home</span></a><a aria-current="page" class="flex-1 flex flex-col items-center justify-center h-full min-h-[48px] gap-0.5 transition-colors text-primary-deep font-semibold" data-path="manifest-inventory" href="#"><span class="material-symbols-outlined text-[22px]">inventory_2</span><span class="font-label-md text-label-md text-[11px]">Inventory</span></a><div class="flex-1 flex items-center justify-center"><a class="relative -top-3 w-13 h-13 w-[52px] h-[52px] rounded-full bg-primary-fab hover:bg-primary-deep active:scale-95 text-on-primary flex items-center justify-center shadow-[0_8px_20px_-4px_rgba(22,163,74,0.45)] transition-all" data-path="quick-log-entry" href="#"><span class="material-symbols-outlined text-[28px]">add</span></a></div><a class="flex-1 flex flex-col items-center justify-center h-full min-h-[48px] gap-0.5 text-other-text transition-colors" data-path="compliance-analytics" href="#"><span class="material-symbols-outlined text-[22px]">bar_chart</span><span class="font-label-md text-label-md text-[11px]">Analytics</span></a><a class="flex-1 flex flex-col items-center justify-center h-full min-h-[48px] gap-0.5 text-other-text transition-colors" data-path="facility-settings" href="#"><span class="material-symbols-outlined text-[22px]">settings</span><span class="font-label-md text-label-md text-[11px]">Settings</span></a></div></nav>
+
+</body></html>

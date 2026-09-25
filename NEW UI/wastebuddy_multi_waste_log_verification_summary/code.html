@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><title>Quick Log Entry - WasteBuddy</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-secondary-container": "#006f67", "liq-border": "#bae6fd", "surface-container-low": "#eff4ff", "on-error-container": "#93000a", "other-text": "#64748b", "on-background": "#0b1c30", "on-surface": "#0b1c30", "primary-fixed-dim": "#79db8d", "haz-bg": "#fef2f2", "card-surface": "#ffffff", "primary-container": "#dcfce7", "on-tertiary-fixed": "#001d31", "on-primary-fixed-variant": "#005323", "on-primary-fixed": "#00210a", "surface": "#f8f9ff", "on-tertiary-fixed-variant": "#004b73", "surface-bright": "#f8f9ff", "elec-bg": "#fff7ed", "error-container": "#ffdad6", "safe-border": "#a7f3d0", "surface-container-lowest": "#ffffff", "on-secondary-fixed-variant": "#00504a", "error": "#ba1a1a", "tertiary-container": "#0075b1", "on-tertiary": "#ffffff", "text-secondary": "#475569", "text-muted": "#94a3b8", "on-secondary": "#ffffff", "on-error": "#ffffff", "primary-deep": "#166534", "on-primary-container": "#d3ffd5", "safe-bg": "#ecfdf5", "liq-text": "#0284c7", "surface-container-high": "#dce9ff", "secondary-fixed-dim": "#80d5cb", "secondary": "#006a63", "elec-text": "#ea580c", "text-primary": "#0f172a", "haz-border": "#fecaca", "secondary-container": "#99efe5", "surface-container": "#e5eeff", "haz-text": "#dc2626", "other-border": "#e2e8f0", "border-dim": "#cbd5e1", "border-default": "#e2e8f0", "outline": "#6f7a6e", "inverse-surface": "#213145", "on-surface-variant": "#3f493f", "tertiary-fixed": "#cce5ff", "surface-dim": "#cbdbf5", "secondary-fixed": "#9cf2e8", "safe-text": "#059669", "outline-variant": "#becabc", "canvas-bg": "#f8fafc", "elec-border": "#fed7aa", "tertiary-fixed-dim": "#93ccff", "surface-tint": "#006d30", "liq-bg": "#f0f9ff", "on-secondary-fixed": "#00201d", "primary-fixed": "#95f8a7", "batt-bg": "#fffbeb", "background": "#f8f9ff", "primary-dark": "#14532d", "surface-variant": "#d3e4fe", "primary": "#00652c", "other-bg": "#f1f5f9", "batt-border": "#fde68a", "primary-fab": "#16a34a", "inverse-on-surface": "#eaf1ff", "on-tertiary-container": "#ecf4ff", "tertiary": "#005b8c", "surface-container-highest": "#d3e4fe", "on-primary": "#ffffff", "batt-text": "#d97706", "inverse-primary": "#79db8d" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-desktop": "2rem", "gutter": "0.75rem", "gutter-desktop": "1.5rem", "space-xs": "0.25rem", "margin": "1rem", "space-md": "0.75rem", "space-xl": "1.5rem", "space-sm": "0.5rem", "space-lg": "1rem" }, fontFamily: { "headline-lg-mobile": ["Inter"], "label-caps": ["Inter"], "headline-lg": ["Inter"], "body-lg": ["Inter"], "metric-display": ["Inter"], "headline-sm": ["Inter"], "body-sm": ["Inter"], "label-md": ["Inter"], "headline-md": ["Inter"], "body-md": ["Inter"] }, fontSize: { "headline-lg-mobile": ["22px", { "lineHeight": "28px", "fontWeight": "700" }], "label-caps": ["11px", { "lineHeight": "14px", "fontWeight": "700" }], "headline-lg": ["30px", { "lineHeight": "38px", "fontWeight": "700" }], "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }], "metric-display": ["24px", { "lineHeight": "28px", "fontWeight": "700" }], "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }], "body-sm": ["11px", { "lineHeight": "16px", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }], "headline-md": ["20px", { "lineHeight": "26px", "fontWeight": "600" }], "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }] } } } }</script><style>@layer base { html, body { width: 100vw; margin: 0; padding: 0; } body { overscroll-behavior-y: none; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head><body class="bg-canvas-bg font-body-md text-text-primary min-h-screen flex flex-col antialiased selection:bg-primary-container selection:text-primary-dark"><header class="fixed top-0 w-full z-50 bg-primary-dark/95 backdrop-blur-xl shadow-[0_2px_12px_rgba(20,83,45,0.25)] pt-safe"><div class="h-16 px-space-md flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-xs min-w-0"><button aria-label="Go back" class="w-11 h-11 flex items-center justify-center text-on-primary hover:bg-white/10 active:bg-white/20 rounded-lg transition-colors shrink-0" onclick="history.back()"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><h1 class="font-headline-sm text-headline-sm text-on-primary tracking-tight truncate">Quick Log Entry</h1></div><div class="flex items-center gap-space-sm shrink-0"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-margin px-margin bg-canvas-bg"><div class="flex flex-col w-full pb-6">
+<!-- Interactive Modal Container Styled as an Elevated Verification Sheet -->
+<div class="w-full bg-card-surface rounded-xl shadow-xl overflow-hidden">
+<!-- Top Drag Handle & Dismiss Header -->
+<div class="pt-3 px-4 pb-2 flex flex-col items-center bg-card-surface">
+<div class="w-12 h-1.5 rounded-full bg-border-dim mb-3"></div>
+<div class="w-full flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-fab animate-pulse"></span>
+<h2 class="font-headline-md text-headline-md text-text-primary tracking-tight">Log Waste Generation</h2>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary mt-0.5">Record new waste from maintenance activity</p>
+</div>
+<button aria-label="Close sheet" class="w-8 h-8 rounded-full bg-other-bg flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors active:scale-95" onclick="history.back()" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+</div>
+<!-- Regulatory Audit Tag -->
+<div class="px-4 py-2 bg-safe-bg flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-safe-text text-[16px]">verified_user</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-safe-text">Statutory Manifest E-Logbook</span>
+</div>
+<span class="font-label-caps text-label-caps text-safe-text font-bold">MoEFCC Form 3</span>
+</div>
+<!-- Main Operational Form -->
+<form class="p-4 space-y-4" onsubmit="event.preventDefault(); triggerSuccess();">
+<!-- Field 1: Date & Field 2: Location Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<!-- Date Input -->
+<div class="flex flex-col">
+<label class="font-label-caps text-label-caps uppercase tracking-wider text-text-secondary mb-1 flex items-center gap-1" for="waste-date">
+<span>Date</span>
+<span class="text-haz-text font-bold">*</span>
+</label>
+<div class="relative flex items-center">
+<input class="w-full h-11 px-3 bg-card-surface text-text-primary font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary pl-10" id="waste-date" placeholder="DD-MM-YYYY" type="text" value="20-09-2026"/>
+<span class="material-symbols-outlined absolute left-3 text-text-muted text-[18px] pointer-events-none">calendar_today</span>
+</div>
+</div>
+<!-- Location Dropdown -->
+<div class="flex flex-col">
+<label class="font-label-caps text-label-caps uppercase tracking-wider text-text-secondary mb-1 flex items-center gap-1" for="waste-location">
+<span>Location</span>
+<span class="text-haz-text font-bold">*</span>
+</label>
+<div class="relative flex items-center">
+<select class="w-full h-11 px-3 bg-card-surface text-text-primary font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none pr-10 pl-10 cursor-pointer" id="waste-location">
+<option selected="" value="GML139">GML139 - Wind Turbine #139</option>
+<option value="GML73">GML73 - Wind Turbine #73</option>
+<option value="KCTRE12">KCTRE12 - Feeder Station</option>
+<option value="Substation Yard A">Substation Yard A (Central)</option>
+</select>
+<span class="material-symbols-outlined absolute left-3 text-text-muted text-[20px] pointer-events-none">pin_drop</span>
+<span class="material-symbols-outlined absolute right-3 text-text-secondary text-[20px] pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Field 3: Activity Selector -->
+<div class="flex flex-col">
+<label class="font-label-caps text-label-caps uppercase tracking-wider text-text-secondary mb-1 flex items-center gap-1" for="maintenance-activity">
+<span>Activity</span>
+<span class="text-haz-text font-bold">*</span>
+</label>
+<div class="relative flex items-center">
+<select class="w-full h-11 px-3 bg-card-surface text-text-primary font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none pr-10 pl-10 cursor-pointer" id="maintenance-activity">
+<option selected="" value="PM">Preventive Maintenance (PM)</option>
+<option value="BM">Breakdown Maintenance (BM)</option>
+<option value="Overhaul">Turbine Overhaul</option>
+<option value="Scheduled">Scheduled Oil Flushing</option>
+</select>
+<span class="material-symbols-outlined absolute left-3 text-text-muted text-[20px] pointer-events-none">build_circle</span>
+<span class="material-symbols-outlined absolute right-3 text-text-secondary text-[20px] pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Field 4: Waste Types & Quantities Stack -->
+<div class="pt-1 flex flex-col space-y-2">
+<div class="flex items-center justify-between">
+<label class="font-label-caps text-label-caps uppercase tracking-wider text-text-secondary flex items-center gap-1">
+<span>Waste Types &amp; Quantities</span>
+<span class="text-haz-text font-bold">*</span>
+</label>
+<span class="px-2 py-0.5 rounded-full bg-primary-container text-primary-deep font-label-caps text-label-caps uppercase font-bold" id="item-badge">2 ITEMS LOGGED</span>
+</div>
+<!-- Waste Entry Row Item Card -->
+<div class="space-y-3" id="waste-rows-container"><!-- Item 1: Compact collapsed summary row with edit & trash -->
+<div class="p-3 bg-surface rounded-xl shadow-sm flex items-center justify-between gap-2.5 transition-all" id="waste-row-1">
+<div class="flex items-center gap-2 min-w-0 flex-1">
+<span class="px-2 py-0.5 rounded-full bg-haz-bg text-haz-text font-label-caps text-label-caps font-bold shrink-0">HAZ</span>
+<div class="min-w-0 flex-1">
+<div class="flex items-center gap-1.5 truncate">
+<span class="font-label-md text-label-md font-semibold text-text-primary truncate">Oil/Grease Soaked Cotton</span>
+<span class="text-text-muted text-[12px]">•</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold shrink-0">5.0 kg</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted block truncate">Item #01 · Hazardous Solids · Declared</span>
+</div>
+</div>
+<div class="flex items-center gap-1 shrink-0">
+<button aria-label="Edit Item 1" class="w-8 h-8 rounded-lg bg-card-surface text-text-secondary hover:text-primary flex items-center justify-center transition-colors shadow-sm active:scale-90" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button aria-label="Delete Item 1" class="w-8 h-8 rounded-lg bg-card-surface text-haz-text hover:bg-haz-bg flex items-center justify-center transition-colors shadow-sm active:scale-90" onclick="removeRow('waste-row-1')" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</div>
+<!-- Item 2: Active input entry card -->
+<div class="p-3 bg-surface rounded-xl shadow-sm space-y-3 relative transition-all ring-1 ring-primary/20" id="waste-row-2">
+<div class="flex items-center justify-between gap-2">
+<div class="flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-liq-bg text-liq-text font-label-caps text-label-caps font-bold">LIQ-HAZ</span>
+<span class="font-label-md text-label-md text-text-secondary">Item #02 (Active)</span>
+</div>
+<button aria-label="Delete entry" class="w-8 h-8 rounded-lg bg-card-surface text-haz-text hover:bg-haz-bg flex items-center justify-center transition-colors shadow-sm active:scale-90" onclick="removeRow('waste-row-2')" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+<div class="flex flex-col">
+<label class="font-body-sm text-body-sm text-text-muted mb-1">Category</label>
+<div class="relative flex items-center">
+<select class="w-full h-10 px-2.5 bg-card-surface text-text-primary font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none pr-8">
+<option value="HAZ">Hazardous Solids</option>
+<option selected="" value="LIQ">Liquid Waste</option>
+<option value="BATT">Battery Waste</option>
+<option value="ELEC">E-Waste</option>
+<option value="OTHER">General Scrap</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 text-text-muted text-[18px] pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="flex flex-col">
+<label class="font-body-sm text-body-sm text-text-muted mb-1">Waste Type</label>
+<div class="relative flex items-center">
+<select class="w-full h-10 px-2.5 bg-card-surface text-text-primary font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none pr-8">
+<option selected="" value="waste-oil">Waste Oil / Synthetic Gear Lubricant</option>
+<option value="hydraulic-fluid">Contaminated Hydraulic Fluid</option>
+<option value="waste-grease">Waste Grease</option>
+<option value="oil-cotton">Oil/Grease Soaked Cotton</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 text-text-muted text-[18px] pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 pt-1">
+<div class="flex-1">
+<label class="font-body-sm text-body-sm text-text-muted mb-1 block">Net Quantity</label>
+<div class="relative flex items-center">
+<input class="w-full h-10 px-3 bg-card-surface text-text-primary font-metric-display text-headline-sm rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary" placeholder="0" step="0.1" type="number" value="15"/>
+<span class="absolute right-3 font-body-sm text-body-sm text-text-muted">Declared</span>
+</div>
+</div>
+<div class="shrink-0 flex flex-col">
+<label class="font-body-sm text-body-sm text-text-muted mb-1 block">Unit</label>
+<div class="flex bg-other-bg p-1 rounded-lg gap-1">
+<button class="unit-btn px-3 py-1.5 rounded-md font-label-caps text-label-caps font-bold transition-all text-text-muted hover:text-text-primary" onclick="toggleUnit(this, 'KG')" type="button">
+          KG
+        </button>
+<button class="unit-btn px-3 py-1.5 rounded-md font-label-caps text-label-caps font-bold transition-all bg-card-surface text-primary shadow-sm" onclick="toggleUnit(this, 'L')" type="button">
+          L
+        </button>
+</div>
+</div>
+</div>
+</div></div>
+<!-- Add Another Waste Type Button -->
+<button class="w-full h-11 rounded-xl bg-primary-container/40 hover:bg-primary-container text-primary-deep font-label-md text-label-md font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.99] shadow-sm" onclick="addWasteRow()" type="button">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+<span>Add Another Waste Type</span>
+</button>
+</div>
+<!-- Field 5: Notes Field -->
+<div class="flex flex-col">
+<label class="font-label-caps text-label-caps uppercase tracking-wider text-text-secondary mb-1 flex items-center justify-between" for="waste-notes">
+<span>Notes (Optional)</span>
+<span class="text-text-muted font-normal">Audit Logged</span>
+</label>
+<textarea class="w-full p-3 bg-card-surface text-text-primary font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none placeholder:text-text-muted" id="waste-notes" placeholder="Add turbine maintenance notes, drum seal barcode #, or contractor info..." rows="2"></textarea>
+</div>
+<!-- Field 6: Photo Evidence -->
+<div class="flex flex-col">
+<label class="font-label-caps text-label-caps uppercase tracking-wider text-text-secondary mb-1">
+          Photo Evidence (Optional)
+        </label>
+<div class="flex items-center gap-3">
+<!-- Trigger Upload Pill -->
+<label class="flex-1 h-12 rounded-xl bg-surface hover:bg-other-bg text-text-primary flex items-center justify-center gap-2.5 cursor-pointer shadow-sm transition-colors active:scale-[0.99] px-3">
+<span class="material-symbols-outlined text-primary text-[22px]">photo_camera</span>
+<span class="font-label-md text-label-md font-semibold text-text-primary truncate">Attach Drum Photo / Barcode</span>
+<input accept="image/*" class="hidden" onchange="previewCapturedEvidence(this)" type="file"/>
+</label>
+<!-- Visual Evidence Thumbnail Placeholder -->
+<div class="relative w-12 h-12 rounded-xl overflow-hidden bg-other-bg shrink-0 shadow-sm flex items-center justify-center" id="photo-preview-slot">
+<img class="w-full h-full object-cover" data-alt="Industrial steel hazardous waste disposal drum in a wind turbine field facility with certified red barcode compliance tracking sticker, clear bright daylight." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8lzqExCCF8SNRXrI0KKRA7twtN-xJiLZqyHRhsVt1-65LFeIi0qepRw6VrMNpu080u_O0uQyU0DWovJ9xdcHfxAp3RlL7ZPPFPwzOqJjKWslxQ11yjsyj8xica7wsF2ppR8dmT4wGSnNHo6SIjAcXPj6b5O0w-C0qdiNz8797lJCPHN-dY0zkGlw30BH6F1geF9dfeTTL8s5xBtUm-e70LzRM7Q8bt3rOU8zUZAeukoS83BhhTq2E"/>
+<div class="absolute inset-0 bg-primary-dark/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-card-surface text-[14px]">check</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Field 7: Bottom CTA Submit Button -->
+<div class="pt-2">
+<button class="w-full h-12 rounded-xl bg-primary hover:bg-primary-deep text-on-primary font-headline-sm text-headline-sm font-semibold flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] cursor-pointer" id="submit-cta" onclick="openVerificationModal()" type="button">
+<span class="material-symbols-outlined text-[22px]">fact_check</span>
+<span id="submit-label">Review &amp; Submit Waste Log (2 Items)</span>
+</button>
+</div>
+<!-- Compliance Statement Notice -->
+<div class="flex items-center justify-center gap-1.5 text-center">
+<span class="material-symbols-outlined text-text-muted text-[14px]">lock</span>
+<p class="font-body-sm text-body-sm text-text-muted">Digitally signed with field engineer credentials &amp; GPS coordinates.</p>
+</div>
+</form>
+</div>
+<!-- Secondary Plant Location Snapshot (Rich visual anchor) -->
+<div class="mt-4 p-4 rounded-xl bg-card-surface shadow-sm flex items-center gap-3.5">
+<div class="w-14 h-14 rounded-xl overflow-hidden shrink-0 shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A modern wind farm clean green field at Molagavalli with tall white wind turbines against a vivid blue sky, industrial environmental monitoring station nearby." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDL950648nINujgrP65kpkovfyGOG3DMMuuQckMqgQqlKb7viy5SqWgF2aMQEWYZRn5Bk6lNAmfbPaQa6gD_9CoersSMcOVxM0X0wk36_gRE8HyuTh9KrWWpG1IRR1PHi6F8SSgl-1vkVmwrALF9WQ1vQ12H-anHFq6lC98Wsg-KMdnVYztPAc-AooBL0fD3Oy5ItQXqfgXXOFPkDADr5bNmAgxI_RZeiAdAooOh3LwIulvOVt4OWep"/>
+</div>
+<div class="min-w-0 flex-1">
+<div class="flex items-center gap-1">
+<span class="font-label-caps text-label-caps text-primary uppercase font-bold tracking-wider">Active Site</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+</div>
+<p class="font-headline-sm text-headline-sm text-text-primary truncate">Molagavalli Wind Farm 1 &amp; 2</p>
+<p class="font-body-sm text-body-sm text-text-secondary truncate">Sector 4 • Storage Station B-09</p>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[20px]">chevron_right</span>
+</div>
+<!-- Micro-interaction client script -->
+<script>
+    let rowCount = 1;
+
+    function toggleUnit(btn, unit) {
+      const parent = btn.parentElement;
+      const buttons = parent.querySelectorAll('.unit-btn');
+      buttons.forEach(b => {
+        b.classList.remove('bg-card-surface', 'text-primary', 'shadow-sm');
+        b.classList.add('text-text-muted');
+      });
+      btn.classList.add('bg-card-surface', 'text-primary', 'shadow-sm');
+      btn.classList.remove('text-text-muted');
+    }
+
+    function addWasteRow() {
+      rowCount++;
+      const container = document.getElementById('waste-rows-container');
+      const newId = 'waste-row-' + Date.now();
+      
+      const newCard = document.createElement('div');
+      newCard.id = newId;
+      newCard.className = "p-3 bg-surface rounded-xl shadow-sm space-y-3 relative transition-all";
+      newCard.innerHTML = `
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5">
+            <span class="px-2 py-0.5 rounded-full bg-liq-bg text-liq-text font-label-caps text-label-caps font-bold">LIQ</span>
+            <span class="font-label-md text-label-md text-text-secondary">Item #0${rowCount}</span>
+          </div>
+          <button 
+            type="button" 
+            onclick="removeRow('${newId}')" 
+            class="w-8 h-8 rounded-lg bg-card-surface text-haz-text hover:bg-haz-bg flex items-center justify-center transition-colors active:scale-90"
+            aria-label="Delete entry"
+          >
+            <span class="material-symbols-outlined text-[18px]">delete</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div class="flex flex-col">
+            <label class="font-body-sm text-body-sm text-text-muted mb-1">Category</label>
+            <div class="relative flex items-center">
+              <select class="w-full h-10 px-2.5 bg-card-surface text-text-primary font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none pr-8">
+                <option value="LIQ" selected>Liquid Waste</option>
+                <option value="HAZ">Hazardous Solids</option>
+                <option value="BATT">Battery Waste</option>
+                <option value="ELEC">E-Waste</option>
+                <option value="OTHER">General Scrap</option>
+              </select>
+              <span class="material-symbols-outlined absolute right-2 text-text-muted text-[18px] pointer-events-none">expand_more</span>
+            </div>
+          </div>
+
+          <div class="flex flex-col">
+            <label class="font-body-sm text-body-sm text-text-muted mb-1">Waste Type</label>
+            <div class="relative flex items-center">
+              <select class="w-full h-10 px-2.5 bg-card-surface text-text-primary font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none pr-8">
+                <option value="waste-grease" selected>Waste Grease</option>
+                <option value="hydraulic-fluid">Contaminated Hydraulic Fluid</option>
+                <option value="oil-cotton">Oil/Grease Soaked Cotton</option>
+                <option value="cartridges">Plastic Lubricant Cartridges</option>
+              </select>
+              <span class="material-symbols-outlined absolute right-2 text-text-muted text-[18px] pointer-events-none">expand_more</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-1">
+          <div class="flex-1">
+            <label class="font-body-sm text-body-sm text-text-muted mb-1 block">Net Quantity</label>
+            <div class="relative flex items-center">
+              <input 
+                type="number" 
+                step="0.1" 
+                value="10" 
+                class="w-full h-10 px-3 bg-card-surface text-text-primary font-metric-display text-headline-sm rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="0"
+              />
+              <span class="absolute right-3 font-body-sm text-body-sm text-text-muted">Declared</span>
+            </div>
+          </div>
+
+          <div class="shrink-0 flex flex-col">
+            <label class="font-body-sm text-body-sm text-text-muted mb-1 block">Unit</label>
+            <div class="flex bg-other-bg p-1 rounded-lg gap-1">
+              <button 
+                type="button" 
+                onclick="toggleUnit(this, 'KG')" 
+                class="unit-btn px-3 py-1.5 rounded-md font-label-caps text-label-caps font-bold transition-all text-text-muted hover:text-text-primary"
+              >
+                KG
+              </button>
+              <button 
+                type="button" 
+                onclick="toggleUnit(this, 'L')" 
+                class="unit-btn px-3 py-1.5 rounded-md font-label-caps text-label-caps font-bold transition-all bg-card-surface text-primary shadow-sm"
+              >
+                L
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      container.appendChild(newCard);
+      updateTotalCounter();
+    }
+
+    function removeRow(rowId) {
+      const el = document.getElementById(rowId);
+      if (el) {
+        const container = document.getElementById('waste-rows-container');
+        if (container.children.length > 1) {
+          el.remove();
+          updateTotalCounter();
+        } else {
+          alert("A minimum of 1 waste item entry is required for manifest logging.");
+        }
+      }
+    }
+
+    function updateTotalCounter() {
+      const count = document.getElementById('waste-rows-container').children.length;
+      document.getElementById('item-badge').textContent = `${count} ${count === 1 ? 'item' : 'items'} logged`;
+      document.getElementById('submit-label').textContent = `Record ${count} Waste ${count === 1 ? 'Entry' : 'Entries'}`;
+    }
+
+    function previewCapturedEvidence(input) {
+      if (input.files && input.files[0]) {
+        const preview = document.getElementById('photo-preview-slot');
+        preview.classList.add('ring-2', 'ring-primary');
+      }
+    }
+
+    function triggerSuccess() {
+      const btn = document.getElementById('submit-cta');
+      const prevHtml = btn.innerHTML;
+      btn.innerHTML = `<span class="material-symbols-outlined animate-spin text-[22px]">autorenew</span><span>Saving to Manifest...</span>`;
+      btn.classList.add('pointer-events-none', 'opacity-90');
+      
+      setTimeout(() => {
+        btn.innerHTML = `<span class="material-symbols-outlined text-[22px]">check_circle</span><span>Entry Certified &amp; Recorded!</span>`;
+        btn.classList.replace('bg-primary', 'bg-safe-text');
+        setTimeout(() => {
+          history.back();
+        }, 800);
+      }, 900);
+    }
+  </script>
+</div><!-- Pre-Submission Cross-Verification Summary Modal Overlay -->
+<div aria-modal="true" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all" id="verification-modal" role="dialog">
+<div class="w-full max-w-lg bg-card-surface rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in slide-in-from-bottom duration-200">
+<!-- Header -->
+<div class="p-4 bg-surface flex items-start justify-between border-b border-default">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-primary-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">verified</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary leading-snug">Cross-Verify Waste Entries</h3>
+<p class="font-body-sm text-body-sm text-text-secondary">Review log before statutory manifest sign-off</p>
+</div>
+</div>
+<button aria-label="Dismiss preview" class="w-8 h-8 rounded-full bg-other-bg flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors" onclick="closeVerificationModal()" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Modal Body Content -->
+<div class="p-4 space-y-3.5 overflow-y-auto">
+<!-- Metadata Snapshot Grid -->
+<div class="p-3 rounded-xl bg-surface grid grid-cols-2 gap-2.5 text-body-sm">
+<div>
+<span class="font-label-caps text-label-caps uppercase text-text-muted block">Log Date</span>
+<span class="font-body-md text-body-md text-text-primary font-semibold flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[16px] text-primary">calendar_month</span>
+            20-09-2026
+          </span>
+</div>
+<div>
+<span class="font-label-caps text-label-caps uppercase text-text-muted block">Activity</span>
+<span class="font-body-md text-body-md text-text-primary font-semibold truncate flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[16px] text-primary">build</span>
+            Preventive Maint.
+          </span>
+</div>
+<div class="col-span-2 pt-1 border-t border-default/60">
+<span class="font-label-caps text-label-caps uppercase text-text-muted block">Site &amp; Location</span>
+<span class="font-body-md text-body-md text-text-primary font-semibold truncate flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[16px] text-primary">location_on</span>
+            GML139 - Wind Turbine #139 (Molagavalli)
+          </span>
+</div>
+</div>
+<!-- Itemized Waste Breakdown -->
+<div class="space-y-2">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-text-secondary font-bold">Itemized Manifest (2 Items)</span>
+<span class="font-body-sm text-body-sm text-safe-text font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">check_circle</span> Form 3 Compliant
+          </span>
+</div>
+<div class="space-y-2">
+<!-- Item 1 Card -->
+<div class="p-2.5 rounded-xl bg-canvas-bg flex items-center justify-between gap-2">
+<div class="flex items-center gap-2 min-w-0">
+<span class="px-2 py-0.5 rounded-full bg-haz-bg text-haz-text font-label-caps text-label-caps font-bold shrink-0">HAZ</span>
+<div class="min-w-0">
+<p class="font-label-md text-label-md font-semibold text-text-primary truncate">Oil/Grease Soaked Cotton</p>
+<p class="font-body-sm text-body-sm text-text-muted">Solid Waste · Sched. I-5.1</p>
+</div>
+</div>
+<span class="font-headline-sm text-headline-sm text-primary font-bold shrink-0">5.0 kg</span>
+</div>
+<!-- Item 2 Card -->
+<div class="p-2.5 rounded-xl bg-canvas-bg flex items-center justify-between gap-2">
+<div class="flex items-center gap-2 min-w-0">
+<span class="px-2 py-0.5 rounded-full bg-liq-bg text-liq-text font-label-caps text-label-caps font-bold shrink-0">LIQ-HAZ</span>
+<div class="min-w-0">
+<p class="font-label-md text-label-md font-semibold text-text-primary truncate">Waste Oil / Gear Lubricant</p>
+<p class="font-body-sm text-body-sm text-text-muted">Liquid Waste · Sched. I-5.2</p>
+</div>
+</div>
+<span class="font-headline-sm text-headline-sm text-primary font-bold shrink-0">15.0 L</span>
+</div>
+</div>
+</div>
+<!-- Summary Aggregate Callout & Photo Attachment Pill -->
+<div class="p-3 rounded-xl bg-safe-bg flex items-center justify-between gap-2">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-primary-deep shrink-0">
+<span class="material-symbols-outlined text-[18px]">scale</span>
+</div>
+<div class="min-w-0">
+<span class="font-label-caps text-label-caps uppercase text-safe-text font-bold block">Total Manifest Quantity</span>
+<span class="font-body-md text-body-md text-text-primary font-bold truncate">5.0 kg Solids + 15.0 L Liquids</span>
+</div>
+</div>
+<div class="flex items-center gap-1 bg-card-surface px-2 py-1 rounded-lg shadow-sm shrink-0">
+<span class="material-symbols-outlined text-primary text-[16px]">image</span>
+<span class="font-label-caps text-label-caps text-text-secondary font-semibold">1 Photo Attached</span>
+</div>
+</div>
+</div>
+<!-- Dual Action Submission Footer -->
+<div class="p-4 bg-surface border-t border-default space-y-2.5">
+<button class="w-full h-12 rounded-xl bg-primary hover:bg-primary-deep text-on-primary font-headline-sm text-headline-sm font-semibold flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] cursor-pointer" id="sign-confirm-cta" onclick="confirmSignWasteLog()" type="button">
+<span class="material-symbols-outlined text-[22px]">lock_open</span>
+<span>Confirm &amp; Sign Waste Log</span>
+</button>
+<button class="w-full h-10 rounded-xl bg-card-surface hover:bg-other-bg text-text-secondary hover:text-text-primary font-label-md text-label-md font-semibold flex items-center justify-center gap-1.5 transition-colors active:scale-[0.99]" onclick="closeVerificationModal()" type="button">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+<span>Edit / Back to Form</span>
+</button>
+<div class="flex items-center justify-center gap-1 pt-0.5 text-center">
+<span class="material-symbols-outlined text-text-muted text-[13px]">verified_user</span>
+<p class="font-body-sm text-body-sm text-text-muted">CPCB &amp; SPCB Hazardous Waste Rules (2016) Logbook Compliant</p>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function openVerificationModal() {
+    const modal = document.getElementById('verification-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+  }
+
+  function closeVerificationModal() {
+    const modal = document.getElementById('verification-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  }
+
+  function confirmSignWasteLog() {
+    const btn = document.getElementById('sign-confirm-cta');
+    if (btn) {
+      btn.innerHTML = `<span class="material-symbols-outlined animate-spin text-[22px]">autorenew</span><span>Certifying & Signing...</span>`;
+      btn.classList.add('pointer-events-none', 'opacity-90');
+      setTimeout(() => {
+        btn.innerHTML = `<span class="material-symbols-outlined text-[22px]">verified</span><span>Signed & Registered to Form 3!</span>`;
+        btn.classList.replace('bg-primary', 'bg-safe-text');
+        setTimeout(() => {
+          closeVerificationModal();
+          history.back();
+        }, 900);
+      }, 1000);
+    }
+  }
+</script></main></body></html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<meta content="mobile_tab" name="shell-type"/>
+<title>WasteBuddy - Liquid Waste Breakdown Modal</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-secondary-container": "#006f67",
+            "liq-border": "#bae6fd",
+            "surface-container-low": "#eff4ff",
+            "on-error-container": "#93000a",
+            "other-text": "#64748b",
+            "on-background": "#0b1c30",
+            "on-surface": "#0b1c30",
+            "primary-fixed-dim": "#79db8d",
+            "haz-bg": "#fef2f2",
+            "card-surface": "#ffffff",
+            "primary-container": "#15803d",
+            "on-tertiary-fixed": "#001d31",
+            "on-primary-fixed-variant": "#005323",
+            "on-primary-fixed": "#00210a",
+            "surface": "#f8f9ff",
+            "on-tertiary-fixed-variant": "#004b73",
+            "surface-bright": "#f8f9ff",
+            "elec-bg": "#fff7ed",
+            "error-container": "#ffdad6",
+            "safe-border": "#a7f3d0",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary-fixed-variant": "#00504a",
+            "error": "#ba1a1a",
+            "tertiary-container": "#0075b1",
+            "on-tertiary": "#ffffff",
+            "text-secondary": "#475569",
+            "text-muted": "#94a3b8",
+            "on-secondary": "#ffffff",
+            "on-error": "#ffffff",
+            "primary-deep": "#166534",
+            "on-primary-container": "#14532d",
+            "safe-bg": "#ecfdf5",
+            "liq-text": "#0284c7",
+            "surface-container-high": "#dce9ff",
+            "secondary-fixed-dim": "#80d5cb",
+            "secondary": "#006a63",
+            "elec-text": "#ea580c",
+            "text-primary": "#0f172a",
+            "haz-border": "#fecaca",
+            "secondary-container": "#99efe5",
+            "surface-container": "#e5eeff",
+            "haz-text": "#dc2626",
+            "other-border": "#e2e8f0",
+            "border-dim": "#cbd5e1",
+            "border-default": "#e2e8f0",
+            "outline": "#6f7a6e",
+            "inverse-surface": "#213145",
+            "on-surface-variant": "#3f493f",
+            "tertiary-fixed": "#cce5ff",
+            "surface-dim": "#cbdbf5",
+            "secondary-fixed": "#9cf2e8",
+            "safe-text": "#059669",
+            "outline-variant": "#becabc",
+            "canvas-bg": "#f8fafc",
+            "elec-border": "#fed7aa",
+            "tertiary-fixed-dim": "#93ccff",
+            "surface-tint": "#006d30",
+            "liq-bg": "#f0f9ff",
+            "on-secondary-fixed": "#00201d",
+            "primary-fixed": "#95f8a7",
+            "batt-bg": "#fffbeb",
+            "background": "#f8f9ff",
+            "primary-dark": "#14532d",
+            "surface-variant": "#d3e4fe",
+            "primary": "#00652c",
+            "other-bg": "#f1f5f9",
+            "batt-border": "#fde68a",
+            "primary-fab": "#16a34a",
+            "inverse-on-surface": "#eaf1ff",
+            "on-tertiary-container": "#ecf4ff",
+            "tertiary": "#005b8c",
+            "surface-container-highest": "#d3e4fe",
+            "on-primary": "#ffffff",
+            "batt-text": "#d97706",
+            "inverse-primary": "#79db8d"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "margin-desktop": "2rem",
+            "gutter": "0.75rem",
+            "gutter-desktop": "1.5rem",
+            "space-xs": "0.25rem",
+            "margin": "1rem",
+            "space-md": "0.75rem",
+            "space-xl": "1.5rem",
+            "space-sm": "0.5rem",
+            "space-lg": "1rem"
+          },
+          fontFamily: {
+            "headline-lg-mobile": ["Inter"],
+            "label-caps": ["Inter"],
+            "headline-lg": ["Inter"],
+            "body-lg": ["Inter"],
+            "metric-display": ["Inter"],
+            "headline-sm": ["Inter"],
+            "body-sm": ["Inter"],
+            "label-md": ["Inter"],
+            "headline-md": ["Inter"],
+            "body-md": ["Inter"]
+          },
+          fontSize: {
+            "headline-lg-mobile": ["22px", { "lineHeight": "28px", "fontWeight": "700" }],
+            "label-caps": ["11px", { "lineHeight": "14px", "fontWeight": "700" }],
+            "headline-lg": ["30px", { "lineHeight": "38px", "fontWeight": "700" }],
+            "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "metric-display": ["24px", { "lineHeight": "28px", "fontWeight": "700" }],
+            "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "body-sm": ["11px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "headline-md": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    @layer base {
+      html, body {
+        width: 100vw;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        overscroll-behavior-y: none;
+      }
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .pt-safe {
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+    }
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-canvas-bg font-body-md text-text-primary min-h-screen flex flex-col antialiased selection:bg-primary-container selection:text-white relative overflow-hidden">
+<!-- Background App Screen (Blurred & Dimmed) -->
+<div class="filter blur-[3px] opacity-40 select-none pointer-events-none flex-1 flex flex-col">
+<!-- Top Header -->
+<header class="w-full bg-primary-dark pt-safe">
+<div class="h-16 px-space-lg flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-primary-deep flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[20px]">eco</span>
+</div>
+<span class="font-headline-sm text-on-primary">Waste<span class="text-[#4ade80] font-bold">Buddy</span></span>
+</div>
+<div class="flex items-center gap-2">
+<div class="h-8 px-2.5 bg-white/10 rounded-lg flex items-center gap-1 text-white text-xs">
+<span>Molagavalli 1 &amp; 2</span>
+</div>
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[18px]">person</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Content Behind -->
+<div class="p-4 space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-slate-600">‹ Home</span>
+<span class="px-2.5 py-1 rounded-full bg-sky-50 text-[10px] text-sky-800 font-semibold">CPCB SCHEDULE 1</span>
+</div>
+<div class="bg-white rounded-2xl p-4 border border-slate-200 h-44 shadow-xs"></div>
+<div class="bg-white rounded-2xl p-4 border border-slate-200 h-64 shadow-xs"></div>
+</div>
+</div>
+<!-- Modal Backdrop Overlay -->
+<div class="fixed inset-0 z-50 bg-[#0f172a]/75 backdrop-blur-sm flex items-center justify-center px-4 py-6">
+<!-- Modal Dialog Card -->
+<div class="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl flex flex-col items-center border border-slate-100/80 animate-in fade-in zoom-in-95 duration-200">
+<!-- Top-right circular close button -->
+<button aria-label="Close modal" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+<!-- Category Icon (Soft cyan/blue circle with liquid droplet) -->
+<div class="w-14 h-14 rounded-full bg-sky-50 border border-sky-100 flex items-center justify-center text-[#0284c7] shadow-sm mb-3">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+</div>
+<!-- Title & Subtitle -->
+<h2 class="text-xl font-bold text-slate-900 text-center tracking-tight">Liquid Waste</h2>
+<p class="text-xs text-slate-500 font-medium text-center mt-0.5">Breakdown by statutory waste type</p>
+<!-- Monthly Badge Pill -->
+<div class="mt-3 inline-flex items-center px-3.5 py-1 rounded-full bg-sky-50 border border-sky-100/90 text-sky-800 text-xs font-semibold">
+<span>September 2026: 2.00 L</span>
+</div>
+<!-- Itemized Streams List with Progress Bars -->
+<div class="w-full space-y-3.5 mt-5">
+<!-- Stream 1: Spent Cutting & Hydraulic Coolant -->
+<div class="space-y-1.5">
+<div class="flex items-center justify-between text-xs">
+<span class="font-medium text-slate-800 truncate pr-2">Spent Cutting &amp; Hydraulic Coolant</span>
+<span class="font-bold text-slate-900 shrink-0">2.0 L <span class="text-sky-600 font-normal">(100%)</span></span>
+</div>
+<div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+<div class="h-full rounded-full bg-[#0284c7] w-full"></div>
+</div>
+<div class="flex justify-between text-[10px] text-slate-400">
+<span>Current month addition</span>
+<span class="text-sky-600 font-medium">WTG Tower 12</span>
+</div>
+</div>
+<!-- Stream 2: Waste Oil / Synthetic Gear Lubricant -->
+<div class="space-y-1.5">
+<div class="flex items-center justify-between text-xs">
+<span class="font-medium text-slate-800 truncate pr-2">Waste Oil / Synthetic Gear Lubricant</span>
+<span class="font-bold text-slate-900 shrink-0">15.0 L <span class="text-slate-400 font-normal">(Vaulted)</span></span>
+</div>
+<div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+<div class="h-full rounded-full bg-slate-300 w-0"></div>
+</div>
+<div class="flex justify-between text-[10px] text-slate-400">
+<span>Vaulted Batch SEC-09</span>
+<span class="text-emerald-600 font-medium">In-Limit Safe</span>
+</div>
+</div>
+<!-- Stream 3: Transformer Insulating Oil -->
+<div class="space-y-1.5 opacity-60">
+<div class="flex items-center justify-between text-xs">
+<span class="font-medium text-slate-600 truncate pr-2">Transformer Insulating Oil</span>
+<span class="text-slate-400 font-normal shrink-0">0.0 L (0%)</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
+<div class="h-full rounded-full bg-slate-300 w-0"></div>
+</div>
+</div>
+<!-- Stream 4: Oily Water / Sump Sludge -->
+<div class="space-y-1.5 opacity-60">
+<div class="flex items-center justify-between text-xs">
+<span class="font-medium text-slate-600 truncate pr-2">Oily Water / Sump Sludge</span>
+<span class="text-slate-400 font-normal shrink-0">0.0 L (0%)</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
+<div class="h-full rounded-full bg-slate-300 w-0"></div>
+</div>
+</div>
+</div>
+<!-- Statutory Compliance Callout Box -->
+<div class="w-full mt-4 p-3 rounded-2xl bg-[#ecfdf5] border border-[#a7f3d0] flex items-center justify-between gap-2.5">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-[#059669] text-[20px] shrink-0" style="font-variation-settings: 'FILL' 1;">verified</span>
+<div class="flex flex-col min-w-0">
+<span class="text-[11px] font-bold text-emerald-950 truncate leading-tight">Secondary containment integrity verified</span>
+<span class="text-[10px] text-emerald-700 truncate leading-tight mt-0.5">110% capacity bunding intact</span>
+</div>
+</div>
+<span class="text-sm font-bold text-[#059669] shrink-0">17.0 L</span>
+</div>
+<!-- Primary Green Action Button -->
+<button class="w-full mt-5 py-3.5 rounded-xl font-semibold text-sm text-center text-white bg-[#15803d] hover:bg-[#166534] active:scale-[0.99] shadow-md shadow-green-900/10 transition-all flex items-center justify-center">
+        Close Breakdown
+      </button>
+</div>
+</div>
+<!-- Persistent Bottom Navigation Bar (Dimmed underneath modal) -->
+<nav class="fixed bottom-0 w-full z-40 pb-safe bg-card-surface/95 backdrop-blur-xl border-t border-border-default opacity-40 pointer-events-none">
+<div class="flex items-center justify-around h-16 px-space-xs relative">
+<div class="flex-1 flex flex-col items-center justify-center h-full gap-0.5 text-other-text">
+<span class="material-symbols-outlined text-[22px]">dashboard</span>
+<span class="text-[11px]">Home</span>
+</div>
+<div class="flex-1 flex flex-col items-center justify-center h-full gap-0.5 text-primary-deep font-semibold">
+<span class="material-symbols-outlined text-[22px]">inventory_2</span>
+<span class="text-[11px]">Inventory</span>
+</div>
+<div class="flex-1 flex items-center justify-center">
+<div class="relative -top-3 w-[52px] h-[52px] rounded-full bg-primary-fab text-white flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-[28px]">add</span>
+</div>
+</div>
+<div class="flex-1 flex flex-col items-center justify-center h-full gap-0.5 text-other-text">
+<span class="material-symbols-outlined text-[22px]">bar_chart</span>
+<span class="text-[11px]">Analytics</span>
+</div>
+<div class="flex-1 flex flex-col items-center justify-center h-full gap-0.5 text-other-text">
+<span class="material-symbols-outlined text-[22px]">settings</span>
+<span class="text-[11px]">Settings</span>
+</div>
+</div>
+</nav>
+</body></html>

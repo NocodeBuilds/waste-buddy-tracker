@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><title>Quick Log Entry - WasteBuddy</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-secondary-container": "#006f67", "liq-border": "#bae6fd", "surface-container-low": "#eff4ff", "on-error-container": "#93000a", "other-text": "#64748b", "on-background": "#0b1c30", "on-surface": "#0b1c30", "primary-fixed-dim": "#79db8d", "haz-bg": "#fef2f2", "card-surface": "#ffffff", "primary-container": "#dcfce7", "on-tertiary-fixed": "#001d31", "on-primary-fixed-variant": "#005323", "on-primary-fixed": "#00210a", "surface": "#f8f9ff", "on-tertiary-fixed-variant": "#004b73", "surface-bright": "#f8f9ff", "elec-bg": "#fff7ed", "error-container": "#ffdad6", "safe-border": "#a7f3d0", "surface-container-lowest": "#ffffff", "on-secondary-fixed-variant": "#00504a", "error": "#ba1a1a", "tertiary-container": "#0075b1", "on-tertiary": "#ffffff", "text-secondary": "#475569", "text-muted": "#94a3b8", "on-secondary": "#ffffff", "on-error": "#ffffff", "primary-deep": "#166534", "on-primary-container": "#d3ffd5", "safe-bg": "#ecfdf5", "liq-text": "#0284c7", "surface-container-high": "#dce9ff", "secondary-fixed-dim": "#80d5cb", "secondary": "#006a63", "elec-text": "#ea580c", "text-primary": "#0f172a", "haz-border": "#fecaca", "secondary-container": "#99efe5", "surface-container": "#e5eeff", "haz-text": "#dc2626", "other-border": "#e2e8f0", "border-dim": "#cbd5e1", "border-default": "#e2e8f0", "outline": "#6f7a6e", "inverse-surface": "#213145", "on-surface-variant": "#3f493f", "tertiary-fixed": "#cce5ff", "surface-dim": "#cbdbf5", "secondary-fixed": "#9cf2e8", "safe-text": "#059669", "outline-variant": "#becabc", "canvas-bg": "#f8fafc", "elec-border": "#fed7aa", "tertiary-fixed-dim": "#93ccff", "surface-tint": "#006d30", "liq-bg": "#f0f9ff", "on-secondary-fixed": "#00201d", "primary-fixed": "#95f8a7", "batt-bg": "#fffbeb", "background": "#f8f9ff", "primary-dark": "#14532d", "surface-variant": "#d3e4fe", "primary": "#00652c", "other-bg": "#f1f5f9", "batt-border": "#fde68a", "primary-fab": "#16a34a", "inverse-on-surface": "#eaf1ff", "on-tertiary-container": "#ecf4ff", "tertiary": "#005b8c", "surface-container-highest": "#d3e4fe", "on-primary": "#ffffff", "batt-text": "#d97706", "inverse-primary": "#79db8d" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-desktop": "2rem", "gutter": "0.75rem", "gutter-desktop": "1.5rem", "space-xs": "0.25rem", "margin": "1rem", "space-md": "0.75rem", "space-xl": "1.5rem", "space-sm": "0.5rem", "space-lg": "1rem" }, fontFamily: { "headline-lg-mobile": ["Inter"], "label-caps": ["Inter"], "headline-lg": ["Inter"], "body-lg": ["Inter"], "metric-display": ["Inter"], "headline-sm": ["Inter"], "body-sm": ["Inter"], "label-md": ["Inter"], "headline-md": ["Inter"], "body-md": ["Inter"] }, fontSize: { "headline-lg-mobile": ["22px", { "lineHeight": "28px", "fontWeight": "700" }], "label-caps": ["11px", { "lineHeight": "14px", "fontWeight": "700" }], "headline-lg": ["30px", { "lineHeight": "38px", "fontWeight": "700" }], "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }], "metric-display": ["24px", { "lineHeight": "28px", "fontWeight": "700" }], "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }], "body-sm": ["11px", { "lineHeight": "16px", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }], "headline-md": ["20px", { "lineHeight": "26px", "fontWeight": "600" }], "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }] } } } }</script><style>@layer base { html, body { width: 100vw; margin: 0; padding: 0; } body { overscroll-behavior-y: none; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-canvas-bg font-body-md text-text-primary min-h-screen flex flex-col antialiased selection:bg-primary-container selection:text-primary-dark"><header class="fixed top-0 w-full z-50 bg-primary-dark/95 backdrop-blur-xl shadow-[0_2px_12px_rgba(20,83,45,0.25)] pt-safe"><div class="h-16 px-space-md flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-xs min-w-0"><button aria-label="Go back" class="w-11 h-11 flex items-center justify-center text-on-primary hover:bg-white/10 active:bg-white/20 rounded-lg transition-colors shrink-0" onclick="history.back()"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><h1 class="font-headline-sm text-headline-sm text-on-primary tracking-tight truncate">Quick Log Entry</h1></div><div class="flex items-center gap-space-sm shrink-0"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-margin px-margin bg-canvas-bg"><div class="flex flex-col w-full pb-10">
+<!-- Top Animated Check Badge & Confirmation Section -->
+<section class="flex flex-col items-center text-center px-space-xs mb-space-lg">
+<div class="relative flex items-center justify-center mb-space-md">
+<!-- Ambient pulsing aura -->
+<div class="absolute w-20 h-20 rounded-full bg-primary-container/20 animate-ping opacity-60"></div>
+<div class="relative w-16 h-16 rounded-full bg-primary-container flex items-center justify-center shadow-lg shadow-primary-container/30">
+<span class="material-symbols-outlined text-white text-[34px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-safe-bg text-safe-text font-label-caps text-label-caps uppercase tracking-wide mb-space-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-safe-text animate-pulse"></span>
+      Statutory Registry Synced
+    </span>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-text-primary tracking-tight">
+      Waste Entry Recorded &amp; Manifest Logged
+    </h2>
+<p class="font-body-md text-text-secondary mt-1 max-w-xs">
+      Form-3 electronic logbook entry registered for Molagavalli 1 &amp; 2 Wind Farm.
+    </p>
+<!-- Digital Signature Chip -->
+<div class="mt-space-md w-full max-w-sm rounded-xl bg-surface-container-low p-space-sm flex flex-col gap-1 text-left">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-primary-deep">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span class="font-label-caps text-label-caps tracking-wider uppercase">SHA-256 Verified Ledger</span>
+</div>
+<span class="font-label-md text-label-md text-text-muted">20 Sep 2026, 11:42 IST</span>
+</div>
+<div class="font-mono text-[11px] font-semibold text-text-primary tracking-tight truncate">
+        #WB-2026-09-GML139-88-C4E9
+      </div>
+<div class="flex items-center gap-1 text-text-secondary text-[11px]">
+<span class="material-symbols-outlined text-[13px] text-text-muted">location_on</span>
+<span>15.2284° N, 77.3112° E • WTG-139 Nacelle</span>
+</div>
+</div>
+</section>
+<!-- Detailed Log Receipt Card -->
+<section class="w-full bg-card-surface rounded-xl shadow-sm p-space-lg mb-space-md flex flex-col gap-space-md">
+<!-- Header Row inside Card -->
+<div class="flex items-start justify-between gap-space-sm pb-space-sm">
+<div class="min-w-0">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider block">Asset &amp; Location</span>
+<div class="font-headline-sm text-headline-sm text-text-primary flex items-center gap-1 truncate">
+<span class="material-symbols-outlined text-primary-deep text-[18px]">wind_power</span>
+          GML139 • Wind Turbine #139
+        </div>
+<span class="font-body-sm text-body-sm text-text-secondary">Zone A-14 • High Elevation Platform</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-text-secondary font-label-caps text-label-caps whitespace-nowrap">
+        PM Activity
+      </span>
+</div>
+<!-- Waste Details Block -->
+<div class="rounded-lg bg-canvas-bg p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded-full bg-haz-bg text-haz-text font-label-caps text-label-caps">
+            HAZ
+          </span>
+<span class="font-body-md text-body-md font-medium text-text-primary">Oil / Grease Soaked Cotton Rags</span>
+</div>
+</div>
+<div class="flex items-baseline justify-between pt-1">
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-text-secondary">Declared Net Weight</span>
+<div class="flex items-baseline gap-1">
+<span class="font-metric-display text-metric-display text-text-primary">5.0</span>
+<span class="font-headline-sm text-headline-sm text-text-secondary">kg</span>
+</div>
+</div>
+<div class="flex flex-col text-right">
+<span class="font-body-sm text-body-sm text-text-secondary">Tare / Tare Ded.</span>
+<span class="font-body-md text-body-md font-medium text-text-primary">0.3 kg (Gross 5.3)</span>
+</div>
+</div>
+</div>
+<!-- Storage Allocation & Photo Evidence Mosaic -->
+<div class="grid grid-cols-1 gap-space-sm pt-space-xs">
+<div class="flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container-low">
+<div class="w-8 h-8 rounded-lg bg-card-surface flex items-center justify-center shrink-0 text-primary-deep shadow-xs">
+<span class="material-symbols-outlined text-[20px]">warehouse</span>
+</div>
+<div class="flex flex-col min-w-0 text-left">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Designated Storage Enclosure</span>
+<span class="font-body-md text-body-md font-medium text-text-primary truncate">Yard Shed 4 • Bay #3</span>
+<span class="font-body-sm text-body-sm text-text-secondary">Flame-Retardant Drum #WB-DR-04</span>
+</div>
+</div>
+<!-- Photo Evidence Row -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-lowest">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Close-up field photo of a bright blue sealed industrial waste containment drum marked with hazardous waste yellow caution labels inside a sheltered wind turbine maintenance storage bay with high contrast lighting and sharp industrial details." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDylVfza6-4lCUD0h99h-4eUxp7T628dbGcAauIFMmSy_TBaDlZZaBRGMrh5_JPXUjN6wHx7Dt_zTD_Bwm5NS09fFgZepK6JxjxQONYMV93wGJbkGDmRk1qmiXVwEDhCrHwwFuijbfr0b5huMjIegr_OKwUZjIlyO1__UiPM6r_TkAHA9NyndCBpmwrtoYdm2OAZ2TSDk6NLYdSirTOiQMi_DVulBkPqO-sbkacZYSh2wd6vZBIF3u-"/>
+<span class="absolute bottom-0.5 right-0.5 bg-primary-dark text-white rounded-full p-0.5">
+<span class="material-symbols-outlined text-[10px] block">check</span>
+</span>
+</div>
+<div class="flex flex-col min-w-0 text-left">
+<span class="font-body-md text-body-md font-medium text-text-primary truncate">Evidence Photo Logged</span>
+<span class="font-body-sm text-body-sm text-safe-text flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[13px]">image</span> Geo-Tagged • 1.8 MB
+            </span>
+</div>
+</div>
+<button class="text-primary hover:text-primary-dark font-label-md text-label-md px-2 py-1 rounded" type="button">
+          Inspect
+        </button>
+</div>
+<!-- Signoff Footer -->
+<div class="flex items-center gap-2 pt-space-xs text-text-secondary">
+<div class="w-6 h-6 rounded-full bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[14px] text-primary-deep">badge</span>
+</div>
+<div class="min-w-0 text-left truncate">
+<span class="font-body-sm text-body-sm text-text-muted">Signed by: </span>
+<span class="font-body-sm text-body-sm font-medium text-text-primary">Site Safety &amp; ESG Coordinator</span>
+<span class="font-body-sm text-body-sm text-text-secondary">(team_molagavalli@renew.com)</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Statutory 90-Day Mandate & Capacity Impact Card -->
+<section class="w-full bg-card-surface rounded-xl shadow-sm p-space-lg mb-space-lg flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-batt-text text-[20px]">timelapse</span>
+<h3 class="font-headline-sm text-headline-sm text-text-primary">Statutory 90-Day Retention Clock</h3>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-batt-bg text-batt-text font-label-caps text-label-caps">
+        Day 1 of 90
+      </span>
+</div>
+<!-- Clock Progress Bar -->
+<div class="flex flex-col gap-1.5">
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden flex">
+<div class="h-full bg-primary rounded-full" style="width: 2%;"></div>
+</div>
+<div class="flex items-center justify-between text-left">
+<span class="font-body-sm text-body-sm text-safe-text font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">timer</span>
+          89 Days Remaining
+        </span>
+<span class="font-body-sm text-body-sm text-text-muted">
+          Mandatory TSDF Dispatch: <strong class="text-text-primary font-semibold">19 Dec 2026</strong>
+</span>
+</div>
+</div>
+<!-- Secondary Metric Pill Split -->
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Yard Bay #3 Load</span>
+<span class="font-headline-sm text-headline-sm text-text-primary mt-0.5">68% Capacity</span>
+<span class="font-body-sm text-body-sm text-safe-text mt-0.5">+5.0 kg logged (Safe threshold)</span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Form 3 e-Ledger</span>
+<span class="font-headline-sm text-headline-sm text-text-primary mt-0.5">CPCB Rule 9</span>
+<span class="font-body-sm text-body-sm text-safe-text mt-0.5">Statutory Compliant</span>
+</div>
+</div>
+<!-- Inline Compliance Guarantee Pill -->
+<div class="flex items-start gap-2 p-space-sm rounded-lg bg-safe-bg text-left">
+<span class="material-symbols-outlined text-safe-text text-[18px] shrink-0 mt-0.5">gavel</span>
+<p class="font-body-sm text-body-sm text-safe-text">
+        Record is automatically archived into the CPCB (Central Pollution Control Board) annual return schedule with cryptographic manifest stamping.
+      </p>
+</div>
+</section>
+<!-- Interactive Action Trigger Buttons -->
+<section class="w-full flex flex-col gap-space-sm">
+<!-- Primary Print Barcode Label -->
+<button class="w-full h-12 bg-primary-container hover:bg-primary-deep text-white font-headline-sm text-headline-sm rounded-xl flex items-center justify-center gap-2 shadow-md shadow-primary-container/25 transition-all active:scale-[0.99]" id="printLabelBtn" type="button">
+<span class="material-symbols-outlined text-[20px]">print</span>
+<span>Print Manifest Barcode Label</span>
+</button>
+<!-- Secondary Download PDF -->
+<button class="w-full h-12 bg-card-surface hover:bg-surface-container-low text-text-secondary font-headline-sm text-headline-sm rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.99]" id="downloadPdfBtn" type="button">
+<span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
+<span>Download Form-3 e-Receipt (PDF)</span>
+</button>
+<!-- Return Actions -->
+<div class="flex items-center justify-between pt-space-xs px-space-xs">
+<button class="inline-flex items-center gap-1 text-primary hover:text-primary-dark font-body-md text-body-md font-medium py-2" onclick="history.back()" type="button">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span>Log Another Entry</span>
+</button>
+<button class="inline-flex items-center gap-1 text-text-secondary hover:text-text-primary font-body-md text-body-md py-2" onclick="history.back()" type="button">
+<span>Go to Waste Inventory</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</section>
+</div>
+<script>
+  (function initSuccessMicroInteractions() {
+    const printBtn = document.getElementById('printLabelBtn');
+    if (printBtn) {
+      printBtn.addEventListener('click', () => {
+        const originalText = printBtn.innerHTML;
+        printBtn.innerHTML = '<span class="material-symbols-outlined text-[20px] animate-spin">sync</span><span>Transmitting to Zebra Mobile Printer...</span>';
+        printBtn.classList.add('opacity-90');
+        setTimeout(() => {
+          printBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">check</span><span>Barcode Dispatched (#WB-DR-04)</span>';
+          setTimeout(() => {
+            printBtn.innerHTML = originalText;
+            printBtn.classList.remove('opacity-90');
+          }, 2400);
+        }, 1100);
+      });
+    }
+
+    const downloadBtn = document.getElementById('downloadPdfBtn');
+    if (downloadBtn) {
+      downloadBtn.addEventListener('click', () => {
+        const originalText = downloadBtn.innerHTML;
+        downloadBtn.innerHTML = '<span class="material-symbols-outlined text-[20px] animate-bounce">downloading</span><span>Generating Signed Manifest...</span>';
+        setTimeout(() => {
+          downloadBtn.innerHTML = '<span class="material-symbols-outlined text-[20px] text-safe-text">check_circle</span><span>Form-3 Receipt Downloaded</span>';
+          setTimeout(() => {
+            downloadBtn.innerHTML = originalText;
+          }, 2000);
+        }, 900);
+      });
+    }
+  })();
+</script></main></body></html>
