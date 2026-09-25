@@ -350,7 +350,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
           <Card>
             <CardContent className="p-3 flex flex-col items-center text-center gap-1">
               <div className="flex items-center gap-2">
-                <Droplets className="h-5 w-5 text-cyan-500 shrink-0" />
+                <Droplets className="h-5 w-5 text-liq-text shrink-0" />
                 <p className="text-xl font-bold leading-tight">{fmtNum(totals.litres)} <span className="text-[10px] font-normal text-muted-foreground">L</span></p>
               </div>
               <p className="text-[10px] text-muted-foreground">Liquid Waste</p>
@@ -359,7 +359,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
           <Card>
             <CardContent className="p-3 flex flex-col items-center text-center gap-1">
               <div className="flex items-center gap-2">
-                <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
+                <Trash2 className="h-5 w-5 text-elec-text shrink-0" />
                 <p className="text-xl font-bold leading-tight">{fmtNum(solids.filter((e) => e.waste_category === "e_waste" && e.waste_type_id !== "used-batteries").reduce((s, e) => s + Number(e.weight_kg ?? 0), 0))} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
               <p className="text-[10px] text-muted-foreground">E-Waste</p>
@@ -368,7 +368,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
           <Card>
             <CardContent className="p-3 flex flex-col items-center text-center gap-1">
               <div className="flex items-center gap-2">
-                <Battery className="h-5 w-5 text-yellow-600 shrink-0" />
+                <Battery className="h-5 w-5 text-batt-text shrink-0" />
                 <p className="text-xl font-bold leading-tight">{fmtNum(solids.filter((e) => e.waste_type_id === "used-batteries").reduce((s, e) => s + Number(e.weight_kg ?? 0), 0))} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
               <p className="text-[10px] text-muted-foreground">Battery Waste</p>
@@ -377,7 +377,7 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
           <Card>
             <CardContent className="p-3 flex flex-col items-center text-center gap-1">
               <div className="flex items-center gap-2">
-                <Recycle className="h-5 w-5 text-amber-600 shrink-0" />
+                <Recycle className="h-5 w-5 text-other-text shrink-0" />
                 <p className="text-xl font-bold leading-tight">{fmtNum(solids.filter((e) => e.waste_category === "other_wastes").reduce((s, e) => s + Number(e.weight_kg ?? 0), 0))} <span className="text-[10px] font-normal text-muted-foreground">kg</span></p>
               </div>
               <p className="text-[10px] text-muted-foreground">Other Wastes</p>
@@ -432,11 +432,11 @@ export default function WasteInventoryTable({ entries, batches, onDelete, onEdit
                             const barColor = isOil
                               ? "bg-overdue"
                               : w.measureUnit === "litres"
-                                ? "bg-accent"
+                                ? "bg-liq-text"
                                 : w.wasteCategory === "hazardous"
                                   ? "bg-overdue"
                                   : w.wasteCategory === "other_wastes"
-                                    ? "bg-amber-500"
+                                    ? "bg-other-text"
                                     : "bg-success";
                             return (
                               <div key={w.id} className="flex items-center gap-2">

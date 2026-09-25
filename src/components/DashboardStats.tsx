@@ -159,10 +159,10 @@ function CategoryBlock({ entries, label, Icon, dot, textColor, unit, filterFn, t
             </div>
           }
         >
-          <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30 shadow-[0_2px_8px_rgba(249,115,22,0.15)] flex flex-col items-center justify-center shrink-0 animate-[pulse-gentle_3s_ease-in-out_infinite] [animation-delay:1s]">
-            <div className="absolute inset-[2px] rounded-full bg-gradient-to-t from-transparent to-orange-500/10" />
-            <span className="relative text-[9px] font-bold text-orange-500 leading-none tabular-nums">{wrnW ? fmtNum(wrnW) : "0"}</span>
-            <span className="relative text-[7px] font-semibold text-orange-500/70 leading-none">{wrnW ? unit : ""}</span>
+          <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-warning/20 to-warning/5 border-2 border-warning/30 shadow-[0_2px_8px_rgba(217,119,6,0.15)] flex flex-col items-center justify-center shrink-0 animate-[pulse-gentle_3s_ease-in-out_infinite] [animation-delay:1s]">
+            <div className="absolute inset-[2px] rounded-full bg-gradient-to-t from-transparent to-warning/10" />
+            <span className="relative text-[9px] font-bold text-warning leading-none tabular-nums">{wrnW ? fmtNum(wrnW) : "0"}</span>
+            <span className="relative text-[7px] font-semibold text-warning/70 leading-none">{wrnW ? unit : ""}</span>
           </div>
         </ComicBubble>
         <ComicBubble
@@ -300,10 +300,10 @@ export default function DashboardStats({ entries }: Props) {
   const splitBarData: Record<string, { title: string; Icon: React.ElementType; items: { name: string; total: number }[]; unit: string; barColor: string; textColor: string }> = {
     hazardous: { title: "Hazardous Solids", Icon: ShieldAlert, items: hazSolids.map((w) => ({ name: w.name, total: w.total })), unit: "kg", barColor: "bg-overdue", textColor: "text-overdue" },
     nonHazardous: { title: "Non-Hazardous Solids", Icon: Leaf, items: nonHazSolids.map((w) => ({ name: w.name, total: w.total })), unit: "kg", barColor: "bg-success", textColor: "text-success" },
-    liquid: { title: "Liquid Waste", Icon: Droplets, items: liquidThisMonth.map((w) => ({ name: w.name, total: w.total })), unit: "L", barColor: "bg-cyan-500", textColor: "text-cyan-500" },
-    ewaste: { title: "E-Waste", Icon: Trash2, items: eWasteThisMonth.map((w) => ({ name: w.name, total: w.total })), unit: "kg", barColor: "bg-orange-500", textColor: "text-orange-500" },
-    battery: { title: "Battery Waste", Icon: Battery, items: batteryThisMonth.map((w) => ({ name: w.name, total: w.total })), unit: "kg", barColor: "bg-yellow-600", textColor: "text-yellow-600" },
-    other: { title: "Other Wastes", Icon: Recycle, items: otherWastesThisMonth.map((w) => ({ name: w.name, total: w.total })), unit: "kg", barColor: "bg-amber-600", textColor: "text-amber-600" },
+    liquid: { title: "Liquid Waste", Icon: Droplets, items: liquidThisMonth.map((w) => ({ name: w.name, total: w.total })), unit: "L", barColor: "bg-liq-text", textColor: "text-liq-text" },
+    ewaste: { title: "E-Waste", Icon: Trash2, items: eWasteThisMonth.map((w) => ({ name: w.name, total: w.total })), unit: "kg", barColor: "bg-elec-text", textColor: "text-elec-text" },
+    battery: { title: "Battery Waste", Icon: Battery, items: batteryThisMonth.map((w) => ({ name: w.name, total: w.total })), unit: "kg", barColor: "bg-batt-text", textColor: "text-batt-text" },
+    other: { title: "Other Wastes", Icon: Recycle, items: otherWastesThisMonth.map((w) => ({ name: w.name, total: w.total })), unit: "kg", barColor: "bg-other-text", textColor: "text-other-text" },
   };
 
   return (
@@ -332,14 +332,14 @@ export default function DashboardStats({ entries }: Props) {
         <div className="grid grid-cols-2 gap-3 mt-3">
           <Card>
             <CardContent className="p-4">
-              <CategoryBlock entries={entries} label="E-Waste" Icon={Trash2} dot="bg-orange-500" textColor="text-orange-500" unit="kg"
+              <CategoryBlock entries={entries} label="E-Waste" Icon={Trash2} dot="bg-elec-text" textColor="text-elec-text" unit="kg"
                 filterFn={(e) => e.waste_category === "e_waste" && e.waste_type_id !== "used-batteries"}
                 totalValue={eWasteKg(entries)} />
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <CategoryBlock entries={entries} label="Battery Waste" Icon={Battery} dot="bg-yellow-600" textColor="text-yellow-600" unit="kg"
+              <CategoryBlock entries={entries} label="Battery Waste" Icon={Battery} dot="bg-batt-text" textColor="text-batt-text" unit="kg"
                 filterFn={(e) => e.waste_type_id === "used-batteries"}
                 totalValue={batteryKg(entries)} />
             </CardContent>
@@ -348,14 +348,14 @@ export default function DashboardStats({ entries }: Props) {
         <div className="grid grid-cols-2 gap-3 mt-3">
           <Card>
             <CardContent className="p-4">
-              <CategoryBlock entries={entries} label="Liquid Waste" Icon={Droplets} dot="bg-cyan-500" textColor="text-cyan-500" unit="L"
+              <CategoryBlock entries={entries} label="Liquid Waste" Icon={Droplets} dot="bg-liq-text" textColor="text-liq-text" unit="L"
                 filterFn={(e) => getMeasureUnit(e.waste_type_id) === "litres"}
                 totalValue={liquidLitres(entries)} />
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <CategoryBlock entries={entries} label="Other Wastes" Icon={Recycle} dot="bg-amber-600" textColor="text-amber-600" unit="kg"
+              <CategoryBlock entries={entries} label="Other Wastes" Icon={Recycle} dot="bg-other-text" textColor="text-other-text" unit="kg"
                 filterFn={(e) => e.waste_category === "other_wastes" && getMeasureUnit(e.waste_type_id) === "kg"}
                 totalValue={otherWastesKg(entries)} />
             </CardContent>
@@ -406,10 +406,10 @@ export default function DashboardStats({ entries }: Props) {
                 </Card>
               </div>
               <div>
-                <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-cyan-500/50" style={{ "--ripple-color": "rgba(6,182,212,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("liquid")}>
+                <Card className="border-liq-text/30 tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-liq-text/50" style={{ "--ripple-color": "hsl(var(--liq-text) / 0.25)" } as React.CSSProperties} onClick={() => setSplitBar("liquid")}>
                   <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
                     <div className="flex items-center gap-2">
-                      <Droplets className="h-5 w-5 text-cyan-500 shrink-0" />
+                      <Droplets className="h-5 w-5 text-liq-text shrink-0" />
                       <p className="text-xl font-bold leading-tight">{fmtNum(liquidLitres(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">L</span></p>
                     </div>
                     <p className="text-[11px] text-muted-foreground">Liquid Waste</p>
@@ -417,10 +417,10 @@ export default function DashboardStats({ entries }: Props) {
                 </Card>
               </div>
               <div>
-                <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-orange-500/50" style={{ "--ripple-color": "rgba(249,115,22,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("ewaste")}>
+                <Card className="border-elec-text/30 tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-elec-text/50" style={{ "--ripple-color": "hsl(var(--elec-text) / 0.25)" } as React.CSSProperties} onClick={() => setSplitBar("ewaste")}>
                   <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
                     <div className="flex items-center gap-2">
-                      <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
+                      <Trash2 className="h-5 w-5 text-elec-text shrink-0" />
                       <p className="text-xl font-bold leading-tight">{fmtNum(eWasteKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
                     </div>
                     <p className="text-[11px] text-muted-foreground">E-Waste</p>
@@ -428,10 +428,10 @@ export default function DashboardStats({ entries }: Props) {
                 </Card>
               </div>
               <div>
-                <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-yellow-600/50" style={{ "--ripple-color": "rgba(202,138,4,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("battery")}>
+                <Card className="border-batt-text/30 tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-batt-text/50" style={{ "--ripple-color": "hsl(var(--batt-text) / 0.25)" } as React.CSSProperties} onClick={() => setSplitBar("battery")}>
                   <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
                     <div className="flex items-center gap-2">
-                      <Battery className="h-5 w-5 text-yellow-600 shrink-0" />
+                      <Battery className="h-5 w-5 text-batt-text shrink-0" />
                       <p className="text-xl font-bold leading-tight">{fmtNum(batteryKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
                     </div>
                     <p className="text-[11px] text-muted-foreground">Battery Waste</p>
@@ -439,10 +439,10 @@ export default function DashboardStats({ entries }: Props) {
                 </Card>
               </div>
               <div>
-                <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-amber-600/50" style={{ "--ripple-color": "rgba(217,119,6,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("other")}>
+                <Card className="border-other-text/30 tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-other-text/50" style={{ "--ripple-color": "hsl(var(--other-text) / 0.25)" } as React.CSSProperties} onClick={() => setSplitBar("other")}>
                   <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
                     <div className="flex items-center gap-2">
-                      <Recycle className="h-5 w-5 text-amber-600 shrink-0" />
+                      <Recycle className="h-5 w-5 text-other-text shrink-0" />
                       <p className="text-xl font-bold leading-tight">{fmtNum(otherWastesKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
                     </div>
                     <p className="text-[11px] text-muted-foreground">Other Wastes</p>

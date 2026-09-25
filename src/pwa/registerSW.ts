@@ -2,7 +2,7 @@
 // Never registers in dev or iframe. Supports ?sw=off kill switch.
 
 const APP_SW_PATH = "/sw.js";
-const CACHE_VERSION = "wastebuddy-v2";
+const CACHE_VERSION = "wastebuddy-v3";
 
 async function unregisterAppSW() {
   if (!("serviceWorker" in navigator)) return;

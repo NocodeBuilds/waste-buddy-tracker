@@ -21,9 +21,9 @@ const TONE_CLASSES: Record<ComicBubbleProps["tone"], {
     accent: "text-overdue",
   },
   warning: {
-    bubble: "border-orange-400/25 bg-orange-400/[0.06]",
-    arrow: "bg-orange-400/[0.06] border-r-orange-400/25 border-t-orange-400/25",
-    accent: "text-orange-500",
+    bubble: "border-warning/25 bg-warning/[0.06]",
+    arrow: "bg-warning/[0.06] border-r-warning/25 border-t-warning/25",
+    accent: "text-warning",
   },
   success: {
     bubble: "border-success/25 bg-success/[0.06]",

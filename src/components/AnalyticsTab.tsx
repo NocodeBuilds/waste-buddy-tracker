@@ -93,10 +93,10 @@ export default function AnalyticsTab({ entries, batches }: Props) {
     return [
       { name: `Hazardous (${fmtNum(hazSolidsKg)} kg)`, value: +hazSolidsKg.toFixed(2), color: "hsl(var(--overdue))" },
       { name: `Non-Hazardous (${fmtNum(nonHazSolidsKg)} kg)`, value: +nonHazSolidsKg.toFixed(2), color: "hsl(var(--success))" },
-      { name: `Liquid (${fmtNum(liquidLitres)} L)`, value: +liquidLitres.toFixed(2), color: "#06b6d4" },
-      { name: `E-Waste (${fmtNum(eWasteKg)} kg)`, value: +eWasteKg.toFixed(2), color: "#f97316" },
-      { name: `Battery (${fmtNum(batteryKg)} kg)`, value: +batteryKg.toFixed(2), color: "#ca8a04" },
-      { name: `Other (${fmtNum(otherWastesKg)} kg)`, value: +otherWastesKg.toFixed(2), color: "hsl(var(--warning))" },
+      { name: `Liquid (${fmtNum(liquidLitres)} L)`, value: +liquidLitres.toFixed(2), color: "hsl(var(--liq-text))" },
+      { name: `E-Waste (${fmtNum(eWasteKg)} kg)`, value: +eWasteKg.toFixed(2), color: "hsl(var(--elec-text))" },
+      { name: `Battery (${fmtNum(batteryKg)} kg)`, value: +batteryKg.toFixed(2), color: "hsl(var(--batt-text))" },
+      { name: `Other (${fmtNum(otherWastesKg)} kg)`, value: +otherWastesKg.toFixed(2), color: "hsl(var(--other-text))" },
     ].filter((d) => d.value > 0);
   }, [hazSolidsKg, nonHazSolidsKg, liquidLitres, eWasteKg, batteryKg, otherWastesKg]);
 

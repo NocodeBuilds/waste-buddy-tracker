@@ -25,6 +25,15 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          glow: "hsl(var(--primary-glow))",
+          deep: "hsl(var(--primary-deep))",
+        },
+        tertiary: {
+          DEFAULT: "hsl(var(--tertiary))",
+          foreground: "hsl(var(--tertiary-foreground))",
+          container: "hsl(var(--tertiary-container))",
+          fixed: "hsl(var(--tertiary-fixed))",
+          fixedDim: "hsl(var(--tertiary-fixed-dim))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -61,6 +70,36 @@ export default {
         overdue: {
           DEFAULT: "hsl(var(--overdue))",
           foreground: "hsl(var(--overdue-foreground))",
+        },
+        haz: {
+          text: "hsl(var(--haz-text))",
+          bg: "hsl(var(--haz-bg))",
+          border: "hsl(var(--haz-border))",
+        },
+        safe: {
+          text: "hsl(var(--safe-text))",
+          bg: "hsl(var(--safe-bg))",
+          border: "hsl(var(--safe-border))",
+        },
+        liq: {
+          text: "hsl(var(--liq-text))",
+          bg: "hsl(var(--liq-bg))",
+          border: "hsl(var(--liq-border))",
+        },
+        elec: {
+          text: "hsl(var(--elec-text))",
+          bg: "hsl(var(--elec-bg))",
+          border: "hsl(var(--elec-border))",
+        },
+        batt: {
+          text: "hsl(var(--batt-text))",
+          bg: "hsl(var(--batt-bg))",
+          border: "hsl(var(--batt-border))",
+        },
+        other: {
+          text: "hsl(var(--other-text))",
+          bg: "hsl(var(--other-bg))",
+          border: "hsl(var(--other-border))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",

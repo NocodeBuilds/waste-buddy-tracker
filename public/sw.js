@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = "wastebuddy-v1";
+const CACHE_NAME = "wastebuddy-v3";
 
 const APP_SHELL = [
   "/",

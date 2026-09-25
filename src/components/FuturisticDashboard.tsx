@@ -48,16 +48,16 @@ const COLORS = {
 };
 
 const PIE_PALETTE = [
-  "hsl(180 90% 55%)",
-  "hsl(280 80% 65%)",
-  "hsl(40 95% 60%)",
-  "hsl(150 70% 50%)",
-  "hsl(340 80% 60%)",
-  "hsl(220 85% 65%)",
-  "hsl(20 90% 60%)",
-  "hsl(100 60% 55%)",
-  "hsl(260 70% 60%)",
-  "hsl(190 80% 55%)",
+  "hsl(var(--haz-text))",       /* HAZ red */
+  "hsl(var(--safe-text))",      /* SAFE green */
+  "hsl(var(--liq-text))",       /* LIQ blue */
+  "hsl(var(--elec-text))",      /* ELEC orange */
+  "hsl(var(--batt-text))",      /* BATT amber */
+  "hsl(var(--other-text))",     /* OTHER slate */
+  "hsl(var(--primary))",        /* Brand green */
+  "hsl(var(--accent))",         /* FAB green */
+  "hsl(var(--tertiary))",       /* Ocean blue */
+  "hsl(var(--secondary))",      /* Teal */
 ];
 
 const tooltipStyle = {
@@ -87,7 +87,7 @@ export default function FuturisticDashboard({ entries }: Props) {
           <motion.div
             className="absolute -top-20 right-[10%] w-[400px] h-[400px] rounded-full pointer-events-none"
             style={{
-              background: "radial-gradient(circle, hsl(142 50% 25% / 0.07) 0%, transparent 70%)",
+              background: "radial-gradient(circle, hsl(var(--primary) / 0.07) 0%, transparent 70%)",
               filter: "blur(40px)",
             }}
             animate={{
@@ -100,7 +100,7 @@ export default function FuturisticDashboard({ entries }: Props) {
           <motion.div
             className="absolute -bottom-16 left-[5%] w-[300px] h-[300px] rounded-full pointer-events-none"
             style={{
-              background: "radial-gradient(circle, hsl(142 70% 42% / 0.04) 0%, transparent 70%)",
+              background: "radial-gradient(circle, hsl(var(--accent) / 0.04) 0%, transparent 70%)",
               filter: "blur(30px)",
             }}
             animate={{
@@ -147,9 +147,9 @@ export default function FuturisticDashboard({ entries }: Props) {
                   const w = Number(entry.weight_kg ?? 0);
                   const catColor = entry.waste_category === "hazardous" ? "overdue"
                     : entry.waste_category === "non_hazardous" ? "success"
-                    : entry.waste_category === "e_waste" ? "orange-500"
-                    : entry.waste_category === "other_wastes" ? "amber-600"
-                    : isLiquid ? "cyan-500" : "foreground";
+                    : entry.waste_category === "e_waste" ? "elec-text"
+                    : entry.waste_category === "other_wastes" ? "other-text"
+                    : isLiquid ? "liq-text" : "foreground";
                   const valCls = `text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md bg-${catColor}/[0.08] text-${catColor}`;
                   const emptyCls = "text-[11px] font-mono text-muted-foreground/50 px-1.5 py-0.5";
                   return (
@@ -164,7 +164,7 @@ export default function FuturisticDashboard({ entries }: Props) {
                       <div className="w-12 text-center">{entry.waste_category === "non_hazardous" && !isLiquid ? <span className={valCls}>{fmtNum(w)}</span> : <span className={emptyCls}>—</span>}</div>
                       <div className="w-12 text-center">{entry.waste_category === "e_waste" && !isLiquid ? <span className={valCls}>{fmtNum(w)}</span> : <span className={emptyCls}>—</span>}</div>
                       <div className="w-12 text-center">{entry.waste_category === "other_wastes" && !isLiquid ? <span className={valCls}>{fmtNum(w)}</span> : <span className={emptyCls}>—</span>}</div>
-                      <div className="w-12 text-center">{isLiquid ? <span className="text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md bg-cyan-500/[0.08] text-cyan-500">{fmtNum(w)}</span> : <span className={emptyCls}>—</span>}</div>
+                      <div className="w-12 text-center">{isLiquid ? <span className="text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md bg-liq-bg text-liq-text">{fmtNum(w)}</span> : <span className={emptyCls}>—</span>}</div>
                     </div>
                   );
                 })}

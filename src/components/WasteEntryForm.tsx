@@ -384,7 +384,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
           <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
             Photo Evidence (optional)
           </Label>
-          <Button type="button" variant="outline" className="h-7 text-[11px] gap-1 text-green-800 border-green-300 bg-green-50 hover:bg-green-100 hover:text-green-900 active:bg-green-200" onClick={() => cameraInputRef.current?.click()}>
+          <Button type="button" variant="outline" className="h-7 text-[11px] gap-1 text-primary border-primary/30 bg-primary/5 hover:bg-primary/10 hover:text-primary active:bg-primary/15" onClick={() => cameraInputRef.current?.click()}>
             <Camera className="h-3 w-3" /> Camera
           </Button>
         </div>
@@ -442,10 +442,10 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
           </div>
 
           <DialogFooter className="gap-2 flex-row justify-end">
-            <Button variant="outline" size="sm" className="h-11 text-sm text-green-800 border-green-300 bg-green-50 hover:bg-green-100 hover:text-green-900 active:bg-green-200" onClick={handleCancelConfirm} disabled={submitting}>
+            <Button variant="outline" size="sm" className="h-11 text-sm text-foreground border-border bg-card hover:bg-muted active:bg-muted/70" onClick={handleCancelConfirm} disabled={submitting}>
               Edit
             </Button>
-            <Button variant="outline" size="sm" className="h-11 text-sm text-green-800 border-green-300 bg-green-50 hover:bg-green-100 hover:text-green-900 active:bg-green-200" onClick={handleConfirmSave} disabled={submitting}>
+            <Button variant="default" size="sm" className="h-11 text-sm bg-primary hover:bg-primary-deep text-primary-foreground" onClick={handleConfirmSave} disabled={submitting}>
               {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
               Confirm
             </Button>

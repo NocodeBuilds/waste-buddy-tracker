@@ -6,91 +6,178 @@
 
 @layer base {
   :root {
-    --background: 120 25% 97%;
-    --foreground: 142 30% 12%;
+    /* ── Surfaces ──────────────────────────────────────── */
+    --background: 230 100% 98%;         /* #f8f9ff */
+    --foreground: 210 59% 12%;          /* #0b1c30 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 142 30% 12%;
+    --card: 0 0% 100%;                  /* #ffffff */
+    --card-foreground: 210 59% 12%;    /* #0b1c30 */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 142 30% 12%;
+    --popover: 0 0% 100%;               /* #ffffff */
+    --popover-foreground: 210 59% 12%; /* #0b1c30 */
 
-    --primary: 142 50% 25%;
-    --primary-foreground: 120 25% 97%;
-    --primary-glow: 142 60% 38%;
+    /* ── Brand: Primary (Forest Green) ────────────────── */
+    --primary: 147 100% 20%;            /* #00652c */
+    --primary-foreground: 0 0% 100%;    /* #ffffff */
+    --primary-glow: 147 100% 25%;       /* primary lighter */
+    --primary-deep: 147 55% 23%;        /* #166534 */
 
-    --secondary: 120 20% 92%;
-    --secondary-foreground: 142 30% 12%;
+    /* ── Brand: Secondary (Slate Teal) ────────────────── */
+    --secondary: 230 100% 97%;          /* #eff4ff */
+    --secondary-foreground: 174 100% 21%; /* #006a63 */
 
-    --muted: 120 15% 93%;
-    --muted-foreground: 142 12% 40%;
+    /* ── Muted ─────────────────────────────────────────── */
+    --muted: 230 100% 97%;              /* #eff4ff */
+    --muted-foreground: 215 16% 54%;    /* #94a3b8 */
 
-    --accent: 142 70% 42%;
-    --accent-foreground: 0 0% 100%;
+    /* ── Accent (FAB / Interactive) ────────────────────── */
+    --accent: 142 71% 36%;              /* #16a34a */
+    --accent-foreground: 0 0% 100%;     /* #ffffff */
 
-    --destructive: 0 72% 51%;
+    --tertiary: 205 100% 28%;           /* #005b8c */
+    --tertiary-foreground: 0 0% 100%;
+    --tertiary-container: 205 100% 45%; /* #0075b1 */
+    --tertiary-fixed: 208 91% 93%;      /* #cce5ff */
+    --tertiary-fixed-dim: 207 89% 74%;  /* #93ccff */
+
+    /* ── Destructive / Error ───────────────────────────── */
+    --destructive: 0 72% 35%;           /* #ba1a1a */
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 35%;
+    /* ── Status Colors ─────────────────────────────────── */
+    --success: 160 84% 39%;             /* #059669 */
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 220 30% 10%;
+    --warning: 38 92% 50%;              /* #d97706 */
+    --warning-foreground: 210 59% 12%;
 
-    --overdue: 0 72% 51%;
+    --overdue: 0 72% 51%;               /* #dc2626 */
     --overdue-foreground: 0 0% 100%;
 
-    --border: 142 20% 86%;
-    --input: 142 20% 86%;
-    --ring: 142 50% 25%;
+    /* ── Statutory Waste Category Colors ───────────────── */
+    --haz-text: 0 84% 60%;              /* #dc2626 */
+    --haz-bg: 0 100% 97%;               /* #fef2f2 */
+    --haz-border: 0 93% 89%;            /* #fecaca */
 
-    --radius: 0.5rem;
+    --safe-text: 160 84% 39%;           /* #059669 */
+    --safe-bg: 156 100% 95%;            /* #ecfdf5 */
+    --safe-border: 152 71% 86%;         /* #a7f3d0 */
 
-    --sidebar-background: 142 30% 12%;
-    --sidebar-foreground: 120 20% 90%;
-    --sidebar-primary: 142 70% 42%;
+    --liq-text: 199 89% 48%;            /* #0284c7 */
+    --liq-bg: 204 100% 97%;             /* #f0f9ff */
+    --liq-border: 195 96% 86%;          /* #bae6fd */
+
+    --elec-text: 24 95% 48%;            /* #ea580c */
+    --elec-bg: 28 100% 97%;             /* #fff7ed */
+    --elec-border: 31 97% 85%;          /* #fed7aa */
+
+    --batt-text: 38 92% 50%;            /* #d97706 */
+    --batt-bg: 48 100% 97%;             /* #fffbeb */
+    --batt-border: 48 97% 76%;          /* #fde68a */
+
+    --other-text: 215 16% 43%;          /* #64748b */
+    --other-bg: 214 32% 94%;            /* #f1f5f9 */
+    --other-border: 214 32% 91%;        /* #e2e8f0 */
+
+    /* ── Borders & Outlines ────────────────────────────── */
+    --border: 214 32% 91%;              /* #e2e8f0 */
+    --input: 214 20% 83%;               /* #cbd5e1 */
+    --ring: 147 100% 20%;               /* #00652c */
+
+    /* ── Sidebar ───────────────────────────────────────── */
+    --sidebar-background: 148 61% 20%;  /* #14532d */
+    --sidebar-foreground: 120 20% 88%;  /* #c6f7e2 */
+    --sidebar-primary: 142 71% 36%;     /* #16a34a */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 142 25% 20%;
-    --sidebar-accent-foreground: 120 20% 90%;
-    --sidebar-border: 142 20% 22%;
-    --sidebar-ring: 142 70% 42%;
+    --sidebar-accent: 148 49% 24%;      /* #166534 */
+    --sidebar-accent-foreground: 120 20% 88%;
+    --sidebar-border: 148 40% 16%;      /* ~#1a3d2a */
+    --sidebar-ring: 142 71% 36%;        /* #16a34a */
+
+    /* ── Shape ─────────────────────────────────────────── */
+    --radius: 0.5rem;
   }
 
   .dark {
-    --background: 142 25% 7%;
-    --foreground: 120 20% 90%;
-    --card: 142 25% 11%;
-    --card-foreground: 120 20% 90%;
-    --popover: 142 25% 11%;
-    --popover-foreground: 120 20% 90%;
-    --primary: 142 70% 42%;
-    --primary-foreground: 142 30% 8%;
-    --primary-glow: 142 80% 55%;
-    --secondary: 142 20% 16%;
-    --secondary-foreground: 120 20% 90%;
-    --muted: 142 20% 16%;
-    --muted-foreground: 142 10% 55%;
-    --accent: 142 70% 42%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 62.8% 30.6%;
+    /* ── Surfaces ──────────────────────────────────────── */
+    --background: 210 59% 7%;           /* #0a1520 */
+    --foreground: 230 30% 88%;          /* #e6ecf5 */
+
+    --card: 148 40% 12%;                /* #0f2818 */
+    --card-foreground: 230 30% 88%;
+
+    --popover: 148 40% 12%;
+    --popover-foreground: 230 30% 88%;
+
+    /* ── Brand: Primary ────────────────────────────────── */
+    --primary: 142 71% 36%;             /* #16a34a */
+    --primary-foreground: 148 100% 10%; /* #00220c */
+    --primary-glow: 142 80% 50%;
+    --primary-deep: 148 56% 21%;        /* #166534 */
+
+    /* ── Brand: Secondary ──────────────────────────────── */
+    --secondary: 174 30% 16%;           /* #1a2e2c */
+    --secondary-foreground: 170 67% 77%;/* #99efe5 */
+
+    /* ── Muted ─────────────────────────────────────────── */
+    --muted: 148 30% 16%;               /* #1a2c1e */
+    --muted-foreground: 215 10% 55%;    /* #7a8a9a */
+
+    /* ── Accent ────────────────────────────────────────── */
+    --accent: 142 71% 36%;              /* #16a34a */
+    --accent-foreground: 148 100% 10%;
+
+    /* ── Destructive ───────────────────────────────────── */
+    --destructive: 0 62% 30%;           /* dark red */
     --destructive-foreground: 0 0% 100%;
-    --success: 142 71% 35%;
+
+    /* ── Status ────────────────────────────────────────── */
+    --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 220 30% 10%;
     --overdue: 0 72% 51%;
     --overdue-foreground: 0 0% 100%;
-    --border: 142 20% 20%;
-    --input: 142 20% 20%;
-    --ring: 142 70% 42%;
-    --sidebar-background: 142 30% 8%;
-    --sidebar-foreground: 120 20% 90%;
-    --sidebar-primary: 142 70% 42%;
+
+    /* ── Statutory Waste Category Colors ───────────────── */
+    --haz-text: 0 70% 58%;
+    --haz-bg: 0 50% 12%;
+    --haz-border: 0 50% 20%;
+
+    --safe-text: 160 70% 45%;
+    --safe-bg: 160 40% 12%;
+    --safe-border: 160 40% 18%;
+
+    --liq-text: 199 80% 55%;
+    --liq-bg: 199 50% 12%;
+    --liq-border: 199 50% 18%;
+
+    --elec-text: 24 80% 55%;
+    --elec-bg: 24 50% 12%;
+    --elec-border: 24 50% 18%;
+
+    --batt-text: 38 80% 55%;
+    --batt-bg: 38 50% 12%;
+    --batt-border: 38 50% 18%;
+
+    --other-text: 215 12% 55%;
+    --other-bg: 215 20% 16%;
+    --other-border: 215 20% 20%;
+
+    /* ── Borders ───────────────────────────────────────── */
+    --border: 148 30% 20%;
+    --input: 148 30% 20%;
+    --ring: 142 71% 36%;
+
+    /* ── Sidebar ───────────────────────────────────────── */
+    --sidebar-background: 148 61% 10%;  /* very dark green */
+    --sidebar-foreground: 120 20% 82%;
+    --sidebar-primary: 142 71% 36%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 142 25% 14%;
-    --sidebar-accent-foreground: 120 20% 90%;
-    --sidebar-border: 142 20% 18%;
-    --sidebar-ring: 142 70% 42%;
+    --sidebar-accent: 148 40% 18%;
+    --sidebar-accent-foreground: 120 20% 82%;
+    --sidebar-border: 148 40% 20%;
+    --sidebar-ring: 142 71% 36%;
   }
 }
 
