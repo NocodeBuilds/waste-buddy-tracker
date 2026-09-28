@@ -6,9 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Building2, Clock, Loader2, LogOut, CheckCircle, XCircle, RefreshCw } from "lucide-react";
+import {
+  Building2,
+  Clock,
+  Loader2,
+  LogOut,
+  CheckCircle,
+  XCircle,
+  RefreshCw,
+  Send,
+  ShieldAlert,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Site, AccessRequestRow as Req } from "@/types";
+import { Badge } from "@/components/ui/badge";
 
 export default function RequestSiteAccess({ onApproved }: { onApproved: () => void }) {
   const { user, signOut } = useAuth();
@@ -40,7 +51,9 @@ export default function RequestSiteAccess({ onApproved }: { onApproved: () => vo
     }
   };
 
-  useEffect(() => { load(); }, [user]);
+  useEffect(() => {
+    load();
+  }, [user]);
 
   const submit = async () => {
     if (!siteId || !user) return;
@@ -53,12 +66,13 @@ export default function RequestSiteAccess({ onApproved }: { onApproved: () => vo
     });
     setBusy(false);
     if (error) {
-      if (error.code === "23505") toast.error("You've already requested this site");
+      if (error.code === "23505") toast.error("You've already requested access for this site");
       else toast.error(error.message);
       return;
     }
-    toast.success("Request submitted — an admin will review it");
-    setSiteId(""); setNote("");
+    toast.success("Access request submitted — site admin will be notified");
+    setSiteId("");
+    setNote("");
     load();
   };
 
@@ -75,78 +89,97 @@ export default function RequestSiteAccess({ onApproved }: { onApproved: () => vo
   const decided = reqs.filter((r) => r.status !== "pending");
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30 px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/30 px-4 py-12">
       <div className="max-w-md mx-auto space-y-4">
-        <Card>
-          <CardContent className="p-5 text-center space-y-1">
-            <div className="bg-primary text-primary-foreground rounded-xl p-3 w-fit mx-auto mb-2">
+        {/* Header card */}
+        <Card className="rounded-2xl border border-border/80 shadow-md bg-card/95 backdrop-blur-xs">
+          <CardContent className="p-6 text-center space-y-2">
+            <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/25 mb-1">
               <Building2 className="h-6 w-6" />
             </div>
-            <h1 className="text-lg font-bold">Request site access</h1>
-            <p className="text-xs text-muted-foreground">{user?.email}</p>
-            <p className="text-xs text-muted-foreground">
-              Choose a site below. An admin will approve your access.
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Facility Access Request</h1>
+            <p className="text-xs font-semibold text-primary">{user?.email}</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Your account requires site administrator authorization before you can view or record hazardous waste logs.
             </p>
           </CardContent>
         </Card>
 
         {loading ? (
-          <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          <div className="flex justify-center py-10">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
         ) : (
           <>
             {availableSites.length > 0 && (
-              <Card>
-                <CardContent className="p-4 space-y-3">
-                  <h2 className="text-sm font-semibold">New request</h2>
+              <Card className="rounded-xl border border-border/80 shadow-xs">
+                <CardContent className="p-4 sm:p-5 space-y-3.5">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Send className="h-3.5 w-3.5 text-primary" /> Request Access to Facility
+                  </h2>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Site</Label>
+                    <Label className="text-xs font-semibold">Select Facility Site</Label>
                     <Select value={siteId} onValueChange={setSiteId}>
-                      <SelectTrigger><SelectValue placeholder="Pick a site" /></SelectTrigger>
+                      <SelectTrigger className="h-9 text-xs rounded-lg">
+                        <SelectValue placeholder="Choose a facility site" />
+                      </SelectTrigger>
                       <SelectContent>
                         {availableSites.map((s) => (
                           <SelectItem key={s.id} value={s.id}>
-                            {s.name}{s.location ? ` — ${s.location}` : ""}
+                            {s.name} {s.location ? `(${s.location})` : ""}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Message (optional)</Label>
+                    <Label className="text-xs font-semibold">Reason / Technician Note (optional)</Label>
                     <Textarea
                       value={note}
                       onChange={(e) => setNote(e.target.value)}
                       maxLength={300}
                       rows={2}
-                      placeholder="Why you need access…"
+                      placeholder="e.g., Assigned to turbine maintenance PM crew..."
+                      className="text-xs rounded-lg resize-none"
                     />
                   </div>
-                  <Button className="w-full" disabled={!siteId || busy} onClick={submit}>
+                  <Button
+                    className="w-full h-9 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm rounded-lg"
+                    disabled={!siteId || busy}
+                    onClick={submit}
+                  >
                     {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                    Submit request
+                    Submit Access Request
                   </Button>
                 </CardContent>
               </Card>
             )}
 
             {pending.length > 0 && (
-              <Card>
-                <CardContent className="p-4 space-y-2">
-                  <h2 className="text-sm font-semibold flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-warning" /> Pending ({pending.length})
-                  </h2>
-                  <ul className="divide-y">
+              <Card className="rounded-xl border border-amber-500/40 bg-amber-500/[0.02] shadow-xs">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-amber-500" /> Pending Approval ({pending.length})
+                    </h2>
+                  </div>
+                  <ul className="divide-y divide-border/60">
                     {pending.map((r) => {
                       const s = sites.find((x) => x.id === r.site_id);
                       return (
-                        <li key={r.id} className="py-2 flex items-center justify-between gap-2">
+                        <li key={r.id} className="py-2.5 flex items-center justify-between gap-2 first:pt-1 last:pb-1">
                           <div className="min-w-0">
-                            <p className="text-xs font-medium truncate">{s?.name ?? r.site_id}</p>
-                            <p className="text-[10px] text-muted-foreground">
+                            <p className="text-xs font-semibold text-foreground truncate">{s?.name ?? r.site_id}</p>
+                            <p className="text-[11px] text-muted-foreground">
                               Requested {new Date(r.created_at).toLocaleDateString()}
                             </p>
                           </div>
-                          <Button size="sm" variant="ghost" className="h-7 text-[10px]" onClick={() => cancel(r.id)}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs text-muted-foreground hover:text-destructive rounded-lg"
+                            onClick={() => cancel(r.id)}
+                          >
                             Cancel
                           </Button>
                         </li>
@@ -158,22 +191,32 @@ export default function RequestSiteAccess({ onApproved }: { onApproved: () => vo
             )}
 
             {decided.length > 0 && (
-              <Card>
-                <CardContent className="p-4 space-y-2">
-                  <h2 className="text-sm font-semibold">History</h2>
-                  <ul className="divide-y">
+              <Card className="rounded-xl border border-border/80 shadow-xs">
+                <CardContent className="p-4 space-y-2.5">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Request History
+                  </h2>
+                  <ul className="divide-y divide-border/60">
                     {decided.map((r) => {
                       const s = sites.find((x) => x.id === r.site_id);
                       const ok = r.status === "approved";
                       return (
-                        <li key={r.id} className="py-2 flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex items-start gap-2">
-                            {ok ? <CheckCircle className="h-4 w-4 text-success shrink-0 mt-0.5" /> : <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />}
-                            <div className="min-w-0">
-                              <p className="text-xs font-medium truncate">{s?.name ?? r.site_id}</p>
-                              <p className="text-[10px] text-muted-foreground capitalize">{r.status}{r.note ? ` — ${r.note}` : ""}</p>
-                            </div>
+                        <li key={r.id} className="py-2.5 flex items-center justify-between gap-2 first:pt-1 last:pb-1">
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-foreground truncate">{s?.name ?? r.site_id}</p>
+                            <p className="text-[11px] text-muted-foreground capitalize">
+                              {r.status} {r.note ? `— "${r.note}"` : ""}
+                            </p>
                           </div>
+                          {ok ? (
+                            <Badge variant="success" className="text-[10px]">
+                              Approved
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive" className="text-[10px]">
+                              Rejected
+                            </Badge>
+                          )}
                         </li>
                       );
                     })}
@@ -182,12 +225,22 @@ export default function RequestSiteAccess({ onApproved }: { onApproved: () => vo
               </Card>
             )}
 
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1 gap-2" onClick={load}>
-                <RefreshCw className="h-4 w-4" /> Refresh
+            <div className="flex gap-2 pt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 h-9 text-xs gap-1.5 rounded-lg"
+                onClick={load}
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Check Status
               </Button>
-              <Button variant="outline" size="sm" className="flex-1 gap-2" onClick={signOut}>
-                <LogOut className="h-4 w-4" /> Sign out
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 h-9 text-xs gap-1.5 text-destructive hover:bg-destructive/10 rounded-lg"
+                onClick={signOut}
+              >
+                <LogOut className="h-3.5 w-3.5" /> Sign Out
               </Button>
             </div>
           </>

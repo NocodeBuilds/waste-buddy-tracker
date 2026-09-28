@@ -64,65 +64,67 @@ export default function AlertsPanel({ entries }: Props) {
   };
 
   return (
-    <div className="border border-border rounded-lg bg-card">
-      <div className="px-3 py-2 border-b flex items-center justify-between gap-2">
-        <h4 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-overdue">
+    <div className="rounded-xl border border-border/80 bg-card overflow-hidden shadow-lg">
+      <div className="px-3.5 py-2.5 border-b border-border/80 flex items-center justify-between gap-2 bg-muted/30">
+        <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
           <Bell className="h-3.5 w-3.5" />
-          Disposal Alerts
+          Disposal Alerts ({overdue.length + warnings.length})
         </h4>
         <Button
           variant="ghost"
           size="sm"
-          className="h-6 gap-1 text-[10px] text-muted-foreground hover:text-foreground px-2"
+          className="h-6 gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground px-2"
           onClick={hideAll}
         >
           <EyeOff className="h-3 w-3" /> Hide all
         </Button>
       </div>
-      <div className="p-2 space-y-2">
+      <div className="p-2.5 space-y-2 max-h-[60vh] overflow-y-auto">
         {overdue.map((e) => (
-          <div key={e.id} className="flex items-start gap-2 bg-overdue/10 p-2 rounded-lg">
-            <AlertTriangle className="h-4 w-4 text-overdue mt-0.5 shrink-0" />
-            <div className="text-xs sm:text-sm flex-1 min-w-0">
-              <span className="font-semibold">{e.location}</span>
-              {" — "}
-              <span className="truncate">{getWasteName(e.waste_type_id)}</span>
-              {" ("}
-              {formatQty(e)}
-              {") stored for "}
-              <span className="font-bold text-overdue">{getDaysStored(e.generated_date)} days</span>
-              {"."}
+          <div key={e.id} className="flex items-start gap-2.5 bg-rose-500/10 border border-rose-500/25 p-2.5 rounded-lg text-foreground">
+            <AlertTriangle className="h-4 w-4 text-rose-600 dark:text-rose-400 mt-0.5 shrink-0" />
+            <div className="text-xs flex-1 min-w-0 leading-relaxed">
+              <span className="font-semibold text-rose-950 dark:text-rose-100">{e.location || "Facility"}</span>
+              <span className="text-muted-foreground"> · </span>
+              <span className="font-medium text-foreground">{getWasteName(e.waste_type_id)}</span>
+              <div className="mt-0.5 text-[11px] text-muted-foreground flex items-center gap-1 flex-wrap">
+                <span>{formatQty(e)}</span>
+                <span>•</span>
+                <span className="font-bold text-rose-600 dark:text-rose-400">Stored {getDaysStored(e.generated_date)}d (Overdue!)</span>
+              </div>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              className="h-5 w-5 shrink-0 text-muted-foreground hover:text-foreground"
+              className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground hover:bg-rose-500/15 rounded-md"
               onClick={() => dismiss(e.id)}
               aria-label="Hide alert"
             >
-              <X className="h-3 w-3" />
+              <X className="h-3.5 w-3.5" />
             </Button>
           </div>
         ))}
         {warnings.map((e) => (
-          <div key={e.id} className="flex items-start gap-2 bg-warning/10 p-2 rounded-lg">
-            <AlertTriangle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
-            <div className="text-xs sm:text-sm flex-1 min-w-0">
-              <span className="font-semibold">{e.location}</span>
-              {" — "}
-              <span className="truncate">{getWasteName(e.waste_type_id)}</span>
-              {" stored for "}
-              <span className="font-semibold text-warning">{getDaysStored(e.generated_date)} days</span>
-              {"."}
+          <div key={e.id} className="flex items-start gap-2.5 bg-amber-500/10 border border-amber-500/25 p-2.5 rounded-lg text-foreground">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+            <div className="text-xs flex-1 min-w-0 leading-relaxed">
+              <span className="font-semibold text-amber-950 dark:text-amber-100">{e.location || "Facility"}</span>
+              <span className="text-muted-foreground"> · </span>
+              <span className="font-medium text-foreground">{getWasteName(e.waste_type_id)}</span>
+              <div className="mt-0.5 text-[11px] text-muted-foreground flex items-center gap-1 flex-wrap">
+                <span>{formatQty(e)}</span>
+                <span>•</span>
+                <span className="font-semibold text-amber-600 dark:text-amber-400">Stored {getDaysStored(e.generated_date)}d (Warning)</span>
+              </div>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              className="h-5 w-5 shrink-0 text-muted-foreground hover:text-foreground"
+              className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground hover:bg-amber-500/15 rounded-md"
               onClick={() => dismiss(e.id)}
               aria-label="Hide alert"
             >
-              <X className="h-3 w-3" />
+              <X className="h-3.5 w-3.5" />
             </Button>
           </div>
         ))}

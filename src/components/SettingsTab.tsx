@@ -3,13 +3,36 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings, Download, LogOut, UserPlus, Building2, Loader2, Shield } from "lucide-react";
+import {
+  Settings,
+  Download,
+  LogOut,
+  UserPlus,
+  Building2,
+  Loader2,
+  Shield,
+  FileSpreadsheet,
+  CheckCircle2,
+  Info,
+  User,
+  Plus,
+  ChevronRight,
+  ShieldCheck,
+} from "lucide-react";
 import { WasteEntry, WASTE_TYPES } from "@/lib/wasteTypes";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSite } from "@/contexts/SiteContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface Props {
   entries: WasteEntry[];
@@ -32,6 +55,8 @@ export default function SettingsTab({ entries }: Props) {
   const [newSiteName, setNewSiteName] = useState("");
   const [newSiteLocation, setNewSiteLocation] = useState("");
   const [creatingSite, setCreatingSite] = useState(false);
+  const [showAddSite, setShowAddSite] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
 
   const loadMembers = async () => {
     if (!currentSite) return;
@@ -92,10 +117,10 @@ export default function SettingsTab({ entries }: Props) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `waste-${currentSite?.name}-${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `waste-${currentSite?.name ?? "facility"}-${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("Data exported");
+    toast.success("CSV dataset exported successfully");
   };
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -110,8 +135,9 @@ export default function SettingsTab({ entries }: Props) {
       toast.error((data as any)?.error ?? error?.message ?? "Invite failed");
       return;
     }
-    toast.success(`Invited ${inviteEmail}`);
+    toast.success(`Access invitation sent to ${inviteEmail}`);
     setInviteEmail("");
+    setShowInvite(false);
     loadMembers();
   };
 
@@ -134,150 +160,301 @@ export default function SettingsTab({ entries }: Props) {
       toast.error(detail || "Could not create site");
       return;
     }
-    toast.success(`Site "${data.name}" created — you're the admin`);
+    toast.success(`Site "${data.name}" created — you are administrator`);
     setNewSiteName("");
     setNewSiteLocation("");
+    setShowAddSite(false);
     await refresh();
     if (data) setCurrentSite({ id: data.id, name: data.name, location: data.location });
   };
 
+  const initial = user?.email?.charAt(0).toUpperCase() ?? "U";
+
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-bold flex items-center gap-2">
-        <Settings className="h-5 w-5 text-accent" /> Settings
-      </h2>
+    <div className="space-y-4 max-w-4xl mx-auto">
+      {/* ── User Profile & Facility Header Banner ── */}
+      <Card className="border-border/80 shadow-xs overflow-hidden">
+        <CardContent className="p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-11 w-11 rounded-2xl bg-primary/10 text-primary font-bold text-lg flex items-center justify-center shrink-0 border border-primary/20">
+                {initial}
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-foreground truncate">{user?.email}</h3>
+                  {isAdmin && (
+                    <Badge variant="default" className="text-[10px] uppercase font-mono">
+                      Admin
+                    </Badge>
+                  )}
+                </div>
+                {currentSite && (
+                  <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-primary" />
+                    <span>Active: </span>
+                    <strong className="text-foreground">{currentSite.name}</strong>
+                    {currentSite.location && <span className="text-[11px] font-mono">({currentSite.location})</span>}
+                  </p>
+                )}
+              </div>
+            </div>
 
-      {/* Account */}
-      <Card>
-        <CardContent className="p-4 space-y-2">
-          <h3 className="text-sm font-semibold flex items-center gap-2">
-            <Shield className="h-4 w-4" /> Account
-          </h3>
-          <p className="text-xs text-muted-foreground">{user?.email}</p>
-          {currentSite && (
-            <p className="text-xs"><span className="text-muted-foreground">Current site:</span> <span className="font-semibold">{currentSite.name}</span></p>
-          )}
-          <Button variant="outline" size="sm" className="w-full mt-2 gap-2" onClick={signOut}>
-            <LogOut className="h-4 w-4" /> Sign out
-          </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs gap-1.5 text-destructive hover:bg-destructive/10 rounded-lg self-start sm:self-auto shrink-0"
+              onClick={signOut}
+            >
+              <LogOut className="h-3.5 w-3.5" /> Sign out
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Sites */}
-      <Card>
+      {/* ── Grouped Section 1: Facility Sites & Workspaces ── */}
+      <Card className="border-border/80 shadow-xs">
         <CardContent className="p-4 space-y-3">
-          <h3 className="text-sm font-semibold flex items-center gap-2">
-            <Building2 className="h-4 w-4" /> My Sites ({sites.length})
-          </h3>
-          {sites.length > 0 && (
-            <ul className="text-xs space-y-1">
-              {sites.map((s) => (
-                <li key={s.id} className="flex justify-between">
-                  <span className={s.id === currentSite?.id ? "font-semibold" : ""}>{s.name}</span>
-                  {s.location && <span className="text-muted-foreground">{s.location}</span>}
-                </li>
-              ))}
-            </ul>
-          )}
-          {isAdmin && (
-            <form onSubmit={handleCreateSite} className="space-y-2 border-t pt-3">
-              <h4 className="text-xs font-semibold">Create new site</h4>
-              <div className="space-y-1.5">
-                <Label htmlFor="new-site-name" className="text-xs">Name</Label>
-                <Input
-                  id="new-site-name"
-                  value={newSiteName}
-                  onChange={(e) => setNewSiteName(e.target.value)}
-                  placeholder="e.g. North Wind Farm"
-                  required
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="new-site-loc" className="text-xs">Location (optional)</Label>
-                <Input
-                  id="new-site-loc"
-                  value={newSiteLocation}
-                  onChange={(e) => setNewSiteLocation(e.target.value)}
-                  placeholder="e.g. Tamil Nadu, IN"
-                />
-              </div>
-              <Button type="submit" size="sm" className="w-full gap-2" disabled={creatingSite}>
-                {creatingSite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Building2 className="h-4 w-4" />}
-                Create site
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-primary" />
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Authorized Facilities ({sites.length})
+              </h3>
+            </div>
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-primary hover:text-primary/90 gap-1 px-2"
+                onClick={() => setShowAddSite(!showAddSite)}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>{showAddSite ? "Cancel" : "Add Facility"}</span>
               </Button>
-              <p className="text-[11px] text-muted-foreground">
-                Admin only. Any site you create is assigned to you as admin.
-              </p>
+            )}
+          </div>
+
+          {/* Site List */}
+          <div className="divide-y divide-border/60 text-xs rounded-lg border border-border/60 overflow-hidden bg-background">
+            {sites.map((s) => {
+              const isActive = s.id === currentSite?.id;
+              return (
+                <div
+                  key={s.id}
+                  className={cn(
+                    "p-3 flex items-center justify-between gap-2 transition-colors cursor-pointer",
+                    isActive ? "bg-primary/5" : "hover:bg-muted/40"
+                  )}
+                  onClick={() => setCurrentSite({ id: s.id, name: s.name, location: s.location })}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div
+                      className={cn(
+                        "h-2 w-2 rounded-full shrink-0",
+                        isActive ? "bg-emerald-600 ring-2 ring-emerald-600/30" : "bg-muted-foreground/30"
+                      )}
+                    />
+                    <span className={cn("truncate", isActive ? "font-bold text-foreground" : "text-muted-foreground")}>
+                      {s.name}
+                    </span>
+                    {isActive && (
+                      <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  {s.location && (
+                    <span className="text-[11px] text-muted-foreground font-mono shrink-0">
+                      {s.location}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Add Site Inline Drawer */}
+          {showAddSite && isAdmin && (
+            <form onSubmit={handleCreateSite} className="p-3.5 rounded-lg border border-border bg-muted/20 space-y-3 pt-3">
+              <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <Plus className="h-3.5 w-3.5 text-primary" /> Register New Facility Site
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <Label htmlFor="new-site-name" className="text-[11px] font-semibold">
+                    Facility Name
+                  </Label>
+                  <Input
+                    id="new-site-name"
+                    value={newSiteName}
+                    onChange={(e) => setNewSiteName(e.target.value)}
+                    placeholder="e.g. Kayathar Wind Farm - Phase 1"
+                    className="h-8 text-xs rounded-lg"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="new-site-loc" className="text-[11px] font-semibold">
+                    Geographic Region
+                  </Label>
+                  <Input
+                    id="new-site-loc"
+                    value={newSiteLocation}
+                    onChange={(e) => setNewSiteLocation(e.target.value)}
+                    placeholder="e.g. Tamil Nadu, IN"
+                    className="h-8 text-xs rounded-lg"
+                  />
+                </div>
+              </div>
+              <Button
+                type="submit"
+                size="sm"
+                className="w-full h-8 text-xs gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg"
+                disabled={creatingSite}
+              >
+                {creatingSite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Building2 className="h-3.5 w-3.5" />}
+                Confirm & Create Facility
+              </Button>
             </form>
           )}
-
         </CardContent>
       </Card>
 
-      {/* Admin: invite users */}
+      {/* ── Grouped Section 2: Team Members & Access ── */}
       {isAdmin && currentSite && (
-        <Card>
+        <Card className="border-border/80 shadow-xs">
           <CardContent className="p-4 space-y-3">
-            <h3 className="text-sm font-semibold flex items-center gap-2">
-              <UserPlus className="h-4 w-4" /> Invite User to {currentSite.name}
-            </h3>
-            <form onSubmit={handleInvite} className="space-y-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="invite-email" className="text-xs">Email</Label>
-                <Input id="invite-email" type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4 text-primary" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Team Members on {currentSite.name} ({members.length})
+                </h3>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Role</Label>
-                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as any)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="member">Member (log entries)</SelectItem>
-                    <SelectItem value="manager">Manager (mark disposals)</SelectItem>
-                    <SelectItem value="admin">Admin (manage users)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" size="sm" className="w-full" disabled={inviting}>
-                {inviting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                Send Invite
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-primary hover:text-primary/90 gap-1 px-2"
+                onClick={() => setShowInvite(!showInvite)}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>{showInvite ? "Cancel" : "Invite Member"}</span>
               </Button>
-            </form>
+            </div>
 
-            <div className="border-t pt-3">
-              <h4 className="text-xs font-semibold mb-2">Site Members ({members.length})</h4>
-              <ul className="space-y-1.5 text-xs">
-                {members.map((m) => (
-                  <li key={m.user_id} className="flex justify-between items-start gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate">{m.email ?? m.full_name}</p>
+            {/* Invite Teammate Drawer */}
+            {showInvite && (
+              <form onSubmit={handleInvite} className="p-3.5 rounded-lg border border-border bg-muted/20 space-y-3">
+                <h4 className="text-xs font-semibold text-foreground">Invite New Teammate</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div className="sm:col-span-2 space-y-1">
+                    <Label htmlFor="invite-email" className="text-[11px] font-semibold">
+                      Email Address
+                    </Label>
+                    <Input
+                      id="invite-email"
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      placeholder="engineer@windpower.com"
+                      className="h-8 text-xs rounded-lg"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-semibold">Role</Label>
+                    <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as any)}>
+                      <SelectTrigger className="h-8 text-xs rounded-lg">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="member">Member</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="w-full h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg"
+                  disabled={inviting}
+                >
+                  {inviting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />} Send Access Invitation
+                </Button>
+              </form>
+            )}
+
+            {/* Member List */}
+            <div className="divide-y divide-border/60 text-xs rounded-lg border border-border/60 overflow-hidden bg-background">
+              {members.map((m) => (
+                <div key={m.user_id} className="p-2.5 flex justify-between items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                      {m.email?.charAt(0).toUpperCase() ?? "U"}
                     </div>
-                    <span className="text-muted-foreground shrink-0 capitalize">
-                      {m.roles.join(", ") || "member"}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+                    <p className="truncate font-medium text-foreground">{m.email ?? m.full_name}</p>
+                  </div>
+                  <span className="text-muted-foreground shrink-0 capitalize text-[10px] font-mono bg-muted/80 px-2 py-0.5 rounded border border-border/50">
+                    {m.roles.join(", ") || "member"}
+                  </span>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Data export */}
-      <Card>
+      {/* ── Grouped Section 3: Data Management ── */}
+      <Card className="border-border/80 shadow-xs">
         <CardContent className="p-4 space-y-3">
-          <h3 className="text-sm font-semibold">Data Export</h3>
-          <Button variant="outline" className="w-full justify-start gap-2" onClick={handleExport}>
-            <Download className="h-4 w-4" /> Export Data as CSV
-          </Button>
+          <div className="flex items-center gap-2">
+            <Download className="h-4 w-4 text-primary" />
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Data Management & Backup
+            </h3>
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border border-border/60 bg-muted/20">
+            <div>
+              <p className="text-xs font-semibold text-foreground">Facility Raw Dataset (CSV)</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Export all historical waste generations, location tags, and manifest linkages as a spreadsheet.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs gap-1.5 rounded-lg shrink-0 shadow-2xs"
+              onClick={handleExport}
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" /> Export CSV
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="text-sm font-semibold mb-1">About</h3>
-          <p className="text-xs text-muted-foreground">
-            Hazardous Waste Tracker v2.0 — Multi-site, role-based waste compliance for wind-turbine maintenance. Disposal limit: 90 days.
-          </p>
+      {/* ── Grouped Section 4: Regulatory Standard & App Info ── */}
+      <Card className="border-border/80 shadow-xs">
+        <CardContent className="p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-emerald-600" />
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Compliance Standard & System Info
+            </h3>
+          </div>
+          <div className="text-xs text-muted-foreground space-y-1.5 pt-1">
+            <p>
+              <strong className="text-foreground">Governing Regulation:</strong> Hazardous and Other Wastes (Management and Transboundary Movement) Rules, 2016 (HOWM).
+            </p>
+            <p>
+              <strong className="text-foreground">Statutory Storage Threshold:</strong> 90 calendar days on-site maximum storage window.
+            </p>
+            <p>
+              <strong className="text-foreground">Platform Engine:</strong> WasteBuddy Enterprise PWA v2.0 (Offline-capable, role-based).
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, CalendarIcon } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -68,7 +68,7 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
     if (!entry) return;
     const w = parseFloat(weight);
     if (!typeId || !w || w <= 0 || !date) {
-      toast.error("Fill all required fields");
+      toast.error("Please fill all required fields");
       return;
     }
     const safeDate = clampDateNotFuture(date);
@@ -88,7 +88,7 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
         location: location || null,
         notes: notes || null,
       });
-      toast.success("Entry updated");
+      toast.success("Waste record updated successfully");
       onClose();
     } catch (e: any) {
       toast.error(e.message ?? "Update failed");
@@ -99,13 +99,16 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
 
   return (
     <Dialog open={!!entry} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-xl">
         <DialogHeader>
-          <DialogTitle>Edit Waste Entry</DialogTitle>
+          <DialogTitle className="text-base font-semibold flex items-center gap-2">
+            <Pencil className="h-4 w-4 text-primary" />
+            Edit Waste Entry
+          </DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-y-3.5 py-1">
           <div className="space-y-1.5">
-            <Label className="text-xs">Category</Label>
+            <Label className="text-xs font-semibold">Category</Label>
             <Select
               value={category}
               onValueChange={(v) => {
@@ -114,56 +117,86 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
                 if (!WASTE_TYPES.find((w) => w.id === typeId && w.wasteCategory === c)) setTypeId("");
               }}
             >
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 text-xs rounded-lg">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="hazardous">Hazardous</SelectItem>
                 <SelectItem value="non_hazardous">Non-Hazardous</SelectItem>
-                <SelectItem value="e_waste">E-waste</SelectItem>
+                <SelectItem value="e_waste">E-Waste</SelectItem>
                 <SelectItem value="other_wastes">Other Wastes</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
           <div className="space-y-1.5">
-            <Label className="text-xs">Waste Type</Label>
+            <Label className="text-xs font-semibold">Waste Type</Label>
             <Select value={typeId} onValueChange={setTypeId}>
-              <SelectTrigger><SelectValue placeholder="Select waste type" /></SelectTrigger>
+              <SelectTrigger className="h-9 text-xs rounded-lg">
+                <SelectValue placeholder="Select waste type" />
+              </SelectTrigger>
               <SelectContent>
                 {types.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className={`grid gap-2 ${showCount ? "grid-cols-3" : "grid-cols-2"}`}>
+
+          <div className={`grid gap-2.5 ${showCount ? "grid-cols-3" : "grid-cols-2"}`}>
             {showCount && (
               <div className="space-y-1.5">
-                <Label className="text-xs">Count (pcs)</Label>
-                <Input type="number" min="1" step="1" value={pieceCount} onChange={(e) => setPieceCount(e.target.value)} />
+                <Label className="text-xs font-semibold">Count (pcs)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={pieceCount}
+                  onChange={(e) => setPieceCount(e.target.value)}
+                  className="h-9 text-xs rounded-lg font-mono"
+                />
               </div>
             )}
             <div className="space-y-1.5">
-              <Label>Weight ({weightUnit})</Label>
-              <Input type="number" step="0.01" min="0" value={weight} onChange={(e) => setWeight(e.target.value)} />
+              <Label className="text-xs font-semibold">Weight ({weightUnit})</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                className="h-9 text-xs rounded-lg font-mono"
+              />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Generated</Label>
+              <Label className="text-xs font-semibold">Generated Date</Label>
               <Popover open={dateOpen} onOpenChange={setDateOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                  <Button variant="outline" className="w-full justify-start text-left font-normal h-9 text-xs rounded-lg">
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
                     {date}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={date ? new Date(date + "T00:00:00") : undefined} onSelect={handleDateSelect} disabled={(date) => date > new Date()} />
+                  <Calendar
+                    mode="single"
+                    selected={date ? new Date(date + "T00:00:00") : undefined}
+                    onSelect={handleDateSelect}
+                    disabled={(date) => date > new Date()}
+                  />
                 </PopoverContent>
               </Popover>
             </div>
           </div>
+
           <div className="space-y-1.5">
-            <Label className="text-xs">Activity</Label>
+            <Label className="text-xs font-semibold">Activity</Label>
             <Select value={activity} onValueChange={(v) => setActivity(v as ActivityType)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 text-xs rounded-lg">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="preventive">Preventive Maintenance</SelectItem>
                 <SelectItem value="breakdown">Breakdown Maintenance</SelectItem>
@@ -172,19 +205,38 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
               </SelectContent>
             </Select>
           </div>
+
           <div className="space-y-1.5">
-            <Label className="text-xs">Location</Label>
-            <Input value={location} onChange={(e) => setLocation(e.target.value)} />
+            <Label className="text-xs font-semibold">Location / Tag</Label>
+            <Input
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="h-9 text-xs rounded-lg"
+              placeholder="e.g., WTG 04 or Bay 2"
+            />
           </div>
+
           <div className="space-y-1.5">
-            <Label className="text-xs">Notes</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
+            <Label className="text-xs font-semibold">Notes</Label>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              className="text-xs rounded-lg resize-none"
+              placeholder="Technician observations, reasons..."
+            />
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button onClick={submit} disabled={saving}>
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Save
+        <DialogFooter className="gap-2 pt-2">
+          <Button variant="outline" onClick={onClose} disabled={saving} className="h-9 text-xs">
+            Cancel
+          </Button>
+          <Button
+            onClick={submit}
+            disabled={saving}
+            className="h-9 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+          >
+            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Save Changes
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -7,18 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Leaf, Loader2, Eye, EyeOff } from "lucide-react";
+import { Leaf, Loader2, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 const loginSchema = z.object({
-  email: z.string().trim().email("Invalid email"),
-  password: z.string().min(6, "Min 6 characters"),
+  email: z.string().trim().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 const signupSchema = z.object({
-  full_name: z.string().trim().min(2, "Name required").max(100),
-  email: z.string().trim().email("Invalid email"),
-  password: z.string().min(8, "Min 8 characters").max(72),
+  full_name: z.string().trim().min(2, "Full name is required").max(100),
+  email: z.string().trim().email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters").max(72),
 });
 
 type Mode = "login" | "signup" | "reset";
@@ -37,10 +37,10 @@ export default function Auth() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div className="bg-primary/10 rounded-full p-4">
+          <div className="bg-primary/10 rounded-2xl p-4 shadow-xs">
             <Leaf className="h-8 w-8 text-primary animate-pulse" />
           </div>
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-xs font-medium text-muted-foreground">Initializing WasteBuddy…</p>
         </div>
       </div>
     );
@@ -76,83 +76,115 @@ export default function Auth() {
     setSubmitting(false);
     if (error) return toast.error(error.message);
     if (data.session) {
-      toast.success("Account created — choose a site to request access");
+      toast.success("Account created — select a facility site to request access");
       navigate("/app");
     } else {
-      toast.success("Check your inbox to confirm your email");
+      toast.success("Verification email sent — please check your inbox");
       setMode("login");
     }
   };
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!z.string().email().safeParse(email).success) return toast.error("Enter a valid email");
+    if (!z.string().email().safeParse(email).success) return toast.error("Please enter a valid email address");
     setSubmitting(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setSubmitting(false);
     if (error) return toast.error(error.message);
-    toast.success("Password reset email sent");
+    toast.success("Password reset instructions sent to your email");
     setMode("login");
   };
 
   const titles: Record<Mode, string> = {
-    login: "Sign in",
-    signup: "Create account",
-    reset: "Reset password",
+    login: "Sign In",
+    signup: "Create Account",
+    reset: "Reset Password",
   };
 
   const onSubmit =
     mode === "signup" ? handleSignup : mode === "reset" ? handleReset : handleLogin;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/40">
-      <div className="flex-1 flex items-center justify-center px-4 py-10">
-        <Card className="w-full max-w-md shadow-lg">
-          <CardContent className="p-6 space-y-5">
-            <div className="text-center space-y-1">
-              <div className="bg-primary text-primary-foreground rounded-xl p-3 w-fit mx-auto mb-2">
-                <Leaf className="h-6 w-6" />
-              </div>
-              <h1 className="text-xl font-bold">{titles[mode]}</h1>
+    <div className="min-h-screen flex flex-col justify-center items-center px-4 py-12 bg-gradient-to-b from-background via-background to-secondary/30">
+      <div className="w-full max-w-md space-y-6">
+        {/* Brand header */}
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/25 mb-1">
+            <Leaf className="h-6 w-6" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">WasteBuddy</h1>
+          <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5 font-medium">
+            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+            HOWM Rules 2016 Statutory Tracker
+          </p>
+        </div>
+
+        {/* Auth card */}
+        <Card className="rounded-2xl border border-border/80 shadow-md bg-card/95 backdrop-blur-xs">
+          <CardContent className="p-6 sm:p-7 space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-lg font-bold text-foreground">{titles[mode]}</h2>
               <p className="text-xs text-muted-foreground">
                 {mode === "reset"
-                  ? "We'll email you a reset link"
+                  ? "Enter your email to receive recovery instructions"
                   : mode === "signup"
-                  ? `Sign up with any email`
-                  : "Hazardous Waste Tracker"}
+                  ? "Register for multi-site hazardous waste compliance tracking"
+                  : "Sign in with your authorized site credentials"}
               </p>
             </div>
 
-            <form onSubmit={onSubmit} className="space-y-3">
+            <form onSubmit={onSubmit} className="space-y-3.5 pt-1">
               {mode === "signup" && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="full_name">Full name</Label>
+                  <Label htmlFor="full_name" className="text-xs font-semibold">
+                    Full Name
+                  </Label>
                   <Input
                     id="full_name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
+                    placeholder="e.g., Alex Kumar"
                     maxLength={100}
+                    className="h-10 text-xs rounded-lg"
                     required
                   />
                 </div>
               )}
+
               <div className="space-y-1.5">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-xs font-semibold">
+                  Email Address
+                </Label>
                 <Input
                   id="email"
                   type="email"
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={mode === "signup" ? `you@example.com` : undefined}
+                  placeholder="technician@windpower.com"
+                  className="h-10 text-xs rounded-lg"
                   required
                 />
               </div>
+
               {mode !== "reset" && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="password">Password</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password" className="text-xs font-semibold">
+                      Password
+                    </Label>
+                    {mode === "login" && (
+                      <button
+                        type="button"
+                        onClick={() => setMode("reset")}
+                        className="text-[11px] text-primary hover:underline font-medium"
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
                   <div className="relative">
                     <Input
                       id="password"
@@ -160,14 +192,14 @@ export default function Auth() {
                       autoComplete={mode === "signup" ? "new-password" : "current-password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="h-10 text-xs rounded-lg pr-10"
                       required
-                      minLength={mode === "signup" ? 8 : 6}
-                      className="pr-10"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPw((s) => !s)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       aria-label={showPw ? "Hide password" : "Show password"}
                     >
                       {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -175,45 +207,47 @@ export default function Auth() {
                   </div>
                 </div>
               )}
-              <Button type="submit" className="w-full" disabled={submitting}>
+
+              <Button
+                type="submit"
+                className="w-full h-10 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm rounded-lg mt-2"
+                disabled={submitting}
+              >
                 {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                {mode === "reset" ? "Send reset email" : mode === "signup" ? "Create account" : "Sign in"}
+                {mode === "signup"
+                  ? "Create Account"
+                  : mode === "reset"
+                  ? "Send Password Reset Link"
+                  : "Sign In"}
               </Button>
             </form>
 
-            <div className="flex flex-col items-center gap-2 text-xs">
-              {mode === "login" && (
-                <>
+            {/* Mode switch */}
+            <div className="text-center pt-2 border-t border-border/60 text-xs text-muted-foreground">
+              {mode === "login" ? (
+                <p>
+                  Don't have an account yet?{" "}
                   <button
                     type="button"
                     onClick={() => setMode("signup")}
-                    className="text-primary hover:underline font-medium"
+                    className="text-primary font-semibold hover:underline"
                   >
-                    New here? Create an account
+                    Sign up
                   </button>
+                </p>
+              ) : (
+                <p>
+                  Already have an account?{" "}
                   <button
                     type="button"
-                    onClick={() => setMode("reset")}
-                    className="text-muted-foreground hover:text-foreground underline"
+                    onClick={() => setMode("login")}
+                    className="text-primary font-semibold hover:underline"
                   >
-                    Forgot password?
+                    Sign in
                   </button>
-                </>
-              )}
-              {mode !== "login" && (
-                <button
-                  type="button"
-                  onClick={() => setMode("login")}
-                  className="text-muted-foreground hover:text-foreground underline"
-                >
-                  Back to sign in
-                </button>
+                </p>
               )}
             </div>
-
-            <p className="text-[11px] text-center text-muted-foreground border-t pt-3">
-              After signup, request access to a site — an admin will approve you.
-            </p>
           </CardContent>
         </Card>
       </div>

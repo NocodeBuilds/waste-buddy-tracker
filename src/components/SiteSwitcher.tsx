@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Building2, ChevronDown, Plus, Loader2 } from "lucide-react";
+import { Building2, ChevronDown, Plus, Loader2, Check } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface AllSite { id: string; name: string; location: string | null }
 
@@ -74,31 +75,42 @@ export default function SiteSwitcher() {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex items-center gap-1.5 text-xs text-primary-foreground/90 hover:text-primary-foreground bg-primary-foreground/10 rounded-md px-2 py-1">
-          <Building2 className="h-3.5 w-3.5" />
-          <span className="font-semibold truncate max-w-[120px]">{currentSite?.name ?? "Select site"}</span>
-          <ChevronDown className="h-3 w-3" />
+        <DropdownMenuTrigger className="flex items-center gap-1.5 text-xs text-foreground font-medium bg-card hover:bg-muted/70 border border-border/80 rounded-lg px-2.5 py-1.5 transition-all shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20">
+          <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
+          <span className="font-semibold truncate max-w-[130px]">{currentSite?.name ?? "Select site"}</span>
+          <ChevronDown className="h-3 w-3 text-muted-foreground ml-0.5 shrink-0" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel>Your sites</DropdownMenuLabel>
+        <DropdownMenuContent align="end" className="w-60 rounded-xl p-1 shadow-lg border-border/80">
+          <DropdownMenuLabel className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1.5">
+            Your Facilities
+          </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {sites.map((s) => (
-            <DropdownMenuItem
-              key={s.id}
-              onClick={() => setCurrentSite(s)}
-              className={currentSite?.id === s.id ? "bg-accent/10" : ""}
-            >
-              <Building2 className="h-4 w-4 mr-2" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">{s.name}</p>
-                {s.location && <p className="text-xs text-muted-foreground">{s.location}</p>}
-              </div>
-            </DropdownMenuItem>
-          ))}
+          <div className="space-y-0.5">
+            {sites.map((s) => {
+              const isSelected = currentSite?.id === s.id;
+              return (
+                <DropdownMenuItem
+                  key={s.id}
+                  onClick={() => setCurrentSite(s)}
+                  className={cn(
+                    "flex items-center gap-2 px-2.5 py-2 cursor-pointer rounded-lg text-xs transition-colors",
+                    isSelected ? "bg-primary/10 text-primary font-semibold" : "text-foreground hover:bg-muted/60"
+                  )}
+                >
+                  <Building2 className={cn("h-4 w-4 shrink-0", isSelected ? "text-primary" : "text-muted-foreground")} />
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate font-medium">{s.name}</p>
+                    {s.location && <p className="text-[10px] text-muted-foreground truncate">{s.location}</p>}
+                  </div>
+                  {isSelected && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+                </DropdownMenuItem>
+              );
+            })}
+          </div>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={openRequest}>
-            <Plus className="h-4 w-4 mr-2" />
-            <span className="text-sm">Request another site</span>
+          <DropdownMenuItem onClick={openRequest} className="flex items-center gap-2 px-2.5 py-2 cursor-pointer rounded-lg text-xs text-muted-foreground hover:text-foreground">
+            <Plus className="h-3.5 w-3.5 text-primary" />
+            <span>Request access to another site</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

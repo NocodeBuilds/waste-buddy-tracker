@@ -51,71 +51,92 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-[52px] lg:pt-[96px]">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-40 bg-primary text-primary-foreground border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
-          <div className="bg-accent rounded-lg p-1.5">
-            <Leaf className="h-5 w-5 text-accent-foreground" />
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Unified Modern Top Navbar */}
+      <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-card/90 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between gap-3">
+          {/* Brand mark */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="bg-primary text-primary-foreground rounded-lg p-1.5 shadow-xs">
+              <Leaf className="h-4.5 w-4.5" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-bold tracking-tight text-foreground">WasteBuddy</span>
+              <span className="hidden sm:inline-flex px-1.5 py-0.5 text-[9px] font-semibold bg-primary/10 text-primary rounded-full uppercase tracking-wider">
+                Compliance
+              </span>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-bold tracking-tight truncate">WasteBuddy</h1>
+
+          {/* Desktop Navigation Tabs */}
+          <nav className="hidden lg:flex items-center gap-1 bg-muted/50 p-1 rounded-xl border border-border/60">
+            {[
+              { id: "home" as TabId, label: "Dashboard", icon: Home },
+              { id: "inventory" as TabId, label: "Inventory", icon: List },
+              { id: "analytics" as TabId, label: "Analytics", icon: BarChart3 },
+              { id: "settings" as TabId, label: "Settings", icon: Settings },
+              ...(isAdmin ? [{ id: "admin" as TabId, label: "Admin", icon: Shield }] : []),
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "relative flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all select-none",
+                    isActive
+                      ? "bg-card text-primary shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-card/40"
+                  )}
+                >
+                  <tab.icon className="h-3.5 w-3.5" />
+                  <span>{tab.label}</span>
+                  {tab.id === "inventory" && overdueCount > 0 && (
+                    <span className="ml-1 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                      {overdueCount > 99 ? "99+" : overdueCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Header Actions */}
+          <div className="flex items-center gap-2">
+            <SiteSwitcher />
+
+            {/* Notification Bell */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="icon" className="relative h-9 w-9 text-muted-foreground hover:text-foreground">
+                  <Bell className="h-4 w-4" />
+                  {alertCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-rose-500 text-[10px] font-bold text-white flex items-center justify-center px-1 shadow-xs ring-2 ring-card">
+                      {alertCount > 9 ? "9+" : alertCount}
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" sideOffset={8} className="w-80 sm:w-96 p-0 border-none shadow-none">
+                <AlertsPanel entries={entries} />
+              </PopoverContent>
+            </Popover>
+
+            {/* Desktop Log Entry Button */}
+            <Button
+              onClick={() => setDrawerOpen(true)}
+              size="sm"
+              className="hidden lg:inline-flex gap-1.5 shadow-xs"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Log Waste</span>
+            </Button>
           </div>
-          <SiteSwitcher />
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative h-9 w-9 text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/10">
-                <Bell className="h-5 w-5" />
-                {alertCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-overdue text-[9px] font-bold text-white flex items-center justify-center leading-none">
-                    {alertCount > 9 ? "9+" : alertCount}
-                  </span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" sideOffset={8} className="w-80 max-h-[70vh] overflow-y-auto p-0">
-              <AlertsPanel entries={entries} />
-            </PopoverContent>
-          </Popover>
         </div>
       </header>
 
-      {/* Desktop tab bar (hidden on mobile) */}
-      <nav className="hidden lg:flex fixed top-[52px] left-0 right-0 z-30 items-center gap-1 border-b bg-card/95 backdrop-blur-sm px-4 max-w-7xl mx-auto">
-        {[
-          { id: "home" as TabId, label: "Home", icon: Home },
-          { id: "inventory" as TabId, label: "Inventory", icon: List },
-          { id: "analytics" as TabId, label: "Analytics", icon: BarChart3 },
-          { id: "settings" as TabId, label: "Settings", icon: Settings },
-          ...(isAdmin ? [{ id: "admin" as TabId, label: "Admin", icon: Shield }] : []),
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              "relative flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors rounded-t-md",
-              activeTab === tab.id
-                ? "text-accent"
-                : "text-muted-foreground hover:text-foreground hover:bg-foreground/5"
-            )}
-          >
-            {/* Animated active indicator */}
-            {activeTab === tab.id && (
-              <span className="absolute -bottom-[1px] left-2 right-2 h-[2px] bg-accent rounded-full" />
-            )}
-            <tab.icon className="h-4 w-4" />
-            {tab.label}
-          </button>
-        ))}
-        <div className="ml-auto">
-          <Button onClick={() => setDrawerOpen(true)} size="sm" className="gap-2 transition-all hover:shadow-md hover:shadow-accent/20">
-            <Plus className="h-4 w-4" /> Log Entry
-          </Button>
-        </div>
-      </nav>
-
       {/* Main content */}
-      <main className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 pb-20 lg:pb-4 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
+      <main className="px-3 sm:px-6 py-4 pb-24 lg:pb-8 space-y-4 max-w-7xl mx-auto">
         {isLoading || siteLoading ? (
         <div className="space-y-4">
           {/* Skeleton header */}
