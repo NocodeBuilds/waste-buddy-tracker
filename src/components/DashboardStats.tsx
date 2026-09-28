@@ -531,12 +531,12 @@ export default function DashboardStats({ entries }: Props) {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="flex gap-2 overflow-x-auto pb-2 pt-0.5 no-scrollbar snap-x md:grid md:grid-cols-3 lg:grid-cols-6 md:gap-3">
           {solidsThisMonth.length === 0 && liquidThisMonth.length === 0 && eWasteThisMonth.length === 0 && batteryThisMonth.length === 0 && otherWastesThisMonth.length === 0 ? (
-            <div className="col-span-full">
+            <div className="w-full md:col-span-full">
               <Card>
-                <CardContent className="py-6 text-center text-muted-foreground flex flex-col items-center gap-1.5">
-                  <Package className="h-5 w-5 opacity-40" />
+                <CardContent className="py-4 text-center text-muted-foreground flex flex-col items-center gap-1">
+                  <Package className="h-4 w-4 opacity-40" />
                   <p className="text-xs">No waste entries recorded this month yet.</p>
                 </CardContent>
               </Card>
@@ -544,92 +544,92 @@ export default function DashboardStats({ entries }: Props) {
           ) : (
             <>
               <Card
-                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-rose-500/50"
+                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-rose-500/50 min-w-[130px] flex-1 md:min-w-0 snap-start"
                 onClick={() => setSplitBar("hazardous")}
               >
-                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                <CardContent className="p-2.5 sm:p-3 flex flex-col items-center text-center gap-1">
                   <div className="p-1 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                    <ShieldAlert className="h-4 w-4 shrink-0" />
+                    <ShieldAlert className="h-3.5 w-3.5 shrink-0" />
                   </div>
-                  <p className="text-lg font-bold font-mono leading-tight mt-0.5">
+                  <p className="text-base sm:text-lg font-bold font-mono leading-tight mt-0.5">
                     {fmtNum(hazSolidsKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span>
                   </p>
-                  <p className="text-[10px] font-medium text-muted-foreground">Hazardous Solids</p>
+                  <p className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">Hazardous Solids</p>
                 </CardContent>
               </Card>
 
               <Card
-                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-emerald-500/50"
+                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-emerald-500/50 min-w-[130px] flex-1 md:min-w-0 snap-start"
                 onClick={() => setSplitBar("nonHazardous")}
               >
-                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                <CardContent className="p-2.5 sm:p-3 flex flex-col items-center text-center gap-1">
                   <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
-                    <Leaf className="h-4 w-4 shrink-0" />
+                    <Leaf className="h-3.5 w-3.5 shrink-0" />
                   </div>
-                  <p className="text-lg font-bold font-mono leading-tight mt-0.5">
+                  <p className="text-base sm:text-lg font-bold font-mono leading-tight mt-0.5">
                     {fmtNum(nonHazSolidsKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span>
                   </p>
-                  <p className="text-[10px] font-medium text-muted-foreground">Non-Haz Solids</p>
+                  <p className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">Non-Haz Solids</p>
                 </CardContent>
               </Card>
 
               <Card
-                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-cyan-500/50"
+                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-cyan-500/50 min-w-[130px] flex-1 md:min-w-0 snap-start"
                 onClick={() => setSplitBar("liquid")}
               >
-                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                <CardContent className="p-2.5 sm:p-3 flex flex-col items-center text-center gap-1">
                   <div className="p-1 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
-                    <Droplets className="h-4 w-4 shrink-0" />
+                    <Droplets className="h-3.5 w-3.5 shrink-0" />
                   </div>
-                  <p className="text-lg font-bold font-mono leading-tight mt-0.5">
+                  <p className="text-base sm:text-lg font-bold font-mono leading-tight mt-0.5">
                     {fmtNum(liquidLitres(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">L</span>
                   </p>
-                  <p className="text-[10px] font-medium text-muted-foreground">Liquid Waste</p>
+                  <p className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">Liquid Waste</p>
                 </CardContent>
               </Card>
 
               <Card
-                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-violet-500/50"
+                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-violet-500/50 min-w-[130px] flex-1 md:min-w-0 snap-start"
                 onClick={() => setSplitBar("ewaste")}
               >
-                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                <CardContent className="p-2.5 sm:p-3 flex flex-col items-center text-center gap-1">
                   <div className="p-1 rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400">
-                    <Trash2 className="h-4 w-4 shrink-0" />
+                    <Trash2 className="h-3.5 w-3.5 shrink-0" />
                   </div>
-                  <p className="text-lg font-bold font-mono leading-tight mt-0.5">
+                  <p className="text-base sm:text-lg font-bold font-mono leading-tight mt-0.5">
                     {fmtNum(eWasteKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span>
                   </p>
-                  <p className="text-[10px] font-medium text-muted-foreground">E-Waste</p>
+                  <p className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">E-Waste</p>
                 </CardContent>
               </Card>
 
               <Card
-                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-amber-500/50"
+                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-amber-500/50 min-w-[130px] flex-1 md:min-w-0 snap-start"
                 onClick={() => setSplitBar("battery")}
               >
-                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                <CardContent className="p-2.5 sm:p-3 flex flex-col items-center text-center gap-1">
                   <div className="p-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                    <Battery className="h-4 w-4 shrink-0" />
+                    <Battery className="h-3.5 w-3.5 shrink-0" />
                   </div>
-                  <p className="text-lg font-bold font-mono leading-tight mt-0.5">
+                  <p className="text-base sm:text-lg font-bold font-mono leading-tight mt-0.5">
                     {fmtNum(batteryKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span>
                   </p>
-                  <p className="text-[10px] font-medium text-muted-foreground">Battery Waste</p>
+                  <p className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">Battery Waste</p>
                 </CardContent>
               </Card>
 
               <Card
-                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-slate-500/50"
+                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-slate-500/50 min-w-[130px] flex-1 md:min-w-0 snap-start"
                 onClick={() => setSplitBar("other")}
               >
-                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                <CardContent className="p-2.5 sm:p-3 flex flex-col items-center text-center gap-1">
                   <div className="p-1 rounded-md bg-slate-500/10 text-slate-600 dark:text-slate-400">
-                    <Recycle className="h-4 w-4 shrink-0" />
+                    <Recycle className="h-3.5 w-3.5 shrink-0" />
                   </div>
-                  <p className="text-lg font-bold font-mono leading-tight mt-0.5">
+                  <p className="text-base sm:text-lg font-bold font-mono leading-tight mt-0.5">
                     {fmtNum(otherWastesKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span>
                   </p>
-                  <p className="text-[10px] font-medium text-muted-foreground">Other Wastes</p>
+                  <p className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">Other Wastes</p>
                 </CardContent>
               </Card>
             </>

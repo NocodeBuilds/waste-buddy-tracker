@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import DashboardCard from "./dashboard/DashboardCard";
 import {
   WasteEntry,
   getDaysStored,
@@ -32,6 +31,8 @@ import {
   CheckCircle,
   Clock,
   Layers,
+  PieChart as PieChartIcon,
+  History,
 } from "lucide-react";
 import {
   Bar,
@@ -61,6 +62,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Props {
   entries: WasteEntry[];
@@ -68,6 +70,8 @@ interface Props {
 }
 
 export default function AnalyticsTab({ entries, batches }: Props) {
+  const [activeSegment, setActiveSegment] = useState<"overview" | "aging" | "trends" | "disposals">("overview");
+
   // ── Period state ──────────────────────────────────────────────
   const [periodKind, setPeriodKind] = useState<PeriodKind>("all");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -207,25 +211,71 @@ export default function AnalyticsTab({ entries, batches }: Props) {
   };
 
   return (
-    <div className="space-y-4">
-      {/* ── Header row ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" /> Analytics & Trends
-          </h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Generation patterns, statutory aging distribution, and facility performance metrics
-          </p>
-        </div>
-      </div>
+    <div className="space-y-3.5">
+      {/* ── Sub-Navigation Pill Segment Switcher (eliminates vertical scroll overload) ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 border-b border-border/60 pb-2">
+        <div className="inline-flex p-1 bg-muted/70 rounded-xl gap-1 overflow-x-auto no-scrollbar">
+          <button
+            type="button"
+            onClick={() => setActiveSegment("overview")}
+            className={cn(
+              "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              activeSegment === "overview"
+                ? "bg-card text-foreground shadow-xs font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <PieChartIcon className="h-3.5 w-3.5 text-primary" />
+            <span>Overview & KPIs</span>
+          </button>
 
-      {/* ── Period Selector Toolbar ── */}
-      <div className="rounded-xl border border-border/80 bg-card p-3 shadow-xs space-y-2.5">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-medium text-muted-foreground">Period:</span>
+          <button
+            type="button"
+            onClick={() => setActiveSegment("aging")}
+            className={cn(
+              "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              activeSegment === "aging"
+                ? "bg-card text-foreground shadow-xs font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Clock className="h-3.5 w-3.5 text-amber-500" />
+            <span>Aging & Compliance</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSegment("trends")}
+            className={cn(
+              "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              activeSegment === "trends"
+                ? "bg-card text-foreground shadow-xs font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <TrendingUp className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+            <span>Generation Trends</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSegment("disposals")}
+            className={cn(
+              "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              activeSegment === "disposals"
+                ? "bg-card text-foreground shadow-xs font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <History className="h-3.5 w-3.5 text-emerald-600" />
+            <span>Disposal Log</span>
+          </button>
+        </div>
+
+        {/* Period Selector */}
+        <div className="flex items-center gap-1.5 self-end sm:self-auto">
           <Select value={periodKind} onValueChange={(v) => setPeriodKind(v as PeriodKind)}>
-            <SelectTrigger className="h-9 text-xs w-[130px] rounded-lg">
+            <SelectTrigger className="h-8 text-xs w-[120px] rounded-lg">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -237,9 +287,9 @@ export default function AnalyticsTab({ entries, batches }: Props) {
           </Select>
 
           {periodKind === "month" && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
-                <SelectTrigger className="h-9 text-xs w-24 rounded-lg">
+                <SelectTrigger className="h-8 text-xs w-20 rounded-md">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -251,7 +301,7 @@ export default function AnalyticsTab({ entries, batches }: Props) {
                 </SelectContent>
               </Select>
               <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
-                <SelectTrigger className="h-9 text-xs w-32 rounded-lg">
+                <SelectTrigger className="h-8 text-xs w-24 rounded-md">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -268,12 +318,12 @@ export default function AnalyticsTab({ entries, batches }: Props) {
           )}
 
           {periodKind === "range" && (
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1">
               <Popover open={rangeOpenStart} onOpenChange={setRangeOpenStart}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-9 text-xs font-normal px-2.5 rounded-lg">
-                    <CalendarIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
-                    {rangeStart || "From Date"}
+                  <Button variant="outline" size="sm" className="h-8 text-xs font-normal px-2 rounded-md">
+                    <CalendarIcon className="mr-1 h-3 w-3 text-muted-foreground" />
+                    {rangeStart || "From"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -292,9 +342,9 @@ export default function AnalyticsTab({ entries, batches }: Props) {
 
               <Popover open={rangeOpenEnd} onOpenChange={setRangeOpenEnd}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-9 text-xs font-normal px-2.5 rounded-lg">
-                    <CalendarIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
-                    {rangeEnd || "To Date"}
+                  <Button variant="outline" size="sm" className="h-8 text-xs font-normal px-2 rounded-md">
+                    <CalendarIcon className="mr-1 h-3 w-3 text-muted-foreground" />
+                    {rangeEnd || "To"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -310,26 +360,12 @@ export default function AnalyticsTab({ entries, batches }: Props) {
                   />
                 </PopoverContent>
               </Popover>
-
-              {(rangeStart || rangeEnd) && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-9 px-2 text-xs text-muted-foreground hover:text-foreground"
-                  onClick={() => {
-                    setRangeStart("");
-                    setRangeEnd("");
-                  }}
-                >
-                  <X className="h-3 w-3 mr-1" /> Clear
-                </Button>
-              )}
             </div>
           )}
 
           {periodKind === "fy" && (
             <Select value={String(selectedFy)} onValueChange={(v) => setSelectedFy(Number(v))}>
-              <SelectTrigger className="h-9 text-xs w-36 rounded-lg">
+              <SelectTrigger className="h-8 text-xs w-28 rounded-md">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -345,8 +381,8 @@ export default function AnalyticsTab({ entries, batches }: Props) {
       </div>
 
       {periodEntries.length === 0 ? (
-        <Card className="border-border/80 border-dashed p-10 text-center text-muted-foreground">
-          <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-40 text-amber-500" />
+        <Card className="border-border/80 border-dashed p-8 text-center text-muted-foreground">
+          <AlertTriangle className="h-7 w-7 mx-auto mb-2 opacity-40 text-amber-500" />
           <p className="text-sm font-semibold text-foreground">No waste records in selected period</p>
           <p className="text-xs text-muted-foreground/70 mt-1">
             Try adjusting the period filter or log waste entries to view detailed analytics.
@@ -354,364 +390,364 @@ export default function AnalyticsTab({ entries, batches }: Props) {
         </Card>
       ) : (
         <>
-          {/* ── Key Metrics Strip ── */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <Card className="border-border/80 shadow-xs">
-              <CardContent className="p-3.5 flex flex-col justify-between h-full">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-medium">Total Solids</span>
-                  <Scale className="h-4 w-4 text-primary" />
-                </div>
-                <div className="mt-2">
-                  <p className="text-2xl font-bold font-mono tracking-tight text-foreground">
-                    {fmtNum(periodTotals.kg)}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">kg generated in period</p>
-                </div>
-              </CardContent>
-            </Card>
+          {/* ────────────────────────── SEGMENT 1: OVERVIEW & KPIS ────────────────────────── */}
+          {activeSegment === "overview" && (
+            <div className="space-y-3">
+              {/* Compact 4-Card KPI Strip */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <Card className="border-border/80 shadow-xs">
+                  <CardContent className="p-3">
+                    <span className="text-[11px] font-medium text-muted-foreground flex items-center justify-between">
+                      Solid Waste <Scale className="h-3.5 w-3.5 text-primary" />
+                    </span>
+                    <p className="text-xl font-bold font-mono text-foreground mt-1 leading-tight">
+                      {fmtNum(periodTotals.kg)}
+                      <span className="text-[10px] font-sans font-normal text-muted-foreground ml-1">kg</span>
+                    </p>
+                  </CardContent>
+                </Card>
 
-            <Card className="border-border/80 shadow-xs">
-              <CardContent className="p-3.5 flex flex-col justify-between h-full">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-medium">Total Liquids</span>
-                  <Droplets className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-                </div>
-                <div className="mt-2">
-                  <p className="text-2xl font-bold font-mono tracking-tight text-foreground">
-                    {fmtNum(periodTotals.litres)}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">L generated in period</p>
-                </div>
-              </CardContent>
-            </Card>
+                <Card className="border-border/80 shadow-xs">
+                  <CardContent className="p-3">
+                    <span className="text-[11px] font-medium text-muted-foreground flex items-center justify-between">
+                      Liquid Waste <Droplets className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                    </span>
+                    <p className="text-xl font-bold font-mono text-foreground mt-1 leading-tight">
+                      {fmtNum(periodTotals.litres)}
+                      <span className="text-[10px] font-sans font-normal text-muted-foreground ml-1">L</span>
+                    </p>
+                  </CardContent>
+                </Card>
 
-            <Card className="border-border/80 shadow-xs">
-              <CardContent className="p-3.5 flex flex-col justify-between h-full">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-medium">In Storage</span>
-                  <Layers className="h-4 w-4 text-amber-600" />
-                </div>
-                <div className="mt-2">
-                  <p className="text-2xl font-bold font-mono tracking-tight text-foreground">
-                    {periodActive.length}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    {fmtNum(activeTotals.kg)} kg · {fmtNum(activeTotals.litres)} L
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                <Card className="border-border/80 shadow-xs">
+                  <CardContent className="p-3">
+                    <span className="text-[11px] font-medium text-muted-foreground flex items-center justify-between">
+                      Active Storage <Layers className="h-3.5 w-3.5 text-amber-600" />
+                    </span>
+                    <p className="text-xl font-bold font-mono text-foreground mt-1 leading-tight">
+                      {periodActive.length}
+                      <span className="text-[10px] font-sans font-normal text-muted-foreground ml-1">items</span>
+                    </p>
+                  </CardContent>
+                </Card>
 
-            <Card className="border-border/80 shadow-xs">
-              <CardContent className="p-3.5 flex flex-col justify-between h-full">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-medium">Disposal Rate</span>
-                  <CheckCircle className="h-4 w-4 text-emerald-600" />
-                </div>
-                <div className="mt-2">
-                  <p className="text-2xl font-bold font-mono tracking-tight text-foreground">
-                    {periodEntries.length > 0
-                      ? `${Math.round(((periodEntries.length - periodActive.length) / periodEntries.length) * 100)}%`
-                      : "0%"}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    {periodEntries.length - periodActive.length} of {periodEntries.length} disposed
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* ── Category Breakdown & Aging Distribution ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {/* Category Donut */}
-            <Card className="border-border/80 shadow-xs">
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Droplets className="h-4 w-4 text-primary" />
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      In-Storage Categories
-                    </h3>
-                  </div>
-                  <Badge variant="outline" className="text-[11px] font-mono">
-                    {categoryData.length} active types
-                  </Badge>
-                </div>
-
-                {categoryData.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-10">No active storage data</p>
-                ) : (
-                  <div className="h-[210px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={categoryData}
-                          dataKey="value"
-                          nameKey="name"
-                          innerRadius={50}
-                          outerRadius={75}
-                          paddingAngle={3}
-                        >
-                          {categoryData.map((d, i) => (
-                            <Cell key={i} fill={d.color} stroke="hsl(var(--card))" strokeWidth={2} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={tooltipStyle}
-                          formatter={(v: number, name?: string) => {
-                            const match = categoryData.find((d) => d.name === name);
-                            return [`${fmtNum(v)} ${match?.unit ?? "kg"}`, name ?? ""];
-                          }}
-                        />
-                        <Legend
-                          wrapperStyle={{ fontSize: 11, paddingTop: 6 }}
-                          formatter={(val) => <span className="text-xs text-foreground">{val}</span>}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Aging Distribution */}
-            <Card className="border-border/80 shadow-xs">
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-amber-500" />
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Statutory Aging Distribution
-                    </h3>
-                  </div>
-                  <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                    HOWM 90-Day Rule
-                  </Badge>
-                </div>
-
-                <div className="h-[210px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={agingData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.6)" />
-                      <XAxis
-                        dataKey="name"
-                        tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                        axisLine={{ stroke: "hsl(var(--border))" }}
-                      />
-                      <YAxis
-                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                        axisLine={{ stroke: "hsl(var(--border))" }}
-                      />
-                      <Tooltip
-                        contentStyle={tooltipStyle}
-                        formatter={(val: number, name: string) => [
-                          `${fmtNum(val)} ${name === "kg" ? "kg" : "L"}`,
-                          name === "kg" ? "Solid Waste" : "Liquid Waste",
-                        ]}
-                      />
-                      <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
-                      <Bar dataKey="kg" fill="#059669" name="Solids (kg)" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="litres" fill="#0284c7" name="Liquids (L)" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* ── 12-Week Generation Trend Line Chart ── */}
-          <Card className="border-border/80 shadow-xs">
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-primary" />
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    12-Week Generation Trend
-                  </h3>
-                </div>
-                <span className="text-[11px] text-muted-foreground font-mono">Weekly batch aggregates</span>
+                <Card className="border-border/80 shadow-xs">
+                  <CardContent className="p-3">
+                    <span className="text-[11px] font-medium text-muted-foreground flex items-center justify-between">
+                      Disposal Rate <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
+                    </span>
+                    <p className="text-xl font-bold font-mono text-foreground mt-1 leading-tight">
+                      {periodEntries.length > 0
+                        ? `${Math.round(((periodEntries.length - periodActive.length) / periodEntries.length) * 100)}%`
+                        : "0%"}
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
 
-              <div className="h-[200px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trendData} margin={{ top: 10, right: 15, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.6)" />
-                    <XAxis
-                      dataKey="week"
-                      tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                      axisLine={{ stroke: "hsl(var(--border))" }}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                      axisLine={{ stroke: "hsl(var(--border))" }}
-                    />
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
-                    <Line
-                      type="monotone"
-                      dataKey="kg"
-                      name="Solids (kg)"
-                      stroke="#059669"
-                      strokeWidth={2.5}
-                      dot={{ r: 3, fill: "#059669" }}
-                      activeDot={{ r: 5 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="litres"
-                      name="Liquids (L)"
-                      stroke="#0284c7"
-                      strokeWidth={2.5}
-                      dot={{ r: 3, fill: "#0284c7" }}
-                      activeDot={{ r: 5 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+              {/* Category Donut & Maintenance Split */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {/* Category Donut */}
+                <Card className="border-border/80 shadow-xs">
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <Droplets className="h-3.5 w-3.5 text-primary" /> In-Storage Category Mix
+                      </h3>
+                      <Badge variant="outline" className="text-[10px] font-mono">
+                        {categoryData.length} types
+                      </Badge>
+                    </div>
 
-          {/* ── Activity Split & Top Locations ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {/* Activity Split */}
-            <Card className="border-border/80 shadow-xs">
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-primary" />
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Generation by Maintenance Activity
-                  </h3>
-                </div>
-
-                <div className="space-y-2.5 pt-1">
-                  {activityTotals.map((a) => {
-                    const totalWeight = a.kg + a.litres;
-                    const maxWeight = Math.max(...activityTotals.map((x) => x.kg + x.litres), 1);
-                    const pct = Math.round((totalWeight / maxWeight) * 100);
-                    return (
-                      <div key={a.activity} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-semibold text-foreground">{a.label}</span>
-                          <span className="font-mono text-muted-foreground">
-                            {fmtNum(a.kg)} kg · {fmtNum(a.litres)} L ({a.count} entries)
-                          </span>
-                        </div>
-                        <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                          <div
-                            className="bg-primary h-full rounded-full transition-all duration-300"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
+                    {categoryData.length === 0 ? (
+                      <p className="text-xs text-muted-foreground text-center py-8">No active storage data</p>
+                    ) : (
+                      <div className="h-[200px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={categoryData}
+                              dataKey="value"
+                              nameKey="name"
+                              innerRadius={48}
+                              outerRadius={72}
+                              paddingAngle={3}
+                            >
+                              {categoryData.map((d, i) => (
+                                <Cell key={i} fill={d.color} stroke="hsl(var(--card))" strokeWidth={2} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={tooltipStyle}
+                              formatter={(v: number, name?: string) => {
+                                const match = categoryData.find((d) => d.name === name);
+                                return [`${fmtNum(v)} ${match?.unit ?? "kg"}`, name ?? ""];
+                              }}
+                            />
+                            <Legend
+                              wrapperStyle={{ fontSize: 11, paddingTop: 4 }}
+                              formatter={(val) => <span className="text-xs text-foreground">{val}</span>}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
                       </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                    )}
+                  </CardContent>
+                </Card>
 
-            {/* Top Locations */}
-            {topLocs.length > 0 && (
+                {/* Maintenance Split */}
+                <Card className="border-border/80 shadow-xs">
+                  <CardContent className="p-4 space-y-2.5">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Activity className="h-3.5 w-3.5 text-primary" /> Maintenance Activity Breakdown
+                    </h3>
+                    <div className="space-y-2 pt-1">
+                      {activityTotals.map((a) => {
+                        const totalWeight = a.kg + a.litres;
+                        const maxWeight = Math.max(...activityTotals.map((x) => x.kg + x.litres), 1);
+                        const pct = Math.round((totalWeight / maxWeight) * 100);
+                        return (
+                          <div key={a.activity} className="space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-semibold text-foreground">{a.label}</span>
+                              <span className="font-mono text-muted-foreground">
+                                {fmtNum(a.kg)} kg · {fmtNum(a.litres)} L ({a.count})
+                              </span>
+                            </div>
+                            <div className="w-full bg-muted/80 rounded-full h-2 overflow-hidden">
+                              <div
+                                className="bg-primary h-full rounded-full transition-all duration-300"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {/* ────────────────────────── SEGMENT 2: AGING & COMPLIANCE ────────────────────────── */}
+          {activeSegment === "aging" && (
+            <div className="space-y-3">
               <Card className="border-border/80 shadow-xs">
                 <CardContent className="p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Top Waste Generating Locations
-                    </h3>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5 text-amber-500" /> Statutory Storage Aging Distribution
+                      </h3>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Categorized under the 90-day statutory limit of HOWM Rules 2016
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-[10px]">
+                      HOWM 90-Day Limit
+                    </Badge>
                   </div>
 
-                  <div className="h-[180px] w-full">
+                  <div className="h-[220px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={topLocs.map(([loc, v]) => ({
-                          loc,
-                          kg: +v.kg.toFixed(2),
-                          litres: +v.litres.toFixed(2),
-                        }))}
-                        layout="vertical"
-                        margin={{ left: 10, right: 20, top: 5, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border)/0.6)" />
+                      <BarChart data={agingData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.6)" />
                         <XAxis
-                          type="number"
-                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          dataKey="name"
+                          tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                           axisLine={{ stroke: "hsl(var(--border))" }}
                         />
                         <YAxis
-                          type="category"
-                          dataKey="loc"
-                          width={75}
-                          tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                           axisLine={{ stroke: "hsl(var(--border))" }}
                         />
-                        <Tooltip contentStyle={tooltipStyle} />
-                        <Legend wrapperStyle={{ fontSize: 11, paddingTop: 4 }} />
-                        <Bar dataKey="kg" stackId="a" fill="#059669" name="Solids (kg)" />
-                        <Bar
-                          dataKey="litres"
-                          stackId="a"
-                          fill="#0284c7"
-                          name="Liquids (L)"
-                          radius={[0, 4, 4, 0]}
+                        <Tooltip
+                          contentStyle={tooltipStyle}
+                          formatter={(val: number, name: string) => [
+                            `${fmtNum(val)} ${name === "kg" ? "kg" : "L"}`,
+                            name === "kg" ? "Solid Waste" : "Liquid Waste",
+                          ]}
                         />
+                        <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
+                        <Bar dataKey="kg" fill="#059669" name="Solids (kg)" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="litres" fill="#0284c7" name="Liquids (L)" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </CardContent>
               </Card>
-            )}
-          </div>
 
-          {/* ── Recent Disposals ── */}
-          {batches.length > 0 && (
+              {/* Statutory buckets micro-grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {agingData.map((b) => (
+                  <Card key={b.name} className="border-border/80 p-3 text-center">
+                    <span className="text-[10px] uppercase font-semibold text-muted-foreground block">{b.name}</span>
+                    <span className="text-base font-bold font-mono text-foreground block mt-0.5">
+                      {fmtNum(b.kg + b.litres)}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">{b.count} active entries</span>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ────────────────────────── SEGMENT 3: GENERATION TRENDS ────────────────────────── */}
+          {activeSegment === "trends" && (
+            <div className="space-y-3">
+              {/* 12-Week Generation Trend Line Chart */}
+              <Card className="border-border/80 shadow-xs">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <TrendingUp className="h-3.5 w-3.5 text-primary" /> 12-Week Generation Trend
+                    </h3>
+                    <span className="text-[11px] text-muted-foreground font-mono">Weekly aggregate</span>
+                  </div>
+
+                  <div className="h-[210px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={trendData} margin={{ top: 10, right: 15, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.6)" />
+                        <XAxis
+                          dataKey="week"
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={{ stroke: "hsl(var(--border))" }}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={{ stroke: "hsl(var(--border))" }}
+                        />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
+                        <Line
+                          type="monotone"
+                          dataKey="kg"
+                          name="Solids (kg)"
+                          stroke="#059669"
+                          strokeWidth={2.5}
+                          dot={{ r: 3, fill: "#059669" }}
+                          activeDot={{ r: 5 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="litres"
+                          name="Liquids (L)"
+                          stroke="#0284c7"
+                          strokeWidth={2.5}
+                          dot={{ r: 3, fill: "#0284c7" }}
+                          activeDot={{ r: 5 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Top Locations */}
+              {topLocs.length > 0 && (
+                <Card className="border-border/80 shadow-xs">
+                  <CardContent className="p-4 space-y-3">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-primary" /> Top Waste Generating Turbines / Locations
+                    </h3>
+
+                    <div className="h-[180px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={topLocs.map(([loc, v]) => ({
+                            loc,
+                            kg: +v.kg.toFixed(2),
+                            litres: +v.litres.toFixed(2),
+                          }))}
+                          layout="vertical"
+                          margin={{ left: 10, right: 20, top: 5, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border)/0.6)" />
+                          <XAxis
+                            type="number"
+                            tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                            axisLine={{ stroke: "hsl(var(--border))" }}
+                          />
+                          <YAxis
+                            type="category"
+                            dataKey="loc"
+                            width={75}
+                            tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
+                            axisLine={{ stroke: "hsl(var(--border))" }}
+                          />
+                          <Tooltip contentStyle={tooltipStyle} />
+                          <Legend wrapperStyle={{ fontSize: 11, paddingTop: 4 }} />
+                          <Bar dataKey="kg" stackId="a" fill="#059669" name="Solids (kg)" />
+                          <Bar
+                            dataKey="litres"
+                            stackId="a"
+                            fill="#0284c7"
+                            name="Liquids (L)"
+                            radius={[0, 4, 4, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* ────────────────────────── SEGMENT 4: DISPOSAL LOG ────────────────────────── */}
+          {activeSegment === "disposals" && (
             <Card className="border-border/80 shadow-xs">
               <CardContent className="p-4 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Recent Disposal Batches
+                    Historical Disposals Archive
                   </h3>
                   <span className="text-[11px] font-mono text-muted-foreground">
                     {batches.length} total batches
                   </span>
                 </div>
-                <div className="divide-y divide-border/60">
-                  {batches.slice(0, 5).map((b) => {
-                    const inBatch = entries.filter((e) => e.disposal_batch_id === b.id);
-                    const t = sumByUnit(inBatch);
-                    const status = (b as any).status ?? "approved";
-                    return (
-                      <div key={b.id} className="flex items-center justify-between py-2.5 text-xs first:pt-1 last:pb-1">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-foreground">{b.disposed_date}</span>
-                            {status === "approved" ? (
-                              <Badge variant="success" className="text-[10px]">
-                                Approved
-                              </Badge>
-                            ) : status === "pending" ? (
-                              <Badge variant="warning" className="text-[10px]">
-                                Pending
-                              </Badge>
-                            ) : (
-                              <Badge variant="destructive" className="text-[10px]">
-                                Rejected
-                              </Badge>
-                            )}
+                {batches.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-6">No disposal records recorded yet.</p>
+                ) : (
+                  <div className="divide-y divide-border/60">
+                    {batches.slice(0, 10).map((b) => {
+                      const inBatch = entries.filter((e) => e.disposal_batch_id === b.id);
+                      const t = sumByUnit(inBatch);
+                      const status = (b as any).status ?? "approved";
+                      return (
+                        <div key={b.id} className="flex items-center justify-between py-2.5 text-xs first:pt-1 last:pb-1">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-foreground">{b.disposed_date}</span>
+                              {status === "approved" ? (
+                                <Badge variant="success" className="text-[10px]">
+                                  Approved
+                                </Badge>
+                              ) : status === "pending" ? (
+                                <Badge variant="warning" className="text-[10px]">
+                                  Pending
+                                </Badge>
+                              ) : (
+                                <Badge variant="destructive" className="text-[10px]">
+                                  Rejected
+                                </Badge>
+                              )}
+                            </div>
+                            {b.notes && <p className="text-[11px] text-muted-foreground mt-0.5 italic">{b.notes}</p>}
                           </div>
-                          {b.notes && <p className="text-[11px] text-muted-foreground mt-0.5 italic">{b.notes}</p>}
+                          <div className="text-right font-mono">
+                            <p className="font-semibold text-foreground">
+                              {fmtNum(t.kg)} kg · {fmtNum(t.litres)} L
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">{inBatch.length} entries</p>
+                          </div>
                         </div>
-                        <div className="text-right font-mono">
-                          <p className="font-semibold text-foreground">
-                            {fmtNum(t.kg)} kg · {fmtNum(t.litres)} L
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">{inBatch.length} entries</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
