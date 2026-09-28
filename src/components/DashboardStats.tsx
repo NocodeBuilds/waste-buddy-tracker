@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import DashboardCard from "./dashboard/DashboardCard";
 import ComicBubble from "./ComicBubble";
 import {
   WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS,
@@ -8,10 +7,12 @@ import {
 } from "@/lib/wasteTypes";
 import {
   Package, ShieldAlert, Leaf, Trash2, Recycle, Battery, Droplets,
+  CheckCircle2, AlertTriangle, Clock,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 interface Props {
   entries: WasteEntry[];
@@ -58,35 +59,15 @@ function otherWastesKg(entries: WasteEntry[]): number {
   return sumWeight(entries.filter((e) => !isDisposed(e) && e.waste_category === "other_wastes" && getMeasureUnit(e.waste_type_id) === "kg"));
 }
 
-// ── Severity row ──────────────────────────────────────────────
-
-function SeverityRow({ label, count, value, dot, countColor, weightColor, unit }: {
-  label: string; count: number; value: number; dot: string;
-  countColor?: string; weightColor?: string; unit?: string;
-}) {
-  const displayUnit = unit || "kg";
-  return (
-    <div className="flex items-center gap-1.5 py-[1px]">
-      <span className={`h-[5px] w-[5px] rounded-full shrink-0 ${dot}`} />
-      <span className={`text-[11px] font-bold w-3.5 text-right tabular-nums ${countColor || "text-foreground"}`}>{count}</span>
-      <span className={`text-[10px] ${count > 0 && countColor ? "font-semibold" : ""} text-muted-foreground flex-1`}>{label}</span>
-      <span className={`text-[10px] font-mono w-14 text-right tabular-nums ${weightColor || "text-muted-foreground"}`}>
-        {count > 0 ? `${fmtNum(value)} ${displayUnit}` : "—"}
-      </span>
-    </div>
-  );
-}
-
 // ── Generic category block ────────────────────────────────────
 
-function CategoryBlock({ entries, label, Icon, dot, textColor, unit, filterFn, totalValue }: {
-  entries: WasteEntry[]; label: string; Icon: React.ElementType; dot: string;
+function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalValue }: {
+  entries: WasteEntry[]; label: string; Icon: React.ElementType;
   textColor: string; unit: string;
   filterFn: (e: WasteEntry) => boolean;
   totalValue: number;
 }) {
   const catEntries = entries.filter((e) => !isDisposed(e) && filterFn(e));
-  const isEmpty = catEntries.length === 0;
   const ovd = catEntries.filter((e) => getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS);
   const wrn = catEntries.filter((e) => { const d = getDaysStored(e.generated_date); return d >= 70 && d < DISPOSAL_LIMIT_DAYS; });
   const saf = catEntries.filter((e) => getStatus(e) === "safe");
@@ -118,77 +99,116 @@ function CategoryBlock({ entries, label, Icon, dot, textColor, unit, filterFn, t
     ? fmtDate(dueDate(ovd.reduce((a, b) => getDaysStored(a.generated_date) > getDaysStored(b.generated_date) ? a : b)))
     : "—";
 
-  // Only one bubble open at a time
   const [openBubble, setOpenBubble] = useState<string | null>(null);
   const toggle = (key: string) => setOpenBubble(prev => prev === key ? null : key);
+
+  const totalSafePrc = totalValue > 0 ? (safW / totalValue) * 100 : 0;
+  const totalWrnPrc = totalValue > 0 ? (wrnW / totalValue) * 100 : 0;
+  const totalOvdPrc = totalValue > 0 ? (ovdW / totalValue) * 100 : 0;
+
   return (
-    <div>
-      <div className="flex items-center justify-center gap-1 mb-2">
-        <Icon className={`h-3.5 w-3.5 ${textColor}`} />
-        <span className="text-[11px] font-bold text-foreground">{label}</span>
+    <div className="flex flex-col h-full justify-between">
+      <div>
+        <div className="flex items-center justify-between gap-1 mb-2.5">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <div className={cn("p-1 rounded-md bg-secondary/80 shrink-0", textColor)}>
+              <Icon className="h-3.5 w-3.5" />
+            </div>
+            <span className="text-xs font-semibold text-foreground truncate">{label}</span>
+          </div>
+          <span className="text-[10px] font-mono font-medium text-muted-foreground shrink-0">
+            {catEntries.length} {catEntries.length === 1 ? "item" : "items"}
+          </span>
+        </div>
+
+        {/* Status Pill Counters */}
+        <div className="grid grid-cols-3 gap-1 mb-2">
+          <ComicBubble
+            tone="overdue"
+            open={openBubble === "overdue"}
+            onOpenChange={() => toggle("overdue")}
+            body={
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">Overdue (≥90d)</p>
+                <p className="font-semibold text-sm">{fmtNum(ovdW)} {unit}</p>
+                <p className="text-foreground/75 text-[11px]">{ovd.length > 0 ? `Due: ${overdueDue}` : "No overdue items"}</p>
+                <p className="text-muted-foreground text-[10px]">{maxDaysOverdue > 0 ? `${maxDaysOverdue} days past limit` : ovd.length > 0 ? "Past due" : "Compliant"}</p>
+              </div>
+            }
+          >
+            <div className={cn(
+              "flex flex-col items-center justify-center p-1 rounded-lg border text-center transition-all",
+              ovd.length > 0
+                ? "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 shadow-2xs"
+                : "bg-muted/30 border-border/60 text-muted-foreground/50"
+            )}>
+              <span className="text-[11px] font-bold font-mono leading-tight">{fmtNum(ovdW)}</span>
+              <span className="text-[8px] font-semibold uppercase tracking-wider opacity-80">Overdue</span>
+            </div>
+          </ComicBubble>
+
+          <ComicBubble
+            tone="warning"
+            open={openBubble === "warning"}
+            onOpenChange={() => toggle("warning")}
+            body={
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Warning (70-89d)</p>
+                <p className="font-semibold text-sm">{fmtNum(wrnW)} {unit}</p>
+                <p className="text-foreground/75 text-[11px]">{minDaysToDue}d remaining to 90d limit</p>
+              </div>
+            }
+          >
+            <div className={cn(
+              "flex flex-col items-center justify-center p-1 rounded-lg border text-center transition-all",
+              wrn.length > 0
+                ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400 shadow-2xs"
+                : "bg-muted/30 border-border/60 text-muted-foreground/50"
+            )}>
+              <span className="text-[11px] font-bold font-mono leading-tight">{fmtNum(wrnW)}</span>
+              <span className="text-[8px] font-semibold uppercase tracking-wider opacity-80">Warn</span>
+            </div>
+          </ComicBubble>
+
+          <ComicBubble
+            tone="success"
+            open={openBubble === "success"}
+            onOpenChange={() => toggle("success")}
+            body={
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">On Track (&lt;70d)</p>
+                <p className="font-semibold text-sm">{fmtNum(safW)} {unit}</p>
+                <p className="text-foreground/75 text-[11px]">Earliest due: {nextDue ? fmtDate(nextDue) : "—"}</p>
+              </div>
+            }
+          >
+            <div className={cn(
+              "flex flex-col items-center justify-center p-1 rounded-lg border text-center transition-all",
+              saf.length > 0
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 shadow-2xs"
+                : "bg-muted/30 border-border/60 text-muted-foreground/50"
+            )}>
+              <span className="text-[11px] font-bold font-mono leading-tight">{fmtNum(safW)}</span>
+              <span className="text-[8px] font-semibold uppercase tracking-wider opacity-80">Safe</span>
+            </div>
+          </ComicBubble>
+        </div>
+
+        {/* Proportional compliance micro-bar */}
+        <div className="w-full bg-muted/60 h-1.5 rounded-full overflow-hidden flex my-2">
+          {totalOvdPrc > 0 && <div className="bg-rose-500 h-full" style={{ width: `${totalOvdPrc}%` }} />}
+          {totalWrnPrc > 0 && <div className="bg-amber-500 h-full" style={{ width: `${totalWrnPrc}%` }} />}
+          {totalSafePrc > 0 && <div className="bg-emerald-500 h-full" style={{ width: `${totalSafePrc}%` }} />}
+        </div>
       </div>
-      <div className="flex items-start justify-center gap-2.5">
-        <ComicBubble
-          tone="overdue"
-          open={openBubble === "overdue"}
-          onOpenChange={(v) => toggle("overdue")}
-          body={
-            <div className="space-y-0.5">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-overdue/80">Overdue</p>
-              <p className="font-medium">{fmtNum(ovdW)} {unit}</p>
-              <p className="text-foreground/65">{ovd.length > 0 ? `Due: ${overdueDue}` : "No overdue items"}</p>
-              <p className="text-foreground/50">{maxDaysOverdue > 0 ? `${maxDaysOverdue} days overdue` : ovd.length > 0 ? "Past due" : "—"}</p>
-            </div>
-          }
-        >
-          <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-overdue/20 to-overdue/5 border-2 border-overdue/30 shadow-[0_2px_8px_rgba(239,68,68,0.15)] flex flex-col items-center justify-center shrink-0 animate-[pulse-gentle_3s_ease-in-out_infinite]">
-            <div className="absolute inset-[2px] rounded-full bg-gradient-to-t from-transparent to-overdue/10" />
-            <span className="relative text-[9px] font-bold text-overdue leading-none tabular-nums">{ovdW ? fmtNum(ovdW) : "0"}</span>
-            <span className="relative text-[7px] font-semibold text-overdue/70 leading-none">{ovdW ? unit : ""}</span>
-          </div>
-        </ComicBubble>
-        <ComicBubble
-          tone="warning"
-          open={openBubble === "warning"}
-          onOpenChange={(v) => toggle("warning")}
-          body={
-            <div className="space-y-0.5">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-warning/80">Warning</p>
-              <p className="font-medium">{fmtNum(wrnW)} {unit}</p>
-              <p className="text-foreground/65">{minDaysToDue}d remaining to disposal</p>
-            </div>
-          }
-        >
-          <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30 shadow-[0_2px_8px_rgba(249,115,22,0.15)] flex flex-col items-center justify-center shrink-0 animate-[pulse-gentle_3s_ease-in-out_infinite] [animation-delay:1s]">
-            <div className="absolute inset-[2px] rounded-full bg-gradient-to-t from-transparent to-orange-500/10" />
-            <span className="relative text-[9px] font-bold text-orange-500 leading-none tabular-nums">{wrnW ? fmtNum(wrnW) : "0"}</span>
-            <span className="relative text-[7px] font-semibold text-orange-500/70 leading-none">{wrnW ? unit : ""}</span>
-          </div>
-        </ComicBubble>
-        <ComicBubble
-          tone="success"
-          open={openBubble === "success"}
-          onOpenChange={(v) => toggle("success")}
-          body={
-            <div className="space-y-0.5">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-success/80">On Track</p>
-              <p className="font-medium">{fmtNum(safW)} {unit}</p>
-              <p className="text-foreground/65">Next disposal: {nextDue ? fmtDate(nextDue) : "—"}</p>
-            </div>
-          }
-        >
-          <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-success/20 to-success/5 border-2 border-success/30 shadow-[0_2px_8px_rgba(34,197,94,0.15)] flex flex-col items-center justify-center shrink-0 animate-[pulse-gentle_3s_ease-in-out_infinite] [animation-delay:2s]">
-            <div className="absolute inset-[2px] rounded-full bg-gradient-to-t from-transparent to-success/10" />
-            <span className="relative text-[9px] font-bold text-success leading-none tabular-nums">{safW ? fmtNum(safW) : "0"}</span>
-            <span className="relative text-[7px] font-semibold text-success/70 leading-none">{safW ? unit : ""}</span>
-          </div>
-        </ComicBubble>
-      </div>
-      <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-center gap-1.5 text-[11px]">
-        <span className="font-mono font-bold text-[12px]" style={{ color: textColor }}>{Math.round(totalValue)} {unit}</span>
-        <span className="text-muted-foreground">total</span>
-        <span className="text-border">·</span>
-        <span className="text-muted-foreground">{catEntries.length} {catEntries.length === 1 ? "entry" : "entries"}</span>
+
+      {/* Card Footer: Total weight and unit */}
+      <div className="pt-2 border-t border-border/60 flex items-baseline justify-between">
+        <span className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">In Storage</span>
+        <div className="text-right">
+          <span className="text-sm font-bold font-mono text-foreground">{fmtNum(Math.round(totalValue))}</span>{" "}
+          <span className="text-[10px] font-medium text-muted-foreground">{unit}</span>
+        </div>
       </div>
     </div>
   );
@@ -306,149 +326,312 @@ export default function DashboardStats({ entries }: Props) {
     other: { title: "Other Wastes", Icon: Recycle, items: otherWastesThisMonth.map((w) => ({ name: w.name, total: w.total })), unit: "kg", barColor: "bg-amber-600", textColor: "text-amber-600" },
   };
 
+  // Compliance Calculations
+  const overdueCount = active.filter((e) => getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS).length;
+  const warningCount = active.filter((e) => {
+    const d = getDaysStored(e.generated_date);
+    return d >= 70 && d < DISPOSAL_LIMIT_DAYS;
+  }).length;
+
+  const earliestDue = useMemo(() => {
+    if (active.length === 0) return null;
+    const sorted = [...active].sort((a, b) => a.generated_date.localeCompare(b.generated_date));
+    const oldest = sorted[0];
+    const gen = new Date(oldest.generated_date + "T00:00:00");
+    gen.setDate(gen.getDate() + DISPOSAL_LIMIT_DAYS);
+    const daysLeft = DISPOSAL_LIMIT_DAYS - getDaysStored(oldest.generated_date);
+    return {
+      date: gen.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+      daysLeft,
+    };
+  }, [active]);
+
   return (
     <div className="relative space-y-4">
-      {/* ── Compliance overview ─────────────────────────────────── */}
-      <section>
-        <h2 className="text-sm font-semibold text-foreground/70 mb-3">
-          Compliance Status
-        </h2>
-        <div className="grid grid-cols-2 gap-3">
-          <Card>
-            <CardContent className="p-4">
-              <CategoryBlock entries={entries} label="Hazardous Solids" Icon={ShieldAlert} dot="bg-overdue" textColor="text-overdue" unit="kg"
+      {/* ── Executive Compliance Health Banner ── */}
+      <Card className={cn(
+        "border transition-all shadow-xs overflow-hidden",
+        overdueCount > 0
+          ? "border-rose-500/30 bg-rose-500/[0.04]"
+          : warningCount > 0
+          ? "border-amber-500/30 bg-amber-500/[0.04]"
+          : "border-emerald-500/30 bg-emerald-500/[0.04]"
+      )}>
+        <CardContent className="p-3.5 sm:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "p-2.5 rounded-xl shrink-0 shadow-2xs",
+                overdueCount > 0
+                  ? "bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                  : warningCount > 0
+                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                  : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+              )}>
+                {overdueCount > 0 ? (
+                  <AlertTriangle className="h-5 w-5" />
+                ) : warningCount > 0 ? (
+                  <Clock className="h-5 w-5" />
+                ) : (
+                  <CheckCircle2 className="h-5 w-5" />
+                )}
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  {overdueCount > 0
+                    ? `${overdueCount} Overdue Disposal ${overdueCount === 1 ? "Item" : "Items"} Require Immediate Action`
+                    : warningCount > 0
+                    ? `${warningCount} ${warningCount === 1 ? "Item" : "Items"} Approaching 90-Day Storage Limit`
+                    : "Facility In 100% Statutory Compliance"}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {overdueCount > 0
+                    ? "Statutory 90-day storage limit exceeded. Arrange disposal batch with authorized vendor."
+                    : warningCount > 0
+                    ? "Items in 70–89 day window. Prepare manifest and schedule quarterly disposal batch."
+                    : "All hazardous and non-hazardous active waste records are within safe compliance limits."}
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Metrics */}
+            <div className="flex items-center gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/60 shrink-0">
+              {earliestDue && (
+                <div className="text-right pl-3 sm:border-l border-border/60">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                    Next Due
+                  </span>
+                  <span className={cn(
+                    "text-xs font-bold font-mono",
+                    earliestDue.daysLeft < 0 ? "text-rose-600 dark:text-rose-400" : earliestDue.daysLeft < 20 ? "text-amber-600" : "text-foreground"
+                  )}>
+                    {earliestDue.date}
+                  </span>
+                </div>
+              )}
+              <div className="text-right pl-3 border-l border-border/60">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                  Active Items
+                </span>
+                <span className="text-xs font-bold font-mono text-foreground">
+                  {active.length} records
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Section A: Statutory In-Storage Breakdown ── */}
+      <section className="space-y-2">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Compliance By Category (In Storage)
+          </h2>
+          <span className="text-[11px] text-muted-foreground">
+            Tap cards to inspect status breakdown
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <Card className="hover:border-rose-500/40 transition-colors">
+            <CardContent className="p-3.5 h-full">
+              <CategoryBlock
+                entries={entries}
+                label="Hazardous Solids"
+                Icon={ShieldAlert}
+                textColor="text-rose-600 dark:text-rose-400"
+                unit="kg"
                 filterFn={(e) => e.waste_category === "hazardous" && getMeasureUnit(e.waste_type_id) === "kg"}
-                totalValue={hazSolidsKg(entries)} />
+                totalValue={hazSolidsKg(entries)}
+              />
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <CategoryBlock entries={entries} label="Non-Hazardous Solids" Icon={Leaf} dot="bg-success" textColor="text-success" unit="kg"
+
+          <Card className="hover:border-emerald-500/40 transition-colors">
+            <CardContent className="p-3.5 h-full">
+              <CategoryBlock
+                entries={entries}
+                label="Non-Haz Solids"
+                Icon={Leaf}
+                textColor="text-emerald-600 dark:text-emerald-400"
+                unit="kg"
                 filterFn={(e) => e.waste_category === "non_hazardous" && getMeasureUnit(e.waste_type_id) === "kg"}
-                totalValue={nonHazSolidsKg(entries)} />
+                totalValue={nonHazSolidsKg(entries)}
+              />
             </CardContent>
           </Card>
-        </div>
-        <div className="grid grid-cols-2 gap-3 mt-3">
-          <Card>
-            <CardContent className="p-4">
-              <CategoryBlock entries={entries} label="E-Waste" Icon={Trash2} dot="bg-orange-500" textColor="text-orange-500" unit="kg"
-                filterFn={(e) => e.waste_category === "e_waste" && e.waste_type_id !== "used-batteries"}
-                totalValue={eWasteKg(entries)} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <CategoryBlock entries={entries} label="Battery Waste" Icon={Battery} dot="bg-yellow-600" textColor="text-yellow-600" unit="kg"
-                filterFn={(e) => e.waste_type_id === "used-batteries"}
-                totalValue={batteryKg(entries)} />
-            </CardContent>
-          </Card>
-        </div>
-        <div className="grid grid-cols-2 gap-3 mt-3">
-          <Card>
-            <CardContent className="p-4">
-              <CategoryBlock entries={entries} label="Liquid Waste" Icon={Droplets} dot="bg-cyan-500" textColor="text-cyan-500" unit="L"
+
+          <Card className="hover:border-cyan-500/40 transition-colors">
+            <CardContent className="p-3.5 h-full">
+              <CategoryBlock
+                entries={entries}
+                label="Liquid Waste"
+                Icon={Droplets}
+                textColor="text-cyan-600 dark:text-cyan-400"
+                unit="L"
                 filterFn={(e) => getMeasureUnit(e.waste_type_id) === "litres"}
-                totalValue={liquidLitres(entries)} />
+                totalValue={liquidLitres(entries)}
+              />
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <CategoryBlock entries={entries} label="Other Wastes" Icon={Recycle} dot="bg-amber-600" textColor="text-amber-600" unit="kg"
+
+          <Card className="hover:border-violet-500/40 transition-colors">
+            <CardContent className="p-3.5 h-full">
+              <CategoryBlock
+                entries={entries}
+                label="E-Waste"
+                Icon={Trash2}
+                textColor="text-violet-600 dark:text-violet-400"
+                unit="kg"
+                filterFn={(e) => e.waste_category === "e_waste" && e.waste_type_id !== "used-batteries"}
+                totalValue={eWasteKg(entries)}
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="hover:border-amber-500/40 transition-colors">
+            <CardContent className="p-3.5 h-full">
+              <CategoryBlock
+                entries={entries}
+                label="Battery Waste"
+                Icon={Battery}
+                textColor="text-amber-600 dark:text-amber-400"
+                unit="kg"
+                filterFn={(e) => e.waste_type_id === "used-batteries"}
+                totalValue={batteryKg(entries)}
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="hover:border-slate-500/40 transition-colors">
+            <CardContent className="p-3.5 h-full">
+              <CategoryBlock
+                entries={entries}
+                label="Other Wastes"
+                Icon={Recycle}
+                textColor="text-slate-600 dark:text-slate-400"
+                unit="kg"
                 filterFn={(e) => e.waste_category === "other_wastes" && getMeasureUnit(e.waste_type_id) === "kg"}
-                totalValue={otherWastesKg(entries)} />
+                totalValue={otherWastesKg(entries)}
+              />
             </CardContent>
           </Card>
         </div>
       </section>
 
-      {/* ═══════════ SECTION B: This month ═══════════ */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-foreground/70 mb-1">
-          This Month
-        </h2>
+      {/* ── Section B: This Month Generation ── */}
+      <section className="space-y-2 pt-1">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            This Month's Generation
+          </h2>
+          <span className="text-[11px] text-muted-foreground">
+            Tap cards to view type breakdown
+          </span>
+        </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {solidsThisMonth.length === 0 && liquidThisMonth.length === 0 && eWasteThisMonth.length === 0 && batteryThisMonth.length === 0 && otherWastesThisMonth.length === 0 ? (
-            <div
-              className="col-span-full"
-            >
+            <div className="col-span-full">
               <Card>
-                <CardContent className="py-8 text-center text-muted-foreground flex flex-col items-center gap-2">
-                  <Package className="h-6 w-6 opacity-40" />
-                  <p className="text-xs">No waste generated this month yet.</p>
+                <CardContent className="py-6 text-center text-muted-foreground flex flex-col items-center gap-1.5">
+                  <Package className="h-5 w-5 opacity-40" />
+                  <p className="text-xs">No waste entries recorded this month yet.</p>
                 </CardContent>
               </Card>
             </div>
           ) : (
             <>
-              <div>
-                <Card className="border-overdue/30 tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-overdue/50" style={{ "--ripple-color": "rgba(239,68,68,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("hazardous")}>
-                  <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
-                    <div className="flex items-center gap-2">
-                      <ShieldAlert className="h-5 w-5 text-overdue shrink-0" />
-                      <p className="text-xl font-bold leading-tight">{fmtNum(hazSolidsKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">Hazardous Solids</p>
-                  </CardContent>
-                </Card>
-              </div>
-              <div>
-                <Card className="border-success/30 tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-success/50" style={{ "--ripple-color": "rgba(34,197,94,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("nonHazardous")}>
-                  <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
-                    <div className="flex items-center gap-2">
-                      <Leaf className="h-5 w-5 text-success shrink-0" />
-                      <p className="text-xl font-bold leading-tight">{fmtNum(nonHazSolidsKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">Non-Hazardous Solids</p>
-                  </CardContent>
-                </Card>
-              </div>
-              <div>
-                <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-cyan-500/50" style={{ "--ripple-color": "rgba(6,182,212,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("liquid")}>
-                  <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
-                    <div className="flex items-center gap-2">
-                      <Droplets className="h-5 w-5 text-cyan-500 shrink-0" />
-                      <p className="text-xl font-bold leading-tight">{fmtNum(liquidLitres(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">L</span></p>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">Liquid Waste</p>
-                  </CardContent>
-                </Card>
-              </div>
-              <div>
-                <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-orange-500/50" style={{ "--ripple-color": "rgba(249,115,22,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("ewaste")}>
-                  <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
-                    <div className="flex items-center gap-2">
-                      <Trash2 className="h-5 w-5 text-orange-500 shrink-0" />
-                      <p className="text-xl font-bold leading-tight">{fmtNum(eWasteKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">E-Waste</p>
-                  </CardContent>
-                </Card>
-              </div>
-              <div>
-                <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-yellow-600/50" style={{ "--ripple-color": "rgba(202,138,4,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("battery")}>
-                  <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
-                    <div className="flex items-center gap-2">
-                      <Battery className="h-5 w-5 text-yellow-600 shrink-0" />
-                      <p className="text-xl font-bold leading-tight">{fmtNum(batteryKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">Battery Waste</p>
-                  </CardContent>
-                </Card>
-              </div>
-              <div>
-                <Card className="tap-ripple cursor-pointer active:scale-[0.97] transition-all duration-200 hover:shadow-md hover:border-amber-600/50" style={{ "--ripple-color": "rgba(217,119,6,0.25)" } as React.CSSProperties} onClick={() => setSplitBar("other")}>
-                  <CardContent className="p-4 flex flex-col items-center text-center gap-1.5">
-                    <div className="flex items-center gap-2">
-                      <Recycle className="h-5 w-5 text-amber-600 shrink-0" />
-                      <p className="text-xl font-bold leading-tight">{fmtNum(otherWastesKg(thisMonthEntries))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">Other Wastes</p>
-                  </CardContent>
-                </Card>
-              </div>
+              <Card
+                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-rose-500/50"
+                onClick={() => setSplitBar("hazardous")}
+              >
+                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                  <div className="p-1 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                    <ShieldAlert className="h-4 w-4 shrink-0" />
+                  </div>
+                  <p className="text-lg font-bold font-mono leading-tight mt-0.5">
+                    {fmtNum(hazSolidsKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span>
+                  </p>
+                  <p className="text-[10px] font-medium text-muted-foreground">Hazardous Solids</p>
+                </CardContent>
+              </Card>
+
+              <Card
+                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-emerald-500/50"
+                onClick={() => setSplitBar("nonHazardous")}
+              >
+                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                  <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                    <Leaf className="h-4 w-4 shrink-0" />
+                  </div>
+                  <p className="text-lg font-bold font-mono leading-tight mt-0.5">
+                    {fmtNum(nonHazSolidsKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span>
+                  </p>
+                  <p className="text-[10px] font-medium text-muted-foreground">Non-Haz Solids</p>
+                </CardContent>
+              </Card>
+
+              <Card
+                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-cyan-500/50"
+                onClick={() => setSplitBar("liquid")}
+              >
+                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                  <div className="p-1 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+                    <Droplets className="h-4 w-4 shrink-0" />
+                  </div>
+                  <p className="text-lg font-bold font-mono leading-tight mt-0.5">
+                    {fmtNum(liquidLitres(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">L</span>
+                  </p>
+                  <p className="text-[10px] font-medium text-muted-foreground">Liquid Waste</p>
+                </CardContent>
+              </Card>
+
+              <Card
+                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-violet-500/50"
+                onClick={() => setSplitBar("ewaste")}
+              >
+                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                  <div className="p-1 rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                    <Trash2 className="h-4 w-4 shrink-0" />
+                  </div>
+                  <p className="text-lg font-bold font-mono leading-tight mt-0.5">
+                    {fmtNum(eWasteKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span>
+                  </p>
+                  <p className="text-[10px] font-medium text-muted-foreground">E-Waste</p>
+                </CardContent>
+              </Card>
+
+              <Card
+                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-amber-500/50"
+                onClick={() => setSplitBar("battery")}
+              >
+                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                  <div className="p-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                    <Battery className="h-4 w-4 shrink-0" />
+                  </div>
+                  <p className="text-lg font-bold font-mono leading-tight mt-0.5">
+                    {fmtNum(batteryKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span>
+                  </p>
+                  <p className="text-[10px] font-medium text-muted-foreground">Battery Waste</p>
+                </CardContent>
+              </Card>
+
+              <Card
+                className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-slate-500/50"
+                onClick={() => setSplitBar("other")}
+              >
+                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
+                  <div className="p-1 rounded-md bg-slate-500/10 text-slate-600 dark:text-slate-400">
+                    <Recycle className="h-4 w-4 shrink-0" />
+                  </div>
+                  <p className="text-lg font-bold font-mono leading-tight mt-0.5">
+                    {fmtNum(otherWastesKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span>
+                  </p>
+                  <p className="text-[10px] font-medium text-muted-foreground">Other Wastes</p>
+                </CardContent>
+              </Card>
             </>
           )}
         </div>
@@ -459,15 +642,6 @@ export default function DashboardStats({ entries }: Props) {
             onOpenChange={(v) => { if (!v) setSplitBar(null); }}
             {...splitBarData[splitBar]}
           />
-        )}
-
-        {!hasAnyThisMonth && (
-          <Card>
-            <CardContent className="p-4 text-center text-xs text-muted-foreground flex flex-col items-center gap-1">
-              <Package className="h-5 w-5 opacity-40" />
-              No waste generated this month yet.
-            </CardContent>
-          </Card>
         )}
       </section>
     </div>

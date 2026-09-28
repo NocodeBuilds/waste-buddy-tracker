@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, Loader2, Eye, EyeOff } from "lucide-react";
+import { Shield, Loader2, Eye, EyeOff, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 const schema = z.object({
-  email: z.string().email("Invalid email"),
-  password: z.string().min(6, "Min 6 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type Mode = "login" | "bootstrap" | "reset";
@@ -41,7 +41,7 @@ export default function AdminAuth() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setSubmitting(false);
     if (error) return toast.error(error.message);
-    toast.success("Welcome, admin");
+    toast.success("Welcome back, Administrator");
     navigate("/app");
   };
 
@@ -73,20 +73,20 @@ export default function AdminAuth() {
     if (bErr || (data as any)?.error) {
       return toast.error((data as any)?.error ?? bErr?.message ?? "Bootstrap failed — admin already exists.");
     }
-    toast.success("You're the site admin. Welcome!");
+    toast.success("Primary Administrator configured successfully!");
     navigate("/app");
   };
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!z.string().email().safeParse(email).success) return toast.error("Enter a valid email");
+    if (!z.string().email().safeParse(email).success) return toast.error("Please enter a valid email address");
     setSubmitting(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setSubmitting(false);
     if (error) return toast.error(error.message);
-    toast.success("Password reset email sent");
+    toast.success("Password reset instructions sent to your email");
     setMode("login");
   };
 
@@ -94,114 +94,143 @@ export default function AdminAuth() {
     mode === "login" ? handleLogin : mode === "bootstrap" ? handleBootstrap : handleReset;
 
   const title =
-    mode === "login" ? "Admin Sign In" : mode === "bootstrap" ? "Claim First Admin" : "Reset Password";
+    mode === "login" ? "Admin Sign In" : mode === "bootstrap" ? "Claim Primary Admin" : "Reset Password";
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-gradient-to-b from-background to-secondary/40">
-      <Card className="w-full max-w-md shadow-lg border-primary/30">
-        <CardContent className="p-6 space-y-5">
-          <div className="text-center space-y-1">
-            <div className="bg-primary text-primary-foreground rounded-xl p-3 w-fit mx-auto mb-2">
-              <Shield className="h-6 w-6" />
-            </div>
-            <h1 className="text-xl font-bold">{title}</h1>
-            <p className="text-xs text-muted-foreground">
-              {mode === "login"
-                ? "Restricted area — administrators only"
-                : mode === "bootstrap"
-                ? "First-time setup: create your admin account for all sites"
-                : "We'll email you a reset link"}
-            </p>
+    <div className="min-h-screen flex flex-col justify-center items-center px-4 py-12 bg-gradient-to-b from-background via-background to-secondary/30">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/25 mb-1">
+            <Shield className="h-6 w-6" />
           </div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">WasteBuddy Admin</h1>
+          <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5 font-medium">
+            <Lock className="h-3.5 w-3.5 text-primary" />
+            Restricted Facility Governance Console
+          </p>
+        </div>
 
-          <form onSubmit={onSubmit} className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+        <Card className="rounded-2xl border border-border/80 shadow-md bg-card/95 backdrop-blur-xs">
+          <CardContent className="p-6 sm:p-7 space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-lg font-bold text-foreground">{title}</h2>
+              <p className="text-xs text-muted-foreground">
+                {mode === "login"
+                  ? "Restricted area — credentials verified against site admin records"
+                  : mode === "bootstrap"
+                  ? "Initial setup: configure root administrative privileges"
+                  : "Enter your admin email to receive recovery instructions"}
+              </p>
             </div>
-            {mode !== "reset" && (
+
+            <form onSubmit={onSubmit} className="space-y-3.5 pt-1">
               <div className="space-y-1.5">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPw ? "text" : "password"}
-                    autoComplete={mode === "bootstrap" ? "new-password" : "current-password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="pr-10"
-                  />
+                <Label htmlFor="email" className="text-xs font-semibold">
+                  Administrator Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@windpower.com"
+                  className="h-10 text-xs rounded-lg"
+                  required
+                />
+              </div>
+
+              {mode !== "reset" && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password" className="text-xs font-semibold">
+                      Password
+                    </Label>
+                    {mode === "login" && (
+                      <button
+                        type="button"
+                        onClick={() => setMode("reset")}
+                        className="text-[11px] text-primary hover:underline font-medium"
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPw ? "text" : "password"}
+                      autoComplete={mode === "bootstrap" ? "new-password" : "current-password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="h-10 text-xs rounded-lg pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPw((s) => !s)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label={showPw ? "Hide password" : "Show password"}
+                    >
+                      {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full h-10 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm rounded-lg mt-2"
+                disabled={submitting}
+              >
+                {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                {mode === "bootstrap"
+                  ? "Claim Admin Account"
+                  : mode === "reset"
+                  ? "Send Password Reset Link"
+                  : "Sign In as Admin"}
+              </Button>
+            </form>
+
+            <div className="pt-2 border-t border-border/60 text-center text-xs text-muted-foreground space-y-1.5">
+              {adminExists === false && mode === "login" && (
+                <p>
+                  No admin configured yet?{" "}
                   <button
                     type="button"
-                    onClick={() => setShowPw((s) => !s)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label={showPw ? "Hide password" : "Show password"}
+                    onClick={() => setMode("bootstrap")}
+                    className="text-primary font-semibold hover:underline"
                   >
-                    {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    Claim primary admin
                   </button>
-                </div>
-              </div>
-            )}
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {mode === "login"
-                ? "Sign in as admin"
-                : mode === "bootstrap"
-                ? "Create admin account"
-                : "Send reset email"}
-            </Button>
-          </form>
-
-          <div className="flex flex-col items-center gap-2 text-xs">
-            {mode === "login" && (
-              <button
-                type="button"
-                onClick={() => setMode("reset")}
-                className="text-muted-foreground hover:text-foreground underline"
-              >
-                Forgot password?
-              </button>
-            )}
-            {mode !== "login" && (
-              <button
-                type="button"
-                onClick={() => setMode("login")}
-                className="text-muted-foreground hover:text-foreground underline"
-              >
-                Back to admin sign in
-              </button>
-            )}
-            {mode === "login" && adminExists !== true && (
-              <button
-                type="button"
-                onClick={() => setMode("bootstrap")}
-                className="text-accent hover:underline font-medium"
-              >
-                First-time setup — Sign up as admin
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => navigate("/auth")}
-              className="text-muted-foreground hover:text-foreground underline"
-            >
-              Not an admin? User sign in
-            </button>
-          </div>
-
-          <p className="text-[11px] text-center text-muted-foreground border-t pt-3">
-            This page is for site administrators only.
-          </p>
-        </CardContent>
-      </Card>
+                </p>
+              )}
+              {mode !== "login" && (
+                <p>
+                  Remember your password?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setMode("login")}
+                    className="text-primary font-semibold hover:underline"
+                  >
+                    Back to sign in
+                  </button>
+                </p>
+              )}
+              <p>
+                <button
+                  type="button"
+                  onClick={() => navigate("/auth")}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  ← Return to regular operator portal
+                </button>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

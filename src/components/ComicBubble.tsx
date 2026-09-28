@@ -12,31 +12,24 @@ interface ComicBubbleProps {
 
 const TONE_CLASSES: Record<ComicBubbleProps["tone"], {
   bubble: string;
-  arrow: string;
   accent: string;
 }> = {
   overdue: {
-    bubble: "border-overdue/25 bg-overdue/[0.06]",
-    arrow: "bg-overdue/[0.06] border-r-overdue/25 border-t-overdue/25",
-    accent: "text-overdue",
+    bubble: "border-rose-500/30 bg-card text-foreground",
+    accent: "text-rose-600 dark:text-rose-400",
   },
   warning: {
-    bubble: "border-orange-400/25 bg-orange-400/[0.06]",
-    arrow: "bg-orange-400/[0.06] border-r-orange-400/25 border-t-orange-400/25",
-    accent: "text-orange-500",
+    bubble: "border-amber-500/30 bg-card text-foreground",
+    accent: "text-amber-600 dark:text-amber-400",
   },
   success: {
-    bubble: "border-success/25 bg-success/[0.06]",
-    arrow: "bg-success/[0.06] border-r-success/25 border-t-success/25",
-    accent: "text-success",
+    bubble: "border-emerald-500/30 bg-card text-foreground",
+    accent: "text-emerald-600 dark:text-emerald-400",
   },
 };
 
 /**
- * A light, transparent tooltip-style popup anchored to the dashboard circles.
- *
- * Renders below the trigger by default so it never overlaps the app header.
- * Collision detection flips it upward only when near the bottom of the viewport.
+ * A sleek, high-clarity popover anchored to compliance status counters.
  */
 export default function ComicBubble({
   children,
@@ -52,7 +45,7 @@ export default function ComicBubble({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="relative inline-flex items-center justify-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
+          className="relative inline-flex items-center justify-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 rounded-xl"
           aria-label={`${tone} details`}
         >
           {children}
@@ -66,15 +59,12 @@ export default function ComicBubble({
         collisionBoundary={[]}
         collisionPadding={12}
         className={cn(
-          "relative w-52 rounded-xl border",
-          "backdrop-blur-md shadow-sm",
-          "before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full",
-          tones.bubble,
-          tones.accent,
-          `before:bg-current before:opacity-50`
+          "relative w-56 rounded-xl border p-3",
+          "backdrop-blur-md shadow-lg bg-card/95",
+          tones.bubble
         )}
       >
-        <div className="space-y-0.5 px-3 py-2 text-[11px] leading-snug text-foreground/80">
+        <div className="space-y-1 text-xs leading-normal">
           {body}
         </div>
       </PopoverContent>
