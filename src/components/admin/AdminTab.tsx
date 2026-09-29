@@ -11,10 +11,10 @@ import {
 import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-import UserManagementView from "./admin/UserManagementView";
-import FacilitiesManagementView from "./admin/FacilitiesManagementView";
-import RecordsOversightView from "./admin/RecordsOversightView";
-import AuditTrailView from "./admin/AuditTrailView";
+import UserManagementView from "./UserManagementView";
+import FacilitiesManagementView from "./FacilitiesManagementView";
+import RecordsOversightView from "./RecordsOversightView";
+import AuditTrailView from "./AuditTrailView";
 
 export default function AdminTab() {
   const { currentSite, sites, isAdmin, refresh } = useSite();

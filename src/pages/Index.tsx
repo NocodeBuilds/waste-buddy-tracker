@@ -1,21 +1,21 @@
 import { useMemo, useState } from "react";
 import { useWasteEntries } from "@/hooks/useWasteEntries";
 import { useSite } from "@/contexts/SiteContext";
-import WasteEntryForm from "@/components/WasteEntryForm";
-import FuturisticDashboard from "@/components/FuturisticDashboard";
-import WasteInventoryTable from "@/components/WasteInventoryTable";
-import AlertsPanel from "@/components/AlertsPanel";
-import AnalyticsTab from "@/components/AnalyticsTab";
-import SettingsTab from "@/components/SettingsTab";
-import AdminTab from "@/components/AdminTab";
-import RequestSiteAccess from "@/components/RequestSiteAccess";
-import BottomNav, { TabId } from "@/components/BottomNav";
-import DesktopSidebar from "@/components/DesktopSidebar";
-import EditWasteDialog from "@/components/EditWasteDialog";
-import OfflineBanner from "@/components/OfflineBanner";
+import WasteEntryForm from "@/components/inventory/WasteEntryForm";
+import FuturisticDashboard from "@/components/dashboard/FuturisticDashboard";
+import WasteInventoryTable from "@/components/inventory/WasteInventoryTable";
+import AlertsPanel from "@/components/common/AlertsPanel";
+import AnalyticsTab from "@/components/analytics/AnalyticsTab";
+import SettingsTab from "@/components/settings/SettingsTab";
+import AdminTab from "@/components/admin/AdminTab";
+import RequestSiteAccess from "@/components/auth/RequestSiteAccess";
+import BottomNav, { TabId } from "@/components/layout/BottomNav";
+import DesktopSidebar from "@/components/layout/DesktopSidebar";
+import EditWasteDialog from "@/components/inventory/EditWasteDialog";
+import OfflineBanner from "@/components/layout/OfflineBanner";
 import { WasteEntry, isEntryOverdue, isEntryWarning } from "@/lib/wasteTypes";
 
-import SiteSwitcher from "@/components/SiteSwitcher";
+import SiteSwitcher from "@/components/layout/SiteSwitcher";
 import { Bell, Home, List, BarChart3, Settings, Shield, Plus } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,

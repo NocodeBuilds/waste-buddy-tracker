@@ -1,4 +1,4 @@
-import { TabId } from "@/components/BottomNav";
+import { TabId } from "./BottomNav";
 import { Home, List, BarChart3, Settings, Shield, Plus, LogOut, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
