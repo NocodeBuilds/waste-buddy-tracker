@@ -14,7 +14,7 @@ import EditWasteDialog from "@/components/EditWasteDialog";
 import { WasteEntry, DISPOSAL_LIMIT_DAYS, getDaysStored, isDisposed } from "@/lib/wasteTypes";
 
 import SiteSwitcher from "@/components/SiteSwitcher";
-import { Leaf, Loader2, Bell, Home, List, BarChart3, Settings, Plus, Shield } from "lucide-react";
+import { Loader2, Bell, Home, List, BarChart3, Settings, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -54,16 +54,17 @@ const Index = () => {
     <div className="min-h-screen bg-background text-foreground">
       {/* Unified Modern Top Navbar */}
       <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-card/90 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between gap-3">
+        <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 h-14 flex items-center justify-between gap-3">
           {/* Brand mark */}
           <div className="flex items-center gap-2.5 shrink-0">
-            <div className="bg-primary text-primary-foreground rounded-lg p-1.5 shadow-xs">
-              <Leaf className="h-4.5 w-4.5" />
-            </div>
+            <img
+              src="/icons/icon-192x192.png"
+              alt="WasteBuddy"
+              className="h-8 w-8 rounded-lg shadow-xs object-cover border border-primary/20 shrink-0"
+            />
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-bold tracking-tight text-foreground">WasteBuddy</span>
-              <span className="hidden sm:inline-flex px-1.5 py-0.5 text-[9px] font-semibold bg-primary/10 text-primary rounded-full uppercase tracking-wider">
-                Compliance
+              <span className="text-sm font-bold tracking-tight text-foreground">
+                Waste<span className="text-primary font-bold">Buddy</span>
               </span>
             </div>
           </div>
@@ -121,22 +122,12 @@ const Index = () => {
                 <AlertsPanel entries={entries} />
               </PopoverContent>
             </Popover>
-
-            {/* Desktop Log Entry Button */}
-            <Button
-              onClick={() => setDrawerOpen(true)}
-              size="sm"
-              className="hidden lg:inline-flex gap-1.5 shadow-xs"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Log Waste</span>
-            </Button>
           </div>
         </div>
       </header>
 
       {/* Main content */}
-      <main className="px-3 sm:px-6 py-4 pb-24 lg:pb-8 space-y-4 max-w-7xl mx-auto">
+      <main className="w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-4 pb-24 lg:pb-8 space-y-4">
         {isLoading || siteLoading ? (
         <div className="space-y-4">
           {/* Skeleton header */}
@@ -171,9 +162,10 @@ const Index = () => {
       ) : (
           <>
             {activeTab === "home" && (
-              <>
-                <FuturisticDashboard entries={entries} />
-              </>
+              <FuturisticDashboard
+                entries={entries}
+                onLogWaste={() => setDrawerOpen(true)}
+              />
             )}
             {activeTab === "inventory" && (
               <WasteInventoryTable

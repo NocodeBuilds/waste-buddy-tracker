@@ -452,7 +452,7 @@ export default function SettingsTab({ entries }: Props) {
               <strong className="text-foreground">Statutory Storage Threshold:</strong> 90 calendar days on-site maximum storage window.
             </p>
             <p>
-              <strong className="text-foreground">Platform Engine:</strong> WasteBuddy Enterprise PWA v2.0 (Offline-capable, role-based).
+              <strong className="text-foreground">Platform Engine:</strong> Waste<span className="text-primary font-semibold">Buddy</span> Enterprise PWA v2.0 (Offline-capable, role-based).
             </p>
           </div>
         </CardContent>

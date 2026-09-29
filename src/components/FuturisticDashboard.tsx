@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { WasteEntry, fmtNum, getLocalDate, WASTE_TYPES } from "@/lib/wasteTypes";
+import { WasteEntry, fmtNum, WASTE_TYPES } from "@/lib/wasteTypes";
 import DashboardStats from "./DashboardStats";
 import { format } from "date-fns";
 import { Clock, Inbox, ShieldAlert, Leaf, Droplets, Trash2, Battery, Recycle } from "lucide-react";
@@ -9,41 +9,19 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   entries: WasteEntry[];
+  onLogWaste?: () => void;
 }
 
-function getWeekStart(): string {
-  const now = new Date();
-  const day = now.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + diff);
-  return getLocalDate(monday);
-}
-
-function getWeekEnd(): string {
-  const monday = new Date(getWeekStart() + "T00:00:00");
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  return getLocalDate(sunday);
-}
-
-function isThisWeek(dateStr: string): boolean {
-  return dateStr >= getWeekStart() && dateStr <= getWeekEnd();
-}
-
-function weekLabel(): string {
-  const s = new Date(getWeekStart() + "T00:00:00");
-  const e = new Date(getWeekEnd() + "T00:00:00");
-  const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
-  return `${s.toLocaleDateString("en-IN", opts)} – ${e.toLocaleDateString("en-IN", opts)}`;
-}
-
-export default function FuturisticDashboard({ entries }: Props) {
-  // Filter entries from this week (Mon–Sun), newest first
-  const weekEntries = useMemo(() => {
-    return entries
-      .filter((e) => isThisWeek(e.generated_date))
-      .sort((a, b) => b.generated_date.localeCompare(a.generated_date));
+export default function FuturisticDashboard({ entries, onLogWaste }: Props) {
+  // Latest 5 entries irrespective of date/week, sorted newest first
+  const recentEntries = useMemo(() => {
+    return [...entries]
+      .sort((a, b) => {
+        const d = b.generated_date.localeCompare(a.generated_date);
+        if (d !== 0) return d;
+        return (b.created_at || "").localeCompare(a.created_at || "");
+      })
+      .slice(0, 5);
   }, [entries]);
 
   const getWasteName = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.name || id;
@@ -66,9 +44,9 @@ export default function FuturisticDashboard({ entries }: Props) {
   return (
     <div className="space-y-4">
       {/* Two-section summary (cumulative + this month) */}
-      <DashboardStats entries={entries} />
+      <DashboardStats entries={entries} onLogWaste={onLogWaste} />
 
-      {/* This Week at a Glance */}
+      {/* Recent Entries at a Glance */}
       <Card className="border-border/80 shadow-xs overflow-hidden">
         <CardContent className="p-0">
           {/* Header */}
@@ -79,16 +57,16 @@ export default function FuturisticDashboard({ entries }: Props) {
               </div>
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                  Recent Entries ({weekLabel()})
+                  Recent Entries
                 </h3>
               </div>
             </div>
             <span className="text-[11px] font-mono text-muted-foreground">
-              {weekEntries.length} {weekEntries.length === 1 ? "entry" : "entries"} this week
+              Latest {recentEntries.length} {recentEntries.length === 1 ? "entry" : "entries"} logged
             </span>
           </div>
 
-          {weekEntries.length > 0 ? (
+          {recentEntries.length > 0 ? (
             <div>
               {/* Desktop Table View */}
               <div className="hidden sm:block overflow-x-auto max-h-[300px]">
@@ -104,7 +82,7 @@ export default function FuturisticDashboard({ entries }: Props) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50 text-xs">
-                    {weekEntries.map((entry) => {
+                    {recentEntries.map((entry) => {
                       const cat = getCategoryDetails(entry.waste_category);
                       const isLiquid = ["any-liquid","waste-oil","waste-chemical","waste-water","waste-gas","liquid-chemical"].includes(entry.waste_type_id);
                       return (
@@ -140,7 +118,7 @@ export default function FuturisticDashboard({ entries }: Props) {
 
               {/* Mobile Card List View */}
               <div className="sm:hidden divide-y divide-border/50 max-h-[340px] overflow-y-auto">
-                {weekEntries.map((entry) => {
+                {recentEntries.map((entry) => {
                   const cat = getCategoryDetails(entry.waste_category);
                   const isLiquid = ["any-liquid","waste-oil","waste-chemical","waste-water","waste-gas","liquid-chemical"].includes(entry.waste_type_id);
                   return (
@@ -175,7 +153,7 @@ export default function FuturisticDashboard({ entries }: Props) {
           ) : (
             <div className="flex flex-col items-center justify-center gap-1.5 py-8 text-xs text-muted-foreground">
               <Inbox className="h-6 w-6 opacity-30" />
-              <span>No waste entries recorded this week.</span>
+              <span>No waste entries recorded yet.</span>
             </div>
           )}
         </CardContent>

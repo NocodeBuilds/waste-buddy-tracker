@@ -7,15 +7,17 @@ import {
 } from "@/lib/wasteTypes";
 import {
   Package, ShieldAlert, Leaf, Trash2, Recycle, Battery, Droplets,
-  CheckCircle2, AlertTriangle, Clock,
+  CheckCircle2, AlertTriangle, Clock, Plus,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface Props {
   entries: WasteEntry[];
+  onLogWaste?: () => void;
 }
 
 function isThisMonth(dateStr: string): boolean {
@@ -137,13 +139,16 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
             }
           >
             <div className={cn(
-              "flex flex-col items-center justify-center p-1 rounded-lg border text-center transition-all",
+              "w-full h-11 py-1 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
               ovd.length > 0
                 ? "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 shadow-2xs"
-                : "bg-muted/30 border-border/60 text-muted-foreground/50"
+                : "bg-muted/30 border-border/60 text-muted-foreground/60"
             )}>
-              <span className="text-[11px] font-bold font-mono leading-tight">{fmtNum(ovdW)}</span>
-              <span className="text-[8px] font-semibold uppercase tracking-wider opacity-80">Overdue</span>
+              <div className="flex items-baseline justify-center gap-0.5 max-w-full px-0.5 truncate leading-tight">
+                <span className="text-[11px] font-bold font-mono">{fmtNum(ovdW)}</span>
+                <span className="text-[8.5px] font-medium opacity-80">{unit}</span>
+              </div>
+              <span className="text-[8px] font-semibold uppercase tracking-wider mt-0.5 leading-none">Overdue</span>
             </div>
           </ComicBubble>
 
@@ -160,13 +165,16 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
             }
           >
             <div className={cn(
-              "flex flex-col items-center justify-center p-1 rounded-lg border text-center transition-all",
+              "w-full h-11 py-1 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
               wrn.length > 0
                 ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400 shadow-2xs"
-                : "bg-muted/30 border-border/60 text-muted-foreground/50"
+                : "bg-muted/30 border-border/60 text-muted-foreground/60"
             )}>
-              <span className="text-[11px] font-bold font-mono leading-tight">{fmtNum(wrnW)}</span>
-              <span className="text-[8px] font-semibold uppercase tracking-wider opacity-80">Warn</span>
+              <div className="flex items-baseline justify-center gap-0.5 max-w-full px-0.5 truncate leading-tight">
+                <span className="text-[11px] font-bold font-mono">{fmtNum(wrnW)}</span>
+                <span className="text-[8.5px] font-medium opacity-80">{unit}</span>
+              </div>
+              <span className="text-[8px] font-semibold uppercase tracking-wider mt-0.5 leading-none">Warning</span>
             </div>
           </ComicBubble>
 
@@ -183,13 +191,16 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
             }
           >
             <div className={cn(
-              "flex flex-col items-center justify-center p-1 rounded-lg border text-center transition-all",
+              "w-full h-11 py-1 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
               saf.length > 0
                 ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 shadow-2xs"
-                : "bg-muted/30 border-border/60 text-muted-foreground/50"
+                : "bg-muted/30 border-border/60 text-muted-foreground/60"
             )}>
-              <span className="text-[11px] font-bold font-mono leading-tight">{fmtNum(safW)}</span>
-              <span className="text-[8px] font-semibold uppercase tracking-wider opacity-80">Safe</span>
+              <div className="flex items-baseline justify-center gap-0.5 max-w-full px-0.5 truncate leading-tight">
+                <span className="text-[11px] font-bold font-mono">{fmtNum(safW)}</span>
+                <span className="text-[8.5px] font-medium opacity-80">{unit}</span>
+              </div>
+              <span className="text-[8px] font-semibold uppercase tracking-wider mt-0.5 leading-none">Safe</span>
             </div>
           </ComicBubble>
         </div>
@@ -255,7 +266,7 @@ function SplitBarDialog({ open, onOpenChange, title, Icon, items, unit, barColor
   );
 }
 
-export default function DashboardStats({ entries }: Props) {
+export default function DashboardStats({ entries, onLogWaste }: Props) {
   const active = entries.filter((e) => !isDisposed(e));
 
   // ── This month
@@ -417,6 +428,20 @@ export default function DashboardStats({ entries }: Props) {
                   {active.length} records
                 </span>
               </div>
+
+              {/* Desktop-only prominent CTA in Top Banner */}
+              {onLogWaste && (
+                <div className="hidden lg:flex items-center pl-3 border-l border-border/60">
+                  <Button
+                    onClick={onLogWaste}
+                    size="sm"
+                    className="gap-1.5 shadow-xs font-semibold px-3.5"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Log Waste</span>
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
@@ -424,13 +449,10 @@ export default function DashboardStats({ entries }: Props) {
 
       {/* ── Section A: Statutory In-Storage Breakdown ── */}
       <section className="space-y-2">
-        <div className="flex items-center justify-between px-1">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <div className="px-1">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
             Compliance By Category (In Storage)
           </h2>
-          <span className="text-[11px] text-muted-foreground">
-            Tap cards to inspect status breakdown
-          </span>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">

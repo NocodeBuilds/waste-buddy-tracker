@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Leaf, Loader2, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Loader2, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 const loginSchema = z.object({
@@ -37,10 +37,14 @@ export default function Auth() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div className="bg-primary/10 rounded-2xl p-4 shadow-xs">
-            <Leaf className="h-8 w-8 text-primary animate-pulse" />
-          </div>
-          <p className="text-xs font-medium text-muted-foreground">Initializing WasteBuddy…</p>
+          <img
+            src="/icons/icon-192x192.png"
+            alt="WasteBuddy"
+            className="h-12 w-12 rounded-2xl shadow-sm object-cover border border-primary/20 animate-pulse"
+          />
+          <p className="text-xs font-medium text-muted-foreground">
+            Initializing Waste<span className="text-primary font-bold">Buddy</span>…
+          </p>
         </div>
       </div>
     );
@@ -111,13 +115,17 @@ export default function Auth() {
       <div className="w-full max-w-md space-y-6">
         {/* Brand header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/25 mb-1">
-            <Leaf className="h-6 w-6" />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">WasteBuddy</h1>
+          <img
+            src="/icons/icon-192x192.png"
+            alt="WasteBuddy"
+            className="h-14 w-14 mx-auto rounded-2xl shadow-md object-cover border border-primary/20 mb-1"
+          />
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            Waste<span className="text-primary font-bold">Buddy</span>
+          </h1>
           <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5 font-medium">
             <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-            HOWM Rules 2016 Statutory Tracker
+            Hazardous & Non-Hazardous Waste Management Portal
           </p>
         </div>
 
