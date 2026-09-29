@@ -41,8 +41,8 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    // Use the is_any_admin() helper to check if a super-admin exists anywhere
-    const { data: anyAdmin } = await admin.rpc("is_any_admin");
+    // Use the admin_exists() helper to check if any admin exists anywhere
+    const { data: anyAdmin } = await admin.rpc("admin_exists");
     if ((anyAdmin as boolean) === true) {
       return new Response(JSON.stringify({ error: "An admin already exists" }), { status: 403, headers: { ...cors, "Content-Type": "application/json" } });
     }

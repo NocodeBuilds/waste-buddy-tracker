@@ -24,10 +24,15 @@ import {
   recentMonthOptions,
   PeriodKind,
   AnalyticsPeriod,
+  getStatutoryCode,
+  isEntryOverdue,
+  isEntryWarning,
+  getStorageLimitDays,
 } from "@/lib/wasteTypes";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Trash2,
   CheckCircle,
@@ -54,10 +59,26 @@ import {
   Package,
   Layers,
   History,
+  Tag,
 } from "lucide-react";
-import { exportInventoryToExcel, exportForm3Pdf, exportDisposalBatchPdf } from "@/lib/wasteExports";
+import {
+  exportInventoryToExcel,
+  exportForm3Pdf,
+  exportDisposalBatchPdf,
+  exportForm8ContainerLabelsPdf,
+  exportForm4AnnualReturnPdf,
+} from "@/lib/wasteExports";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,7 +98,10 @@ import { useEntryPhotoCounts } from "@/hooks/useEntryPhotos";
 import { format } from "date-fns";
 import EntryPhotosButton from "./EntryPhotosButton";
 import { toast } from "sonner";
-import ExportOptionsDialog from "./ExportOptionsDialog";
+import ExportOptionsDialog, { ExportFormat } from "./ExportOptionsDialog";
+import StorageBreakdownView from "./StorageBreakdownView";
+import DisposalHistoryView from "./DisposalHistoryView";
+import EmptyState from "@/components/ui/empty-state";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
@@ -88,7 +112,7 @@ interface Props {
   batches: DisposalBatch[];
   onDelete: (id: string) => Promise<void>;
   onEdit: (entry: WasteEntry) => void;
-  onCreateDisposal: (params: { disposed_date: string; notes?: string }) => Promise<void>;
+  onCreateDisposal: (params: { disposed_date: string; notes?: string; entry_ids?: string[] }) => Promise<void>;
   onApproveDisposal?: (batchId: string) => Promise<void>;
   onRejectDisposal?: (batchId: string, reason?: string) => Promise<void>;
 }
@@ -119,12 +143,12 @@ export default function WasteInventoryTable({
   const [disposing, setDisposing] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
-  const [rejectingId, setRejectingId] = useState<string | null>(null);
-  const [rejectReason, setRejectReason] = useState("");
   const [sortColumn, setSortColumn] = useState<string | null>("generated_date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [exportOpen, setExportOpen] = useState(false);
-  const [exportFormat, setExportFormat] = useState<"excel" | "pdf">("excel");
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("excel");
+  const [selectedForDisposal, setSelectedForDisposal] = useState<Set<string>>(new Set());
+  const [disposalScope, setDisposalScope] = useState<"all" | "selected">("all");
   const [byTypeOpen, setByTypeOpen] = useState(true);
   const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null);
 
@@ -318,10 +342,21 @@ export default function WasteInventoryTable({
   const handleDispose = async () => {
     setDisposing(true);
     try {
-      await onCreateDisposal({ disposed_date: disposalDate, notes: disposalNotes || undefined });
+      const chosenIds = disposalScope === "selected" ? Array.from(selectedForDisposal) : undefined;
+      if (disposalScope === "selected" && (!chosenIds || chosenIds.length === 0)) {
+        toast.error("Please select at least one entry to dispose");
+        setDisposing(false);
+        return;
+      }
+      await onCreateDisposal({
+        disposed_date: disposalDate,
+        notes: disposalNotes || undefined,
+        entry_ids: chosenIds,
+      });
       toast.success("Disposal request submitted — pending approval");
       setDialogOpen(false);
       setDisposalNotes("");
+      setSelectedForDisposal(new Set());
     } catch (err: any) {
       toast.error(err.message ?? "Failed to record disposal");
     } finally {
@@ -329,16 +364,17 @@ export default function WasteInventoryTable({
     }
   };
 
-  const openExport = (fmt: "excel" | "pdf") => {
+  const openExport = (fmt: ExportFormat) => {
     setExportFormat(fmt);
     setExportOpen(true);
   };
 
   const handleExport = (opts: {
-    format: "excel" | "pdf";
+    format: ExportFormat;
     filteredEntries: WasteEntry[];
     chosenBatch: DisposalBatch | null;
     periodLabel: string;
+    selectedFy: number;
   }) => {
     if (opts.format === "excel") {
       if (periodFiltered.length === 0 && opts.filteredEntries.length === 0) {
@@ -354,7 +390,7 @@ export default function WasteInventoryTable({
       } catch (err: any) {
         toast.error(err.message ?? "Export failed");
       }
-    } else {
+    } else if (opts.format === "pdf") {
       if (opts.filteredEntries.length === 0) {
         toast.error("No data to export");
         return;
@@ -364,7 +400,26 @@ export default function WasteInventoryTable({
           label: opts.periodLabel,
           kind: "all",
         });
-        toast.success(`PDF exported — ${opts.periodLabel}`);
+        toast.success(`Form 3 PDF exported — ${opts.periodLabel}`);
+      } catch (err: any) {
+        toast.error(err.message ?? "Export failed");
+      }
+    } else if (opts.format === "form8") {
+      if (opts.filteredEntries.length === 0) {
+        toast.error("No entries to generate labels for");
+        return;
+      }
+      try {
+        exportForm8ContainerLabelsPdf(opts.filteredEntries, currentSite?.name ?? "Site");
+        toast.success(`Form 8 Labels exported (${opts.filteredEntries.length} items)`);
+      } catch (err: any) {
+        toast.error(err.message ?? "Export failed");
+      }
+    } else if (opts.format === "form4") {
+      try {
+        const fy = opts.selectedFy ?? selectedFy;
+        exportForm4AnnualReturnPdf(entries, batches, currentSite?.name ?? "Site", fy);
+        toast.success(`Form 4 Annual Return exported for FY ${fy}-${String(fy + 1).slice(-2)}`);
       } catch (err: any) {
         toast.error(err.message ?? "Export failed");
       }
@@ -434,79 +489,234 @@ export default function WasteInventoryTable({
           </Button>
 
           {isManagerOrAdmin && activeEntries.length > 0 && (
-            <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <AlertDialogTrigger asChild>
-                <Button size="sm" className="h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs">
-                  <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                  Quarterly Disposal
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="rounded-xl">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="text-base">Confirm Quarterly Disposal</AlertDialogTitle>
-                  <AlertDialogDescription className="text-xs">
-                    This will mark all {activeEntries.length} active entries at this facility as disposed in a single batch
-                    and create an official disposal batch record for Form 3 / Form 4 compliance.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <div className="space-y-3 py-1 text-xs">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="dd" className="text-xs font-semibold">
-                      Disposal Date
-                    </Label>
-                    <Popover open={dateOpen} onOpenChange={setDateOpen}>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start text-left font-normal h-9 text-xs rounded-lg">
-                          <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                          {disposalDate}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={new Date(disposalDate + "T00:00:00")}
-                          onSelect={(d) => {
-                            if (d) {
-                              setDisposalDate(format(d, "yyyy-MM-dd"));
-                              setDateOpen(false);
+            <>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setSelectedForDisposal(new Set(activeEntries.map((e) => e.id)));
+                  setDisposalScope("all");
+                  setDialogOpen(true);
+                }}
+                className="h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs"
+              >
+                <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                Record Disposal
+              </Button>
+
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogContent className="max-w-xl max-h-[90vh] overflow-hidden flex flex-col rounded-xl p-0">
+                  <DialogHeader className="p-4 pb-3 border-b border-border/60">
+                    <DialogTitle className="text-base font-semibold flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-primary" />
+                      Record Waste Disposal Batch
+                    </DialogTitle>
+                    <DialogDescription className="text-xs">
+                      Create an official disposal batch record and generate Form 10 manifest for site:{" "}
+                      <strong className="text-foreground">{currentSite?.name ?? "Site"}</strong>
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="p-4 space-y-4 overflow-y-auto flex-1 text-xs">
+                    {/* Disposal Scope Selector */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Disposal Scope</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setDisposalScope("all")}
+                          className={`p-2.5 rounded-lg border text-left transition-all ${
+                            disposalScope === "all"
+                              ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary/20"
+                              : "border-border hover:bg-muted/70 text-muted-foreground"
+                          }`}
+                        >
+                          <div className="font-semibold text-foreground text-xs">All Active Inventory</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5">
+                            {activeEntries.length} entries · {fmtNum(totals.kg)} kg / {fmtNum(totals.litres)} L
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDisposalScope("selected");
+                            if (selectedForDisposal.size === 0) {
+                              setSelectedForDisposal(new Set(activeEntries.map((e) => e.id)));
                             }
                           }}
-                          disabled={(date) => date > new Date()}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                          className={`p-2.5 rounded-lg border text-left transition-all ${
+                            disposalScope === "selected"
+                              ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary/20"
+                              : "border-border hover:bg-muted/70 text-muted-foreground"
+                          }`}
+                        >
+                          <div className="font-semibold text-foreground text-xs">Select Specific Items</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5">
+                            {selectedForDisposal.size} items selected
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Selective Items Checklist */}
+                    {disposalScope === "selected" && (
+                      <div className="space-y-2 border border-border/80 rounded-xl p-3 bg-muted/20">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-foreground">
+                            Select Drums / Items to Dispose ({selectedForDisposal.size} of {activeEntries.length})
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 px-2 text-[11px]"
+                              onClick={() => setSelectedForDisposal(new Set(activeEntries.map((e) => e.id)))}
+                            >
+                              All
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 px-2 text-[11px]"
+                              onClick={() =>
+                                setSelectedForDisposal(
+                                  new Set(activeEntries.filter((e) => isEntryOverdue(e)).map((e) => e.id))
+                                )
+                              }
+                            >
+                              Overdue Only
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 px-2 text-[11px]"
+                              onClick={() => setSelectedForDisposal(new Set())}
+                            >
+                              Clear
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="max-h-48 overflow-y-auto divide-y divide-border/60 border border-border/70 rounded-lg bg-card shadow-inner">
+                          {activeEntries.map((e) => {
+                            const checked = selectedForDisposal.has(e.id);
+                            const wt = WASTE_TYPES.find((w) => w.id === e.waste_type_id);
+                            const statCode = getStatutoryCode(e.waste_type_id);
+                            const isOvd = isEntryOverdue(e);
+                            return (
+                              <label
+                                key={e.id}
+                                className="flex items-center gap-2.5 p-2 text-xs hover:bg-muted/40 cursor-pointer select-none transition-colors"
+                              >
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(val) => {
+                                    const next = new Set(selectedForDisposal);
+                                    if (val) next.add(e.id);
+                                    else next.delete(e.id);
+                                    setSelectedForDisposal(next);
+                                  }}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="font-semibold text-foreground truncate">
+                                      {wt?.name ?? e.waste_type_id}
+                                    </span>
+                                    {statCode !== "—" && (
+                                      <span className="text-[10px] font-mono px-1 py-0.2 bg-muted text-muted-foreground rounded">
+                                        {statCode}
+                                      </span>
+                                    )}
+                                    {isOvd && (
+                                      <Badge variant="destructive" className="text-[9px] py-0 px-1">
+                                        Overdue
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="text-[10px] text-muted-foreground flex items-center gap-2 mt-0.5">
+                                    <span>{e.location || "General"}</span>
+                                    <span>·</span>
+                                    <span>{e.generated_date}</span>
+                                    <span>·</span>
+                                    <span>{getDaysStored(e.generated_date)}d stored</span>
+                                  </div>
+                                </div>
+                                <div className="font-mono font-bold text-xs text-right whitespace-nowrap text-foreground">
+                                  {fmtNum(Number(e.weight_kg ?? 0))} {unitLabel(getMeasureUnit(e.waste_type_id))}
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Date picker */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="dd" className="text-xs font-semibold">
+                        Disposal Date
+                      </Label>
+                      <Popover open={dateOpen} onOpenChange={setDateOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start text-left font-normal h-9 text-xs rounded-lg">
+                            <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                            {disposalDate}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={new Date(disposalDate + "T00:00:00")}
+                            onSelect={(d) => {
+                              if (d) {
+                                setDisposalDate(format(d, "yyyy-MM-dd"));
+                                setDateOpen(false);
+                              }
+                            }}
+                            disabled={(date) => date > new Date()}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    {/* Notes / Transporter / Manifest # */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="dn" className="text-xs font-semibold">
+                        Transporter Name / Vehicle # / Manifest # (Optional)
+                      </Label>
+                      <Textarea
+                        id="dn"
+                        placeholder="e.g., TSDF Transporter name, vehicle #, Form 10 manifest #..."
+                        value={disposalNotes}
+                        onChange={(e) => setDisposalNotes(e.target.value)}
+                        className="text-xs min-h-[70px] rounded-lg"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="dn" className="text-xs font-semibold">
-                      Notes / Transporter / Manifest # (Optional)
-                    </Label>
-                    <Textarea
-                      id="dn"
-                      placeholder="e.g., TSDF Transporter name, vehicle #, manifest #..."
-                      value={disposalNotes}
-                      onChange={(e) => setDisposalNotes(e.target.value)}
-                      className="text-xs min-h-[80px] rounded-lg"
-                    />
-                  </div>
-                </div>
-                <AlertDialogFooter className="gap-2 pt-2">
-                  <AlertDialogCancel disabled={disposing} className="h-9 text-xs">
-                    Cancel
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleDispose();
-                    }}
-                    disabled={disposing}
-                    className="h-9 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-                  >
-                    {disposing && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
-                    Confirm Disposal Batch
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+
+                  <DialogFooter className="p-3 border-t border-border/60 gap-2 bg-muted/20">
+                    <DialogClose asChild>
+                      <Button variant="outline" size="sm" className="h-9 text-xs" disabled={disposing}>
+                        Cancel
+                      </Button>
+                    </DialogClose>
+                    <Button
+                      size="sm"
+                      disabled={disposing || (disposalScope === "selected" && selectedForDisposal.size === 0)}
+                      onClick={handleDispose}
+                      className="h-9 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                    >
+                      {disposing && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+                      Confirm Disposal (
+                      {disposalScope === "all" ? activeEntries.length : selectedForDisposal.size} items)
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </>
           )}
         </div>
       </div>
@@ -724,12 +934,11 @@ export default function WasteInventoryTable({
           {/* ── Mobile View: High-Density Compact List (Eliminates vertical scroll overload) ── */}
           <div className="md:hidden space-y-1.5">
             {filtered.length === 0 ? (
-              <Card className="p-8 text-center text-muted-foreground border-border/80 border-dashed">
-                <p className="text-sm font-medium">No waste entries found</p>
-                <p className="text-xs text-muted-foreground/70 mt-1">
-                  Try adjusting your filters or search query.
-                </p>
-              </Card>
+              <EmptyState
+                icon={Package}
+                title="No Waste Entries Found"
+                description="Try adjusting your filters, date range, or search query."
+              />
             ) : (
               <div className="rounded-xl border border-border/80 bg-card divide-y divide-border/60 overflow-hidden shadow-xs">
                 {filtered.map((entry) => {
@@ -768,6 +977,11 @@ export default function WasteInventoryTable({
                               <h4 className="text-xs font-semibold text-foreground truncate">
                                 {getWasteName(entry.waste_type_id)}
                               </h4>
+                              {getStatutoryCode(entry.waste_type_id) !== "—" && (
+                                <span className="text-[10px] font-mono px-1 py-0.2 bg-muted text-muted-foreground rounded">
+                                  {getStatutoryCode(entry.waste_type_id)}
+                                </span>
+                              )}
                             </div>
                             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
                               <span>{entry.generated_date}</span>
@@ -787,9 +1001,9 @@ export default function WasteInventoryTable({
                                   <span
                                     className={cn(
                                       "font-mono font-medium",
-                                      days >= DISPOSAL_LIMIT_DAYS
+                                      isEntryOverdue(entry)
                                         ? "text-rose-600 dark:text-rose-400 font-bold"
-                                        : days >= 70
+                                        : isEntryWarning(entry)
                                         ? "text-amber-600 font-semibold"
                                         : "text-muted-foreground"
                                     )}
@@ -844,11 +1058,25 @@ export default function WasteInventoryTable({
                           )}
 
                           <div className="flex items-center justify-between pt-1 border-t border-border/40">
-                            <EntryPhotosButton
-                              entryId={entry.id}
-                              count={photoCounts[entry.id] ?? 0}
-                              canDelete={isManagerOrAdmin}
-                            />
+                            <div className="flex items-center gap-2">
+                              <EntryPhotosButton
+                                entryId={entry.id}
+                                count={photoCounts[entry.id] ?? 0}
+                                canDelete={isManagerOrAdmin}
+                              />
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs gap-1 px-2 text-amber-700 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 rounded-lg"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  exportForm8ContainerLabelsPdf([entry], currentSite?.name ?? "Site");
+                                  toast.success("Form 8 Label downloaded");
+                                }}
+                              >
+                                <Tag className="h-3 w-3" /> Label
+                              </Button>
+                            </div>
                             {isManagerOrAdmin && !isDisp && (
                               <div className="flex items-center gap-1.5">
                                 <Button
@@ -949,13 +1177,13 @@ export default function WasteInventoryTable({
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={isManagerOrAdmin ? 10 : 9} className="text-center py-12">
-                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                          <p className="text-sm font-medium">No waste entries found</p>
-                          <p className="text-xs text-muted-foreground/70">
-                            Try adjusting filters, or tap <strong>+ Log Waste</strong> to record a new entry.
-                          </p>
-                        </div>
+                      <TableCell colSpan={isManagerOrAdmin ? 10 : 9} className="text-center py-8">
+                        <EmptyState
+                          icon={Package}
+                          title="No Waste Entries Found"
+                          description="Try adjusting your filters, date range, or search query."
+                          className="border-none bg-transparent"
+                        />
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -983,8 +1211,15 @@ export default function WasteInventoryTable({
                                 : "OTH"}
                             </span>
                           </TableCell>
-                          <TableCell className="max-w-[200px] truncate text-xs font-semibold px-3 py-3 text-foreground">
-                            {getWasteName(entry.waste_type_id)}
+                          <TableCell className="max-w-[220px] px-3 py-3">
+                            <div className="text-xs font-semibold text-foreground truncate">
+                              {getWasteName(entry.waste_type_id)}
+                            </div>
+                            {getStatutoryCode(entry.waste_type_id) !== "—" && (
+                              <div className="text-[10px] font-mono text-muted-foreground">
+                                {getStatutoryCode(entry.waste_type_id)}
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell className="text-xs px-3 py-3">
                             {renderCategoryBadge(entry.waste_category)}
@@ -1010,9 +1245,9 @@ export default function WasteInventoryTable({
                           <TableCell className="text-center px-3 py-3">
                             <span
                               className={
-                                days >= DISPOSAL_LIMIT_DAYS && !isDisp
+                                isEntryOverdue(entry) && !isDisp
                                   ? "text-rose-600 font-bold font-mono text-xs"
-                                  : days >= 70 && !isDisp
+                                  : isEntryWarning(entry) && !isDisp
                                   ? "text-amber-600 font-semibold font-mono text-xs"
                                   : "text-muted-foreground font-mono text-xs"
                               }
@@ -1032,6 +1267,19 @@ export default function WasteInventoryTable({
                             <TableCell className="text-right whitespace-nowrap px-3 py-3">
                               {!isDisp && (
                                 <div className="inline-flex items-center gap-1">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                                    onClick={() => {
+                                      exportForm8ContainerLabelsPdf([entry], currentSite?.name ?? "Site");
+                                      toast.success("Form 8 Container Label downloaded");
+                                    }}
+                                    title="Print Form 8 Drum Label"
+                                    aria-label="Print Form 8 Drum Label"
+                                  >
+                                    <Tag className="h-3.5 w-3.5" />
+                                  </Button>
                                   <Button
                                     size="icon"
                                     variant="ghost"
@@ -1067,291 +1315,28 @@ export default function WasteInventoryTable({
 
       {/* ────────────────────────── VIEW 2: STORAGE BREAKDOWN ────────────────────────── */}
       {activeView === "summary" && (
-        <div className="space-y-3.5">
-          {/* 6 Category Cards */}
-          <div className="space-y-2">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              In Storage by Statutory Category
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-              <Card className="border-border/80 hover:border-rose-500/40 transition-colors">
-                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
-                  <div className="flex items-center gap-1.5">
-                    <ShieldAlert className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0" />
-                    <p className="text-lg font-bold font-mono text-foreground leading-tight">
-                      {fmtNum(hazKg)}
-                      <span className="text-[10px] font-sans font-normal text-muted-foreground ml-0.5">kg</span>
-                    </p>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">Hazardous Solids</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border/80 hover:border-emerald-600/40 transition-colors">
-                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
-                  <div className="flex items-center gap-1.5">
-                    <Leaf className="h-4 w-4 text-emerald-600 shrink-0" />
-                    <p className="text-lg font-bold font-mono text-foreground leading-tight">
-                      {fmtNum(nonHazKg)}
-                      <span className="text-[10px] font-sans font-normal text-muted-foreground ml-0.5">kg</span>
-                    </p>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">Non-Hazardous</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border/80 hover:border-cyan-500/40 transition-colors">
-                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
-                  <div className="flex items-center gap-1.5">
-                    <Droplets className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
-                    <p className="text-lg font-bold font-mono text-foreground leading-tight">
-                      {fmtNum(totals.litres)}
-                      <span className="text-[10px] font-sans font-normal text-muted-foreground ml-0.5">L</span>
-                    </p>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">Liquid Waste</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border/80 hover:border-violet-500/40 transition-colors">
-                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
-                  <div className="flex items-center gap-1.5">
-                    <Cpu className="h-4 w-4 text-violet-600 dark:text-violet-400 shrink-0" />
-                    <p className="text-lg font-bold font-mono text-foreground leading-tight">
-                      {fmtNum(eWasteKg)}
-                      <span className="text-[10px] font-sans font-normal text-muted-foreground ml-0.5">kg</span>
-                    </p>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">E-Waste</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border/80 hover:border-amber-500/40 transition-colors">
-                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
-                  <div className="flex items-center gap-1.5">
-                    <Battery className="h-4 w-4 text-amber-600 shrink-0" />
-                    <p className="text-lg font-bold font-mono text-foreground leading-tight">
-                      {fmtNum(batteryKg)}
-                      <span className="text-[10px] font-sans font-normal text-muted-foreground ml-0.5">kg</span>
-                    </p>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">Battery Waste</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border/80 hover:border-slate-500/40 transition-colors">
-                <CardContent className="p-3 flex flex-col items-center text-center gap-1">
-                  <div className="flex items-center gap-1.5">
-                    <Recycle className="h-4 w-4 text-slate-600 dark:text-slate-400 shrink-0" />
-                    <p className="text-lg font-bold font-mono text-foreground leading-tight">
-                      {fmtNum(otherKg)}
-                      <span className="text-[10px] font-sans font-normal text-muted-foreground ml-0.5">kg</span>
-                    </p>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">Other Wastes</p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Waste Type Progress Breakdown */}
-          {byType.length > 0 && (
-            <Card className="border-border/80 shadow-xs">
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Scale className="h-4 w-4 text-primary" /> Active Waste Type Weight Breakdown ({byType.length})
-                  </h3>
-                </div>
-
-                <div className="space-y-2 py-1">
-                  {byType.map((w) => {
-                    const max = Math.max(...byType.map((x) => x.total));
-                    const suffix = w.measureUnit === "litres" ? "L" : "kg";
-                    const isOil = w.id === "waste-oil" || w.id === "waste-grease";
-                    const barColor = isOil
-                      ? "bg-rose-500"
-                      : w.measureUnit === "litres"
-                      ? "bg-cyan-500"
-                      : w.wasteCategory === "hazardous"
-                      ? "bg-rose-500"
-                      : w.wasteCategory === "other_wastes"
-                      ? "bg-amber-500"
-                      : "bg-emerald-600";
-                    return (
-                      <div key={w.id} className="flex items-center gap-2.5 text-xs">
-                        <span className="flex-1 truncate font-medium text-foreground">{w.name}</span>
-                        <div className="flex-[2] bg-muted/80 rounded-full h-2 overflow-hidden">
-                          <div
-                            className={`${barColor} h-full rounded-full transition-all duration-300`}
-                            style={{ width: `${(w.total / max) * 100}%` }}
-                          />
-                        </div>
-                        <span className="font-mono font-semibold w-24 text-right text-foreground">
-                          {fmtNum(w.total)} {suffix}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        <StorageBreakdownView
+          hazKg={hazKg}
+          nonHazKg={nonHazKg}
+          totals={totals}
+          eWasteKg={eWasteKg}
+          batteryKg={batteryKg}
+          otherKg={otherKg}
+          byType={byType}
+        />
       )}
 
       {/* ────────────────────────── VIEW 3: DISPOSALS & MANIFESTS ────────────────────────── */}
       {activeView === "disposals" && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Official Disposal Batches & Manifests
-            </h3>
-            <span className="text-[11px] font-mono text-muted-foreground">
-              {batches.length} {batches.length === 1 ? "batch" : "batches"}
-            </span>
-          </div>
-
-          {batches.length === 0 ? (
-            <Card className="border-border/80 border-dashed p-8 text-center text-muted-foreground">
-              <History className="h-8 w-8 mx-auto mb-2 opacity-40 text-muted-foreground" />
-              <p className="text-sm font-semibold text-foreground">No disposal batches recorded yet</p>
-              <p className="text-xs text-muted-foreground/70 mt-1">
-                When waste is dispatched to an authorized TSDF or recycler, tap <strong>Quarterly Disposal</strong> to generate an official batch.
-              </p>
-            </Card>
-          ) : (
-            <div className="space-y-2.5">
-              {batches.map((b) => {
-                const inBatch = entries.filter((e) => e.disposal_batch_id === b.id);
-                const status = (b as any).status ?? "approved";
-                const isPending = status === "pending";
-                const isRejected = status === "rejected";
-                return (
-                  <Card
-                    key={b.id}
-                    className={`border transition-all ${
-                      isPending
-                        ? "border-amber-500/50 bg-amber-500/[0.03]"
-                        : isRejected
-                        ? "border-destructive/40 bg-destructive/5"
-                        : "border-border/80 hover:border-primary/40"
-                    }`}
-                  >
-                    <CardContent className="p-3.5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-semibold text-foreground">{b.disposed_date}</p>
-                            {isPending && <Badge variant="warning">Pending Approval</Badge>}
-                            {isRejected && <Badge variant="destructive">Rejected</Badge>}
-                            {!isPending && !isRejected && <Badge variant="success">Approved</Badge>}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {inBatch.length > 0
-                              ? `${inBatch.length} entries in batch`
-                              : `All active entries (${allActiveEntries.length}) pending approval`}
-                          </p>
-                          {b.notes && (
-                            <p className="text-xs text-muted-foreground mt-1.5 italic break-words bg-muted/40 p-2 rounded-lg">
-                              {b.notes}
-                            </p>
-                          )}
-                          {isRejected && (b as any).rejection_reason && (
-                            <p className="text-xs text-destructive mt-1.5 font-medium break-words">
-                              Reason: {(b as any).rejection_reason}
-                            </p>
-                          )}
-                          {isPending && isManagerOrAdmin && onApproveDisposal && (
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              <Button
-                                size="sm"
-                                variant="default"
-                                className="h-8 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
-                                onClick={async () => {
-                                  try {
-                                    await onApproveDisposal(b.id);
-                                    toast.success("Disposal approved — entries marked as disposed");
-                                  } catch (err: any) {
-                                    toast.error(err.message ?? "Failed to approve");
-                                  }
-                                }}
-                              >
-                                <CheckCircle className="h-3.5 w-3.5" /> Approve Batch
-                              </Button>
-                              {rejectingId === b.id ? (
-                                <div className="flex gap-2 items-center w-full">
-                                  <Input
-                                    placeholder="Reason for rejection…"
-                                    value={rejectReason}
-                                    onChange={(e) => setRejectReason(e.target.value)}
-                                    className="h-8 text-xs rounded-lg"
-                                    maxLength={200}
-                                  />
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    className="h-8 text-xs rounded-lg"
-                                    onClick={async () => {
-                                      try {
-                                        await onRejectDisposal?.(b.id, rejectReason);
-                                        toast.success("Disposal rejected");
-                                        setRejectingId(null);
-                                        setRejectReason("");
-                                      } catch (err: any) {
-                                        toast.error(err.message ?? "Failed to reject");
-                                      }
-                                    }}
-                                  >
-                                    Confirm
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-8 text-xs rounded-lg"
-                                    onClick={() => {
-                                      setRejectingId(null);
-                                      setRejectReason("");
-                                    }}
-                                  >
-                                    Cancel
-                                  </Button>
-                                </div>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-8 text-xs gap-1 border-destructive/40 text-destructive hover:bg-destructive/10 rounded-lg"
-                                  onClick={() => setRejectingId(b.id)}
-                                >
-                                  <X className="h-3.5 w-3.5" /> Reject
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex flex-col items-end gap-1.5 shrink-0">
-                          {!isPending && !isRejected && <CheckCircle className="h-5 w-5 text-emerald-600" />}
-                          {inBatch.length > 0 && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 text-xs gap-1.5 shadow-xs rounded-lg"
-                              onClick={() => exportDisposalBatchPdf(b, inBatch, currentSite?.name ?? "Site")}
-                            >
-                              <Download className="h-3.5 w-3.5 text-primary" /> Manifest
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        <DisposalHistoryView
+          batches={batches}
+          entries={entries}
+          allActiveEntries={allActiveEntries}
+          isManagerOrAdmin={isManagerOrAdmin}
+          currentSiteName={currentSite?.name ?? "Site"}
+          onApproveDisposal={onApproveDisposal}
+          onRejectDisposal={onRejectDisposal}
+        />
       )}
 
       {/* Export options dialog */}

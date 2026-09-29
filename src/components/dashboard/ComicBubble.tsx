@@ -8,6 +8,7 @@ interface ComicBubbleProps {
   tone: "overdue" | "warning" | "success";
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  className?: string;
 }
 
 const TONE_CLASSES: Record<ComicBubbleProps["tone"], {
@@ -37,6 +38,7 @@ export default function ComicBubble({
   tone,
   open,
   onOpenChange,
+  className,
 }: ComicBubbleProps) {
   const tones = TONE_CLASSES[tone];
 
@@ -45,7 +47,10 @@ export default function ComicBubble({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="relative inline-flex items-center justify-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 rounded-xl"
+          className={cn(
+            "relative w-full flex items-center justify-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 rounded-lg",
+            className
+          )}
           aria-label={`${tone} details`}
         >
           {children}

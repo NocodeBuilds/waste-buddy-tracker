@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, X, Smartphone } from "lucide-react";
+import { Download, X } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -117,11 +117,15 @@ export default function InstallPrompt() {
     <div className="fixed bottom-24 left-3 right-3 z-40 md:left-auto md:right-4 md:w-96 animate-in slide-in-from-bottom-4">
       <Card className="border-primary/40 shadow-lg bg-card/95 backdrop-blur">
         <CardContent className="p-3 flex items-start gap-3">
-          <div className="rounded-lg bg-primary/10 p-2 shrink-0">
-            <Smartphone className="h-5 w-5 text-primary" />
-          </div>
+          <img
+            src="/icons/icon-192x192.png"
+            alt="WasteBuddy"
+            className="h-10 w-10 rounded-xl shadow-xs object-cover border border-primary/20 shrink-0"
+          />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold leading-tight">Install WasteBuddy app</p>
+            <p className="text-sm font-semibold leading-tight">
+              Install Waste<span className="text-primary font-bold">Buddy</span> app
+            </p>
             <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
               {getInstructions()}
             </p>

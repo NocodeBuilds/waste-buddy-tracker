@@ -4,18 +4,21 @@ import ComicBubble from "./ComicBubble";
 import {
   WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS,
   getStatus, isDisposed, getMeasureUnit, fmtNum,
+  isEntryOverdue, isEntryWarning, getStorageLimitDays,
 } from "@/lib/wasteTypes";
 import {
   Package, ShieldAlert, Leaf, Trash2, Recycle, Battery, Droplets,
-  CheckCircle2, AlertTriangle, Clock,
+  CheckCircle2, AlertTriangle, Clock, Plus,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface Props {
   entries: WasteEntry[];
+  onLogWaste?: () => void;
 }
 
 function isThisMonth(dateStr: string): boolean {
@@ -68,9 +71,9 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
   totalValue: number;
 }) {
   const catEntries = entries.filter((e) => !isDisposed(e) && filterFn(e));
-  const ovd = catEntries.filter((e) => getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS);
-  const wrn = catEntries.filter((e) => { const d = getDaysStored(e.generated_date); return d >= 70 && d < DISPOSAL_LIMIT_DAYS; });
-  const saf = catEntries.filter((e) => getStatus(e) === "safe");
+  const ovd = catEntries.filter((e) => isEntryOverdue(e));
+  const wrn = catEntries.filter((e) => isEntryWarning(e));
+  const saf = catEntries.filter((e) => !isEntryOverdue(e) && !isEntryWarning(e));
   const ovdW = Math.round(sumWeight(ovd));
   const wrnW = Math.round(sumWeight(wrn));
   const safW = Math.round(sumWeight(saf));
@@ -79,7 +82,8 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
   const fmtDate = (s: string) => new Date(s + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
   const dueDate = (entry: WasteEntry) => {
     const gen = new Date(entry.generated_date + "T00:00:00");
-    gen.setDate(gen.getDate() + DISPOSAL_LIMIT_DAYS);
+    const limit = getStorageLimitDays(entry.waste_category, entry.waste_type_id);
+    gen.setDate(gen.getDate() + limit);
     return gen.toISOString().slice(0, 10);
   };
 
@@ -88,11 +92,11 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
     : "";
 
   const maxDaysOverdue = ovd.length > 0
-    ? Math.max(...ovd.map(e => getDaysStored(e.generated_date) - DISPOSAL_LIMIT_DAYS))
+    ? Math.max(...ovd.map(e => getDaysStored(e.generated_date) - getStorageLimitDays(e.waste_category, e.waste_type_id)))
     : 0;
 
   const minDaysToDue = wrn.length > 0
-    ? Math.min(...wrn.map(e => DISPOSAL_LIMIT_DAYS - getDaysStored(e.generated_date)))
+    ? Math.min(...wrn.map(e => getStorageLimitDays(e.waste_category, e.waste_type_id) - getDaysStored(e.generated_date)))
     : 0;
 
   const overdueDue = ovd.length > 0
@@ -137,13 +141,16 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
             }
           >
             <div className={cn(
-              "flex flex-col items-center justify-center p-1 rounded-lg border text-center transition-all",
+              "w-full h-11 py-1 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
               ovd.length > 0
                 ? "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 shadow-2xs"
-                : "bg-muted/30 border-border/60 text-muted-foreground/50"
+                : "bg-muted/30 border-border/60 text-muted-foreground/60"
             )}>
-              <span className="text-[11px] font-bold font-mono leading-tight">{fmtNum(ovdW)}</span>
-              <span className="text-[8px] font-semibold uppercase tracking-wider opacity-80">Overdue</span>
+              <div className="flex items-baseline justify-center gap-0.5 max-w-full px-0.5 truncate leading-tight">
+                <span className="text-[11px] font-bold font-mono">{fmtNum(ovdW)}</span>
+                <span className="text-[8.5px] font-medium opacity-80">{unit}</span>
+              </div>
+              <span className="text-[8px] font-semibold uppercase tracking-wider mt-0.5 leading-none">Overdue</span>
             </div>
           </ComicBubble>
 
@@ -160,13 +167,16 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
             }
           >
             <div className={cn(
-              "flex flex-col items-center justify-center p-1 rounded-lg border text-center transition-all",
+              "w-full h-11 py-1 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
               wrn.length > 0
                 ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400 shadow-2xs"
-                : "bg-muted/30 border-border/60 text-muted-foreground/50"
+                : "bg-muted/30 border-border/60 text-muted-foreground/60"
             )}>
-              <span className="text-[11px] font-bold font-mono leading-tight">{fmtNum(wrnW)}</span>
-              <span className="text-[8px] font-semibold uppercase tracking-wider opacity-80">Warn</span>
+              <div className="flex items-baseline justify-center gap-0.5 max-w-full px-0.5 truncate leading-tight">
+                <span className="text-[11px] font-bold font-mono">{fmtNum(wrnW)}</span>
+                <span className="text-[8.5px] font-medium opacity-80">{unit}</span>
+              </div>
+              <span className="text-[8px] font-semibold uppercase tracking-wider mt-0.5 leading-none">Warning</span>
             </div>
           </ComicBubble>
 
@@ -183,13 +193,16 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
             }
           >
             <div className={cn(
-              "flex flex-col items-center justify-center p-1 rounded-lg border text-center transition-all",
+              "w-full h-11 py-1 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
               saf.length > 0
                 ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 shadow-2xs"
-                : "bg-muted/30 border-border/60 text-muted-foreground/50"
+                : "bg-muted/30 border-border/60 text-muted-foreground/60"
             )}>
-              <span className="text-[11px] font-bold font-mono leading-tight">{fmtNum(safW)}</span>
-              <span className="text-[8px] font-semibold uppercase tracking-wider opacity-80">Safe</span>
+              <div className="flex items-baseline justify-center gap-0.5 max-w-full px-0.5 truncate leading-tight">
+                <span className="text-[11px] font-bold font-mono">{fmtNum(safW)}</span>
+                <span className="text-[8.5px] font-medium opacity-80">{unit}</span>
+              </div>
+              <span className="text-[8px] font-semibold uppercase tracking-wider mt-0.5 leading-none">Safe</span>
             </div>
           </ComicBubble>
         </div>
@@ -255,7 +268,7 @@ function SplitBarDialog({ open, onOpenChange, title, Icon, items, unit, barColor
   );
 }
 
-export default function DashboardStats({ entries }: Props) {
+export default function DashboardStats({ entries, onLogWaste }: Props) {
   const active = entries.filter((e) => !isDisposed(e));
 
   // ── This month
@@ -326,48 +339,176 @@ export default function DashboardStats({ entries }: Props) {
     other: { title: "Other Wastes", Icon: Recycle, items: otherWastesThisMonth.map((w) => ({ name: w.name, total: w.total })), unit: "kg", barColor: "bg-amber-600", textColor: "text-amber-600" },
   };
 
-  // Compliance Calculations
-  const overdueCount = active.filter((e) => getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS).length;
-  const warningCount = active.filter((e) => {
-    const d = getDaysStored(e.generated_date);
-    return d >= 70 && d < DISPOSAL_LIMIT_DAYS;
-  }).length;
+  // Compliance Calculations & Brief Quantities
+  const overdueItems = active.filter((e) => isEntryOverdue(e));
+  const warningItems = active.filter((e) => isEntryWarning(e));
+  const overdueCount = overdueItems.length;
+  const warningCount = warningItems.length;
+
+  const overdueKg = overdueItems
+    .filter((e) => getMeasureUnit(e.waste_type_id) === "kg")
+    .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+  const overdueLitres = overdueItems
+    .filter((e) => getMeasureUnit(e.waste_type_id) === "litres")
+    .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+  const overduePcs = overdueItems.reduce((s, e) => s + Number(e.piece_count ?? 0), 0);
+
+  const warningKg = warningItems
+    .filter((e) => getMeasureUnit(e.waste_type_id) === "kg")
+    .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+  const warningLitres = warningItems
+    .filter((e) => getMeasureUnit(e.waste_type_id) === "litres")
+    .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+  const warningPcs = warningItems.reduce((s, e) => s + Number(e.piece_count ?? 0), 0);
+
+  const totalActiveKg = active
+    .filter((e) => getMeasureUnit(e.waste_type_id) === "kg")
+    .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+  const totalActiveLitres = active
+    .filter((e) => getMeasureUnit(e.waste_type_id) === "litres")
+    .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+
+  const formatBriefQty = (kg: number, litres: number, pcs: number) => {
+    const parts: string[] = [];
+    if (kg > 0) parts.push(`${fmtNum(kg)} kg`);
+    if (litres > 0) parts.push(`${fmtNum(litres)} L`);
+    if (pcs > 0 && parts.length === 0) parts.push(`${pcs} pcs`);
+    return parts.length > 0 ? parts.join(", ") : "0 kg";
+  };
+
+  const overdueBrief = formatBriefQty(overdueKg, overdueLitres, overduePcs);
+  const warningBrief = formatBriefQty(warningKg, warningLitres, warningPcs);
+  const activeBrief = formatBriefQty(totalActiveKg, totalActiveLitres, 0);
 
   const earliestDue = useMemo(() => {
     if (active.length === 0) return null;
-    const sorted = [...active].sort((a, b) => a.generated_date.localeCompare(b.generated_date));
-    const oldest = sorted[0];
-    const gen = new Date(oldest.generated_date + "T00:00:00");
-    gen.setDate(gen.getDate() + DISPOSAL_LIMIT_DAYS);
-    const daysLeft = DISPOSAL_LIMIT_DAYS - getDaysStored(oldest.generated_date);
-    return {
-      date: gen.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
-      daysLeft,
-    };
+    const itemsWithDue = active.map((e) => {
+      const gen = new Date(e.generated_date + "T00:00:00");
+      const limit = getStorageLimitDays(e.waste_category, e.waste_type_id);
+      gen.setDate(gen.getDate() + limit);
+      const daysLeft = limit - getDaysStored(e.generated_date);
+      return {
+        date: gen.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+        daysLeft,
+        time: gen.getTime(),
+      };
+    });
+    itemsWithDue.sort((a, b) => a.time - b.time);
+    return itemsWithDue[0];
   }, [active]);
 
   return (
     <div className="relative space-y-4">
       {/* ── Executive Compliance Health Banner ── */}
-      <Card className={cn(
-        "border transition-all shadow-xs overflow-hidden",
-        overdueCount > 0
-          ? "border-rose-500/30 bg-rose-500/[0.04]"
-          : warningCount > 0
-          ? "border-amber-500/30 bg-amber-500/[0.04]"
-          : "border-emerald-500/30 bg-emerald-500/[0.04]"
-      )}>
-        <CardContent className="p-3.5 sm:p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                "p-2.5 rounded-xl shrink-0 shadow-2xs",
-                overdueCount > 0
-                  ? "bg-rose-500/15 text-rose-600 dark:text-rose-400"
-                  : warningCount > 0
-                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                  : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-              )}>
+      <Card
+        className={cn(
+          "border transition-all shadow-xs overflow-hidden",
+          overdueCount > 0
+            ? "border-rose-500/30 bg-rose-500/[0.04]"
+            : warningCount > 0
+            ? "border-amber-500/30 bg-amber-500/[0.04]"
+            : "border-emerald-500/30 bg-emerald-500/[0.04]"
+        )}
+      >
+        <CardContent className="p-3 sm:p-4">
+          {/* Mobile Layout (< sm): Ultra-compact & space-efficient */}
+          <div className="sm:hidden space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div
+                  className={cn(
+                    "p-1.5 rounded-lg shrink-0",
+                    overdueCount > 0
+                      ? "bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                      : warningCount > 0
+                      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                      : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                  )}
+                >
+                  {overdueCount > 0 ? (
+                    <AlertTriangle className="h-4 w-4" />
+                  ) : warningCount > 0 ? (
+                    <Clock className="h-4 w-4" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4" />
+                  )}
+                </div>
+                <h3 className="text-xs font-bold text-foreground truncate">
+                  {overdueCount > 0
+                    ? `${overdueCount} Overdue Item${overdueCount === 1 ? "" : "s"}`
+                    : warningCount > 0
+                    ? `${warningCount} Item${warningCount === 1 ? "" : "s"} In Warning`
+                    : "100% Statutory Compliance"}
+                </h3>
+              </div>
+
+              {/* Status Badge */}
+              <span
+                className={cn(
+                  "text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 font-mono",
+                  overdueCount > 0
+                    ? "bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30"
+                    : warningCount > 0
+                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30"
+                    : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
+                )}
+              >
+                {overdueCount > 0 ? "Past Limit" : warningCount > 0 ? "70–89d Due" : "Compliant"}
+              </span>
+            </div>
+
+            {/* Brief Quantities & Next Due Line on Mobile */}
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] pt-1.5 border-t border-border/50">
+              <div className="flex items-center gap-2 flex-wrap">
+                {overdueCount > 0 && (
+                  <span className="font-semibold text-rose-600 dark:text-rose-400 font-mono">
+                    Overdue: {overdueBrief}
+                  </span>
+                )}
+                {warningCount > 0 && (
+                  <span className="font-medium text-amber-600 dark:text-amber-400 font-mono">
+                    Warning: {warningBrief}
+                  </span>
+                )}
+                {overdueCount === 0 && warningCount === 0 && (
+                  <span className="text-muted-foreground font-mono">
+                    In Storage: <strong className="text-foreground">{activeBrief}</strong> ({active.length} records)
+                  </span>
+                )}
+              </div>
+
+              {earliestDue && (
+                <span className="text-[10px] text-muted-foreground font-mono shrink-0">
+                  Next Due:{" "}
+                  <strong
+                    className={cn(
+                      earliestDue.daysLeft < 0
+                        ? "text-rose-600"
+                        : earliestDue.daysLeft < 20
+                        ? "text-amber-600"
+                        : "text-foreground"
+                    )}
+                  >
+                    {earliestDue.date}
+                  </strong>
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Desktop Layout (>= sm) */}
+          <div className="hidden sm:flex sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className={cn(
+                  "p-2.5 rounded-xl shrink-0 shadow-2xs",
+                  overdueCount > 0
+                    ? "bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                    : warningCount > 0
+                    ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                    : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                )}
+              >
                 {overdueCount > 0 ? (
                   <AlertTriangle className="h-5 w-5" />
                 ) : warningCount > 0 ? (
@@ -376,35 +517,43 @@ export default function DashboardStats({ entries }: Props) {
                   <CheckCircle2 className="h-5 w-5" />
                 )}
               </div>
-              <div>
+              <div className="min-w-0">
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  {overdueCount > 0
-                    ? `${overdueCount} Overdue Disposal ${overdueCount === 1 ? "Item" : "Items"} Require Immediate Action`
-                    : warningCount > 0
-                    ? `${warningCount} ${warningCount === 1 ? "Item" : "Items"} Approaching 90-Day Storage Limit`
-                    : "Facility In 100% Statutory Compliance"}
+                  <span>
+                    {overdueCount > 0
+                      ? `${overdueCount} Overdue Item${overdueCount === 1 ? "" : "s"} (${overdueBrief}) Require Disposal`
+                      : warningCount > 0
+                      ? `${warningCount} Item${warningCount === 1 ? "" : "s"} (${warningBrief}) Approaching 90-Day Limit`
+                      : "Facility In 100% Statutory Compliance"}
+                  </span>
                 </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">
                   {overdueCount > 0
-                    ? "Statutory 90-day storage limit exceeded. Arrange disposal batch with authorized vendor."
+                    ? `Statutory 90-day storage limit exceeded (${overdueBrief}). Warning window: ${warningCount} items (${warningBrief}).`
                     : warningCount > 0
-                    ? "Items in 70–89 day window. Prepare manifest and schedule quarterly disposal batch."
-                    : "All hazardous and non-hazardous active waste records are within safe compliance limits."}
+                    ? `${warningCount} records (${warningBrief}) in 70–89 day window. 0 records overdue.`
+                    : `All active records (${activeBrief} across ${active.length} records) within 90-day threshold. 0 overdue • 0 warning.`}
                 </p>
               </div>
             </div>
 
-            {/* Quick Metrics */}
-            <div className="flex items-center gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/60 shrink-0">
+            {/* Quick Metrics (Desktop) */}
+            <div className="flex items-center gap-3 shrink-0">
               {earliestDue && (
-                <div className="text-right pl-3 sm:border-l border-border/60">
+                <div className="text-right pl-3 border-l border-border/60">
                   <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
                     Next Due
                   </span>
-                  <span className={cn(
-                    "text-xs font-bold font-mono",
-                    earliestDue.daysLeft < 0 ? "text-rose-600 dark:text-rose-400" : earliestDue.daysLeft < 20 ? "text-amber-600" : "text-foreground"
-                  )}>
+                  <span
+                    className={cn(
+                      "text-xs font-bold font-mono",
+                      earliestDue.daysLeft < 0
+                        ? "text-rose-600 dark:text-rose-400"
+                        : earliestDue.daysLeft < 20
+                        ? "text-amber-600"
+                        : "text-foreground"
+                    )}
+                  >
                     {earliestDue.date}
                   </span>
                 </div>
@@ -414,7 +563,7 @@ export default function DashboardStats({ entries }: Props) {
                   Active Items
                 </span>
                 <span className="text-xs font-bold font-mono text-foreground">
-                  {active.length} records
+                  {active.length} ({activeBrief})
                 </span>
               </div>
             </div>
@@ -424,13 +573,10 @@ export default function DashboardStats({ entries }: Props) {
 
       {/* ── Section A: Statutory In-Storage Breakdown ── */}
       <section className="space-y-2">
-        <div className="flex items-center justify-between px-1">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <div className="px-1">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
             Compliance By Category (In Storage)
           </h2>
-          <span className="text-[11px] text-muted-foreground">
-            Tap cards to inspect status breakdown
-          </span>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">

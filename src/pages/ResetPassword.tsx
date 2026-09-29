@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Leaf, Loader2, Eye, EyeOff, KeyRound } from "lucide-react";
+import { Loader2, Eye, EyeOff, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ResetPassword() {
@@ -51,7 +51,7 @@ export default function ResetPassword() {
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Reset Password</h1>
           <p className="text-xs text-muted-foreground">
-            Configure a new secure password for your WasteBuddy account
+            Configure a new secure password for your Waste<span className="text-primary font-bold">Buddy</span> account
           </p>
         </div>
 

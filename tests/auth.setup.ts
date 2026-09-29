@@ -58,7 +58,7 @@ test.describe('E2E Authentication Setup', () => {
     await page.locator('#password').fill(password);
 
     // Submit the form
-    await page.getByRole('button', { name: /Sign in|Create account/ }).click();
+    await page.locator('button[type="submit"]').click();
 
     // Wait for redirect to /app (confirms successful auth) OR error toast (failed auth)
     try {

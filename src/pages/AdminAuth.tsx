@@ -100,10 +100,19 @@ export default function AdminAuth() {
     <div className="min-h-screen flex flex-col justify-center items-center px-4 py-12 bg-gradient-to-b from-background via-background to-secondary/30">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/25 mb-1">
-            <Shield className="h-6 w-6" />
+          <div className="relative inline-flex items-center justify-center mb-1">
+            <img
+              src="/icons/icon-192x192.png"
+              alt="WasteBuddy"
+              className="h-14 w-14 rounded-2xl shadow-md object-cover border border-primary/20"
+            />
+            <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-1 shadow-sm">
+              <Shield className="h-3.5 w-3.5" />
+            </div>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">WasteBuddy Admin</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            Waste<span className="text-primary font-bold">Buddy</span> Admin
+          </h1>
           <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5 font-medium">
             <Lock className="h-3.5 w-3.5 text-primary" />
             Restricted Facility Governance Console

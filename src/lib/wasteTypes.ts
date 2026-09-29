@@ -12,52 +12,54 @@ export interface WasteType {
   measureUnit: MeasureUnit;
   /** When true, the entry form also captures a piece count (nos). Never used in totals. */
   countable: boolean;
+  /** Statutory CPCB Schedule I/II or Rules code */
+  statutoryCode?: string;
 }
 
 export const WASTE_TYPES: WasteType[] = [
-  // Hazardous
-  { id: "oil-cotton", name: "Oil/Grease Soaked Cotton Waste", unit: "kg", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: false },
-  { id: "waste-oil", name: "Waste Oil", unit: "litres", category: "Liquid", wasteCategory: "hazardous", measureUnit: "litres", countable: false },
-  { id: "waste-grease", name: "Waste Grease", unit: "kg", category: "Semi-Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: false },
-  { id: "plastic-waste", name: "Plastic Waste (Contaminated)", unit: "kg", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: false },
-  { id: "hu-oil-filter", name: "HU Oil Filter Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
-  { id: "gb-oil-filter", name: "GB Oil Filter Waste (Online filters)", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
-  { id: "gb-oil-filter-offline", name: "GB Oil Filter Waste (Offline filters)", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
-  { id: "dust-filter-mat", name: "Dust Filter Mat", unit: "kg", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: false },
-  { id: "carbon-brush", name: "Carbon Brush Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
-  { id: "oil-filters-misc", name: "Misc Oil Filters", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
-  { id: "empty-containers", name: "Empty Chemical Containers", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
-  { id: "oil-hose", name: "Oil Hose", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
-  { id: "plastic-cartridge-perma", name: "Plastic Cartridge (PERMA)", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
-  { id: "plastic-cartridge-breather", name: "Plastic Cartridge (Gearbox Breather)", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
-  { id: "silica-gel", name: "Silica Gel", unit: "kg", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: false },
-  { id: "yaw-clipper-oil-seal", name: "Yaw Clipper Oil Seal", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
-  { id: "pitch-cylinder-oil-seal", name: "Pitch Cylinder Oil Seal", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
-  { id: "empty-tins", name: "Empty Tins (Zinc Spray, WD40 etc.)", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true },
+  // Hazardous (HOWM Rules 2016)
+  { id: "oil-cotton", name: "Oil/Grease Soaked Cotton Waste", unit: "kg", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: false, statutoryCode: "Sch-I 5.2" },
+  { id: "waste-oil", name: "Waste Oil", unit: "litres", category: "Liquid", wasteCategory: "hazardous", measureUnit: "litres", countable: false, statutoryCode: "Sch-I 5.1" },
+  { id: "waste-grease", name: "Waste Grease", unit: "kg", category: "Semi-Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: false, statutoryCode: "Sch-I 5.1" },
+  { id: "plastic-waste", name: "Plastic Waste (Contaminated)", unit: "kg", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: false, statutoryCode: "Sch-I 33.1" },
+  { id: "hu-oil-filter", name: "HU Oil Filter Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true, statutoryCode: "Sch-I 5.2" },
+  { id: "gb-oil-filter", name: "GB Oil Filter Waste (Online filters)", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true, statutoryCode: "Sch-I 5.2" },
+  { id: "gb-oil-filter-offline", name: "GB Oil Filter Waste (Offline filters)", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true, statutoryCode: "Sch-I 5.2" },
+  { id: "dust-filter-mat", name: "Dust Filter Mat", unit: "kg", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: false, statutoryCode: "Sch-I 35.3" },
+  { id: "carbon-brush", name: "Carbon Brush Waste", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true, statutoryCode: "Sch-II B17" },
+  { id: "oil-filters-misc", name: "Misc Oil Filters", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true, statutoryCode: "Sch-I 5.2" },
+  { id: "empty-containers", name: "Empty Chemical Containers", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true, statutoryCode: "Sch-I 33.1" },
+  { id: "oil-hose", name: "Oil Hose", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true, statutoryCode: "Sch-I 5.2" },
+  { id: "plastic-cartridge-perma", name: "Plastic Cartridge (PERMA)", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true, statutoryCode: "Sch-I 33.1" },
+  { id: "plastic-cartridge-breather", name: "Plastic Cartridge (Gearbox Breather)", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true, statutoryCode: "Sch-I 33.1" },
+  { id: "silica-gel", name: "Silica Gel", unit: "kg", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: false, statutoryCode: "Sch-I 35.3" },
+  { id: "yaw-clipper-oil-seal", name: "Yaw Clipper Oil Seal", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true, statutoryCode: "Sch-I 5.2" },
+  { id: "pitch-cylinder-oil-seal", name: "Pitch Cylinder Oil Seal", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true, statutoryCode: "Sch-I 5.2" },
+  { id: "empty-tins", name: "Empty Tins (Zinc Spray, WD40 etc.)", unit: "nos", category: "Solid", wasteCategory: "hazardous", measureUnit: "kg", countable: true, statutoryCode: "Sch-I 33.1" },
   // Non-hazardous
-  { id: "paper-waste", name: "Paper Waste", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false },
-  { id: "packaging-waste", name: "Packaging Waste", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false },
-  { id: "wooden-boxes", name: "Wooden Boxes", unit: "nos", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: true },
-  { id: "plastic-non-contaminated", name: "Plastic Waste (Non-Contaminated)", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false },
-  { id: "non-haz-others", name: "Others (Non-Hazardous)", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false },
-  // E-waste
-  { id: "used-batteries", name: "Used Batteries", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
-  { id: "e-waste-circuit-boards", name: "Circuit Boards", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
-  { id: "e-waste-general", name: "Electronic Waste", unit: "kg", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: false },
-  { id: "e-waste-igbts", name: "IGBTs", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
-  { id: "e-waste-diodes", name: "Diodes", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
-  { id: "e-waste-thyristors", name: "Thyristors", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
-  { id: "e-waste-resistors", name: "Resistors", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
-  { id: "e-waste-capacitors", name: "Capacitors", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
-  { id: "e-waste-others", name: "E-waste Others", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true },
+  { id: "paper-waste", name: "Paper Waste", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false, statutoryCode: "SWM 2016" },
+  { id: "packaging-waste", name: "Packaging Waste", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false, statutoryCode: "PWM 2016" },
+  { id: "wooden-boxes", name: "Wooden Boxes", unit: "nos", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: true, statutoryCode: "SWM (Wood)" },
+  { id: "plastic-non-contaminated", name: "Plastic Waste (Non-Contaminated)", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false, statutoryCode: "PWM 2016" },
+  { id: "non-haz-others", name: "Others (Non-Hazardous)", unit: "kg", category: "Solid", wasteCategory: "non_hazardous", measureUnit: "kg", countable: false, statutoryCode: "SWM 2016" },
+  // E-waste (E-Waste Rules 2022 & Battery Waste Rules 2022)
+  { id: "used-batteries", name: "Used Batteries", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true, statutoryCode: "BWM 2022" },
+  { id: "e-waste-circuit-boards", name: "Circuit Boards", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true, statutoryCode: "ITEW Sch-I" },
+  { id: "e-waste-general", name: "Electronic Waste", unit: "kg", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: false, statutoryCode: "E-Waste 2022" },
+  { id: "e-waste-igbts", name: "IGBTs", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true, statutoryCode: "CEEW Sch-I" },
+  { id: "e-waste-diodes", name: "Diodes", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true, statutoryCode: "CEEW Sch-I" },
+  { id: "e-waste-thyristors", name: "Thyristors", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true, statutoryCode: "CEEW Sch-I" },
+  { id: "e-waste-resistors", name: "Resistors", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true, statutoryCode: "CEEW Sch-I" },
+  { id: "e-waste-capacitors", name: "Capacitors", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true, statutoryCode: "CEEW Sch-I" },
+  { id: "e-waste-others", name: "E-waste Others", unit: "nos", category: "E-waste", wasteCategory: "e_waste", measureUnit: "kg", countable: true, statutoryCode: "E-Waste 2022" },
   // Other wastes
-  { id: "aluminium-scrap", name: "Aluminium Scrap", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false },
-  { id: "copper-scrap", name: "Copper Scrap", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false },
-  { id: "ms-scrap", name: "MS Scrap", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false },
-  { id: "plastic-scrap", name: "Plastic Scrap", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false },
-  { id: "frp-scrap", name: "FRP Scrap (Blade)", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false },
-  { id: "scrap-insulator", name: "Scrap Insulator", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false },
-  { id: "rubber-scrap", name: "Rubber Scrap", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false },
+  { id: "aluminium-scrap", name: "Aluminium Scrap", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false, statutoryCode: "Scrap (Al)" },
+  { id: "copper-scrap", name: "Copper Scrap", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false, statutoryCode: "Scrap (Cu)" },
+  { id: "ms-scrap", name: "MS Scrap", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false, statutoryCode: "Scrap (MS)" },
+  { id: "plastic-scrap", name: "Plastic Scrap", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false, statutoryCode: "Scrap (Plastic)" },
+  { id: "frp-scrap", name: "FRP Scrap (Blade)", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false, statutoryCode: "Scrap (FRP)" },
+  { id: "scrap-insulator", name: "Scrap Insulator", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false, statutoryCode: "Scrap (Ceramic)" },
+  { id: "rubber-scrap", name: "Rubber Scrap", unit: "kg", category: "Solid", wasteCategory: "other_wastes", measureUnit: "kg", countable: false, statutoryCode: "Scrap (Rubber)" },
 ];
 
 export type ActivityType = "breakdown" | "preventive" | "5s" | "others";
@@ -99,11 +101,37 @@ export function getDaysStored(generatedDate: string): number {
   return Math.floor((now.getTime() - gen.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+/** Statutory storage threshold by waste category under Indian environmental rules. */
+export function getStorageLimitDays(category?: WasteCategory, wasteTypeId?: string): number {
+  if (category === "hazardous") return 90; // HOWM Rules 2016 Rule 8
+  if (category === "e_waste" || wasteTypeId === "used-batteries") return 180; // E-Waste Rules 2022 / BWM 2022
+  if (category === "non_hazardous" || category === "other_wastes") return 180; // Non-hazardous operational housekeeping
+  return 90;
+}
+
+export function isEntryOverdue(entry: WasteEntry): boolean {
+  if (isDisposed(entry)) return false;
+  const days = getDaysStored(entry.generated_date);
+  const limit = getStorageLimitDays(entry.waste_category, entry.waste_type_id);
+  return days >= limit;
+}
+
+export function isEntryWarning(entry: WasteEntry): boolean {
+  if (isDisposed(entry)) return false;
+  const days = getDaysStored(entry.generated_date);
+  const limit = getStorageLimitDays(entry.waste_category, entry.waste_type_id);
+  const warnThreshold = limit === 180 ? 150 : 70;
+  return days >= warnThreshold && days < limit;
+}
+
+export function getStatutoryCode(wasteTypeId: string): string {
+  return WASTE_TYPES.find((w) => w.id === wasteTypeId)?.statutoryCode ?? "—";
+}
+
 export function getStatus(entry: WasteEntry): "safe" | "warning" | "overdue" {
   if (entry.disposal_batch_id) return "safe";
-  const days = getDaysStored(entry.generated_date);
-  if (days >= DISPOSAL_LIMIT_DAYS) return "overdue";
-  if (days >= 70) return "warning";
+  if (isEntryOverdue(entry)) return "overdue";
+  if (isEntryWarning(entry)) return "warning";
   return "safe";
 }
 

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Leaf, Loader2, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Loader2, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 const loginSchema = z.object({
@@ -21,14 +21,13 @@ const signupSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters").max(72),
 });
 
-type Mode = "login" | "signup" | "reset";
+type Mode = "login" | "reset";
 
 export default function Auth() {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [mode, setMode] = useState<Mode>("login");
@@ -37,10 +36,14 @@ export default function Auth() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div className="bg-primary/10 rounded-2xl p-4 shadow-xs">
-            <Leaf className="h-8 w-8 text-primary animate-pulse" />
-          </div>
-          <p className="text-xs font-medium text-muted-foreground">Initializing WasteBuddy…</p>
+          <img
+            src="/icons/icon-192x192.png"
+            alt="WasteBuddy"
+            className="h-12 w-12 rounded-2xl shadow-sm object-cover border border-primary/20 animate-pulse"
+          />
+          <p className="text-xs font-medium text-muted-foreground">
+            Initializing Waste<span className="text-primary font-bold">Buddy</span>…
+          </p>
         </div>
       </div>
     );
@@ -60,30 +63,6 @@ export default function Auth() {
     navigate("/app");
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const parsed = signupSchema.safeParse({ full_name: fullName, email, password });
-    if (!parsed.success) return toast.error(parsed.error.errors[0].message);
-    setSubmitting(true);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/app`,
-        data: { full_name: fullName },
-      },
-    });
-    setSubmitting(false);
-    if (error) return toast.error(error.message);
-    if (data.session) {
-      toast.success("Account created — select a facility site to request access");
-      navigate("/app");
-    } else {
-      toast.success("Verification email sent — please check your inbox");
-      setMode("login");
-    }
-  };
-
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!z.string().email().safeParse(email).success) return toast.error("Please enter a valid email address");
@@ -99,25 +78,27 @@ export default function Auth() {
 
   const titles: Record<Mode, string> = {
     login: "Sign In",
-    signup: "Create Account",
     reset: "Reset Password",
   };
 
-  const onSubmit =
-    mode === "signup" ? handleSignup : mode === "reset" ? handleReset : handleLogin;
+  const onSubmit = mode === "reset" ? handleReset : handleLogin;
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center px-4 py-12 bg-gradient-to-b from-background via-background to-secondary/30">
       <div className="w-full max-w-md space-y-6">
         {/* Brand header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/25 mb-1">
-            <Leaf className="h-6 w-6" />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">WasteBuddy</h1>
+          <img
+            src="/icons/icon-192x192.png"
+            alt="WasteBuddy"
+            className="h-14 w-14 mx-auto rounded-2xl shadow-md object-cover border border-primary/20 mb-1"
+          />
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            Waste<span className="text-primary font-bold">Buddy</span>
+          </h1>
           <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5 font-medium">
             <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-            HOWM Rules 2016 Statutory Tracker
+            Hazardous & Non-Hazardous Waste Management Portal
           </p>
         </div>
 
@@ -129,30 +110,11 @@ export default function Auth() {
               <p className="text-xs text-muted-foreground">
                 {mode === "reset"
                   ? "Enter your email to receive recovery instructions"
-                  : mode === "signup"
-                  ? "Register for multi-site hazardous waste compliance tracking"
                   : "Sign in with your authorized site credentials"}
               </p>
             </div>
 
             <form onSubmit={onSubmit} className="space-y-3.5 pt-1">
-              {mode === "signup" && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="full_name" className="text-xs font-semibold">
-                    Full Name
-                  </Label>
-                  <Input
-                    id="full_name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="e.g., Alex Kumar"
-                    maxLength={100}
-                    className="h-10 text-xs rounded-lg"
-                    required
-                  />
-                </div>
-              )}
-
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-xs font-semibold">
                   Email Address
@@ -175,21 +137,19 @@ export default function Auth() {
                     <Label htmlFor="password" className="text-xs font-semibold">
                       Password
                     </Label>
-                    {mode === "login" && (
-                      <button
-                        type="button"
-                        onClick={() => setMode("reset")}
-                        className="text-[11px] text-primary hover:underline font-medium"
-                      >
-                        Forgot password?
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setMode("reset")}
+                      className="text-[11px] text-primary hover:underline font-medium"
+                    >
+                      Forgot password?
+                    </button>
                   </div>
                   <div className="relative">
                     <Input
                       id="password"
                       type={showPw ? "text" : "password"}
-                      autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                      autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
@@ -214,38 +174,29 @@ export default function Auth() {
                 disabled={submitting}
               >
                 {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                {mode === "signup"
-                  ? "Create Account"
-                  : mode === "reset"
-                  ? "Send Password Reset Link"
-                  : "Sign In"}
+                {mode === "reset" ? "Send Password Reset Link" : "Sign In"}
               </Button>
             </form>
 
-            {/* Mode switch */}
-            <div className="text-center pt-2 border-t border-border/60 text-xs text-muted-foreground">
-              {mode === "login" ? (
-                <p>
-                  Don't have an account yet?{" "}
-                  <button
-                    type="button"
-                    onClick={() => setMode("signup")}
-                    className="text-primary font-semibold hover:underline"
-                  >
-                    Sign up
-                  </button>
-                </p>
-              ) : (
-                <p>
-                  Already have an account?{" "}
+            {/* Mode switch & Enterprise Notice */}
+            <div className="pt-2 border-t border-border/60 text-xs text-muted-foreground space-y-2">
+              {mode === "reset" ? (
+                <div className="text-center">
                   <button
                     type="button"
                     onClick={() => setMode("login")}
                     className="text-primary font-semibold hover:underline"
                   >
-                    Sign in
+                    Back to Sign In
                   </button>
-                </p>
+                </div>
+              ) : (
+                <div className="rounded-lg bg-muted/40 p-2.5 text-[11px] text-center border border-border/40 space-y-0.5">
+                  <p className="font-semibold text-foreground">Restricted Enterprise Access</p>
+                  <p className="text-muted-foreground text-[10.5px]">
+                    User accounts are provisioned directly by facility administrators. Contact your EHS site manager for credentials.
+                  </p>
+                </div>
               )}
             </div>
           </CardContent>

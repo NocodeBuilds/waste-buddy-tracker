@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Info,
   User,
+  Users,
   Plus,
   ChevronRight,
   ShieldCheck,
@@ -33,9 +34,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import EmptyState from "@/components/ui/empty-state";
 
 interface Props {
   entries: WasteEntry[];
+  onNavigateToAdmin?: () => void;
 }
 
 interface SiteMember {
@@ -45,46 +48,52 @@ interface SiteMember {
   roles: string[];
 }
 
-export default function SettingsTab({ entries }: Props) {
+export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
   const { user, signOut } = useAuth();
   const { currentSite, isAdmin, sites, refresh, setCurrentSite } = useSite();
   const [members, setMembers] = useState<SiteMember[]>([]);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<"admin" | "manager" | "member">("member");
-  const [inviting, setInviting] = useState(false);
   const [newSiteName, setNewSiteName] = useState("");
   const [newSiteLocation, setNewSiteLocation] = useState("");
   const [creatingSite, setCreatingSite] = useState(false);
   const [showAddSite, setShowAddSite] = useState(false);
-  const [showInvite, setShowInvite] = useState(false);
 
   const loadMembers = async () => {
-    if (!currentSite) return;
-    const { data: memberships } = await supabase
-      .from("user_sites")
-      .select("user_id, profiles!inner(email, full_name)")
-      .eq("site_id", currentSite.id);
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("user_id, role")
-      .eq("site_id", currentSite.id);
-    const rolesByUser: Record<string, string[]> = {};
-    (roles ?? []).forEach((r: any) => {
-      rolesByUser[r.user_id] = [...(rolesByUser[r.user_id] ?? []), r.role];
-    });
-    setMembers(
-      (memberships ?? []).map((m: any) => ({
-        user_id: m.user_id,
-        email: m.profiles?.email ?? null,
-        full_name: m.profiles?.full_name ?? null,
-        roles: rolesByUser[m.user_id] ?? [],
-      }))
-    );
+    if (!currentSite?.id) return;
+    try {
+      const [{ data: ms }, { data: rs }] = await Promise.all([
+        supabase.from("user_sites").select("user_id").eq("site_id", currentSite.id),
+        supabase.from("user_roles").select("user_id, role").eq("site_id", currentSite.id),
+      ]);
+      const userIds = Array.from(
+        new Set([...(ms ?? []).map((m: any) => m.user_id), ...(rs ?? []).map((r: any) => r.user_id)])
+      );
+      let profMap: Record<string, { email: string | null; full_name: string | null }> = {};
+      if (userIds.length > 0) {
+        const { data: ps } = await supabase.from("profiles").select("id, email, full_name").in("id", userIds);
+        (ps ?? []).forEach((p: any) => {
+          profMap[p.id] = { email: p.email, full_name: p.full_name };
+        });
+      }
+      const rolesByUser: Record<string, string[]> = {};
+      (rs ?? []).forEach((r: any) => {
+        rolesByUser[r.user_id] = [...(rolesByUser[r.user_id] ?? []), r.role];
+      });
+      setMembers(
+        userIds.map((uid) => ({
+          user_id: uid,
+          email: profMap[uid]?.email ?? null,
+          full_name: profMap[uid]?.full_name ?? null,
+          roles: rolesByUser[uid] ?? [],
+        }))
+      );
+    } catch (err) {
+      console.error("Failed to load facility members:", err);
+    }
   };
 
   useEffect(() => {
-    if (isAdmin) loadMembers();
-  }, [currentSite, isAdmin]);
+    loadMembers();
+  }, [currentSite?.id]);
 
   const sanitizeCsv = (v: unknown): string => {
     const s = String(v ?? "");
@@ -121,24 +130,6 @@ export default function SettingsTab({ entries }: Props) {
     a.click();
     URL.revokeObjectURL(url);
     toast.success("CSV dataset exported successfully");
-  };
-
-  const handleInvite = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentSite || !inviteEmail) return;
-    setInviting(true);
-    const { data, error } = await supabase.functions.invoke("invite-user", {
-      body: { email: inviteEmail, site_id: currentSite.id, role: inviteRole },
-    });
-    setInviting(false);
-    if (error || (data as any)?.error) {
-      toast.error((data as any)?.error ?? error?.message ?? "Invite failed");
-      return;
-    }
-    toast.success(`Access invitation sent to ${inviteEmail}`);
-    setInviteEmail("");
-    setShowInvite(false);
-    loadMembers();
   };
 
   const handleCreateSite = async (e: React.FormEvent) => {
@@ -206,11 +197,46 @@ export default function SettingsTab({ entries }: Props) {
               className="h-8 text-xs gap-1.5 text-destructive hover:bg-destructive/10 rounded-lg self-start sm:self-auto shrink-0"
               onClick={signOut}
             >
-              <LogOut className="h-3.5 w-3.5" /> Sign out
+              <LogOut className="h-3.5 w-3.5" />
+              <span>Sign out</span>
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* ── Admin Portal Access Card (Mobile & Desktop) ── */}
+      {isAdmin && onNavigateToAdmin && (
+        <Card className="border-primary/40 bg-primary/5 shadow-xs overflow-hidden">
+          <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-xs">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-foreground">Enterprise Administration</h3>
+                  <Badge variant="default" className="text-[9px] uppercase font-mono bg-primary">
+                    Admin
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Manage user accounts, roles, site permissions, and disposal batch approvals.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              onClick={onNavigateToAdmin}
+              size="sm"
+              className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs rounded-lg shrink-0 self-stretch sm:self-auto"
+            >
+              <Shield className="h-4 w-4" />
+              <span>Open Admin Portal</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── Grouped Section 1: Facility Sites & Workspaces ── */}
       <Card className="border-border/80 shadow-xs">
@@ -321,88 +347,56 @@ export default function SettingsTab({ entries }: Props) {
         </CardContent>
       </Card>
 
-      {/* ── Grouped Section 2: Team Members & Access ── */}
-      {isAdmin && currentSite && (
+      {/* ── Grouped Section 2: Facility Team Roster ── */}
+      {currentSite && (
         <Card className="border-border/80 shadow-xs">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <UserPlus className="h-4 w-4 text-primary" />
+                <Users className="h-4 w-4 text-primary" />
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Team Members on {currentSite.name} ({members.length})
+                  <span>Facility Operators on {currentSite.name} ({members.length})</span>
                 </h3>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs text-primary hover:text-primary/90 gap-1 px-2"
-                onClick={() => setShowInvite(!showInvite)}
-              >
-                <Plus className="h-3.5 w-3.5" />
-                <span>{showInvite ? "Cancel" : "Invite Member"}</span>
-              </Button>
-            </div>
-
-            {/* Invite Teammate Drawer */}
-            {showInvite && (
-              <form onSubmit={handleInvite} className="p-3.5 rounded-lg border border-border bg-muted/20 space-y-3">
-                <h4 className="text-xs font-semibold text-foreground">Invite New Teammate</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <div className="sm:col-span-2 space-y-1">
-                    <Label htmlFor="invite-email" className="text-[11px] font-semibold">
-                      Email Address
-                    </Label>
-                    <Input
-                      id="invite-email"
-                      type="email"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      placeholder="engineer@windpower.com"
-                      className="h-8 text-xs rounded-lg"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[11px] font-semibold">Role</Label>
-                    <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as any)}>
-                      <SelectTrigger className="h-8 text-xs rounded-lg">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="member">Member</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+              {isAdmin && onNavigateToAdmin && (
                 <Button
-                  type="submit"
+                  variant="outline"
                   size="sm"
-                  className="w-full h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg"
-                  disabled={inviting}
+                  className="h-7 text-xs gap-1.5 px-2.5 rounded-lg shadow-2xs font-medium text-foreground hover:bg-muted"
+                  onClick={onNavigateToAdmin}
                 >
-                  {inviting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />} Send Access Invitation
+                  <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                  <span>Manage in Admin</span>
                 </Button>
-              </form>
-            )}
+              )}
+            </div>
 
             {/* Member List */}
-            <div className="divide-y divide-border/60 text-xs rounded-lg border border-border/60 overflow-hidden bg-background">
-              {members.map((m) => (
-                <div key={m.user_id} className="p-2.5 flex justify-between items-center gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                      {m.email?.charAt(0).toUpperCase() ?? "U"}
+            {members.length === 0 ? (
+              <EmptyState
+                key="empty-members"
+                icon={Users}
+                title="No Members Assigned"
+                description="No operator accounts are assigned to this facility."
+                compact
+              />
+            ) : (
+              <div key="members-list" className="divide-y divide-border/60 text-xs rounded-lg border border-border/60 overflow-hidden bg-background">
+                {members.map((m) => (
+                  <div key={m.user_id} className="p-2.5 flex justify-between items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                        <span>{m.email?.charAt(0).toUpperCase() ?? "U"}</span>
+                      </div>
+                      <p className="truncate font-medium text-foreground">{m.email ?? m.full_name}</p>
                     </div>
-                    <p className="truncate font-medium text-foreground">{m.email ?? m.full_name}</p>
+                    <span className="text-muted-foreground shrink-0 capitalize text-[10px] font-mono bg-muted/80 px-2 py-0.5 rounded border border-border/50">
+                      {m.roles.join(", ") || "member"}
+                    </span>
                   </div>
-                  <span className="text-muted-foreground shrink-0 capitalize text-[10px] font-mono bg-muted/80 px-2 py-0.5 rounded border border-border/50">
-                    {m.roles.join(", ") || "member"}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -429,7 +423,8 @@ export default function SettingsTab({ entries }: Props) {
               className="h-8 text-xs gap-1.5 rounded-lg shrink-0 shadow-2xs"
               onClick={handleExport}
             >
-              <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" /> Export CSV
+              <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
+              <span>Export CSV</span>
             </Button>
           </div>
         </CardContent>
@@ -452,7 +447,7 @@ export default function SettingsTab({ entries }: Props) {
               <strong className="text-foreground">Statutory Storage Threshold:</strong> 90 calendar days on-site maximum storage window.
             </p>
             <p>
-              <strong className="text-foreground">Platform Engine:</strong> WasteBuddy Enterprise PWA v2.0 (Offline-capable, role-based).
+              <strong className="text-foreground">Platform Engine:</strong> Waste<span className="text-primary font-semibold">Buddy</span> Enterprise PWA v2.0 (Offline-capable, role-based).
             </p>
           </div>
         </CardContent>
