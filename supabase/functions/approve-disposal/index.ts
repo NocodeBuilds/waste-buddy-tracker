@@ -131,14 +131,22 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: uErr.message }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
       }
 
-      // 2. Link all unlinked entries on this site to the batch
-      const { error: linkErr } = await admin
+      // 2. Check if entries were already linked to this batch (selective disposal)
+      const { count: linkedCount } = await admin
         .from("waste_entries")
-        .update({ disposal_batch_id: body.batch_id })
-        .eq("site_id", body.site_id)
-        .is("disposal_batch_id", null);
-      if (linkErr) {
-        return new Response(JSON.stringify({ error: linkErr.message }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+        .select("id", { count: "exact", head: true })
+        .eq("disposal_batch_id", body.batch_id);
+
+      if (!linkedCount || linkedCount === 0) {
+        // Fallback for full facility batch: link all unlinked entries on this site
+        const { error: linkErr } = await admin
+          .from("waste_entries")
+          .update({ disposal_batch_id: body.batch_id })
+          .eq("site_id", body.site_id)
+          .is("disposal_batch_id", null);
+        if (linkErr) {
+          return new Response(JSON.stringify({ error: linkErr.message }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+        }
       }
 
       return new Response(JSON.stringify({ ok: true, status: "approved" }), {
@@ -148,6 +156,12 @@ Deno.serve(async (req) => {
     }
 
     // action === "reject"
+    // Unlink any entries that were pre-linked to this batch
+    await admin
+      .from("waste_entries")
+      .update({ disposal_batch_id: null })
+      .eq("disposal_batch_id", body.batch_id);
+
     const { error: rErr } = await admin
       .from("disposal_batches")
       .update({

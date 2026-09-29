@@ -4,6 +4,7 @@ import ComicBubble from "./ComicBubble";
 import {
   WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS,
   getStatus, isDisposed, getMeasureUnit, fmtNum,
+  isEntryOverdue, isEntryWarning, getStorageLimitDays,
 } from "@/lib/wasteTypes";
 import {
   Package, ShieldAlert, Leaf, Trash2, Recycle, Battery, Droplets,
@@ -70,9 +71,9 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
   totalValue: number;
 }) {
   const catEntries = entries.filter((e) => !isDisposed(e) && filterFn(e));
-  const ovd = catEntries.filter((e) => getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS);
-  const wrn = catEntries.filter((e) => { const d = getDaysStored(e.generated_date); return d >= 70 && d < DISPOSAL_LIMIT_DAYS; });
-  const saf = catEntries.filter((e) => getStatus(e) === "safe");
+  const ovd = catEntries.filter((e) => isEntryOverdue(e));
+  const wrn = catEntries.filter((e) => isEntryWarning(e));
+  const saf = catEntries.filter((e) => !isEntryOverdue(e) && !isEntryWarning(e));
   const ovdW = Math.round(sumWeight(ovd));
   const wrnW = Math.round(sumWeight(wrn));
   const safW = Math.round(sumWeight(saf));
@@ -81,7 +82,8 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
   const fmtDate = (s: string) => new Date(s + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
   const dueDate = (entry: WasteEntry) => {
     const gen = new Date(entry.generated_date + "T00:00:00");
-    gen.setDate(gen.getDate() + DISPOSAL_LIMIT_DAYS);
+    const limit = getStorageLimitDays(entry.waste_category, entry.waste_type_id);
+    gen.setDate(gen.getDate() + limit);
     return gen.toISOString().slice(0, 10);
   };
 
@@ -90,11 +92,11 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
     : "";
 
   const maxDaysOverdue = ovd.length > 0
-    ? Math.max(...ovd.map(e => getDaysStored(e.generated_date) - DISPOSAL_LIMIT_DAYS))
+    ? Math.max(...ovd.map(e => getDaysStored(e.generated_date) - getStorageLimitDays(e.waste_category, e.waste_type_id)))
     : 0;
 
   const minDaysToDue = wrn.length > 0
-    ? Math.min(...wrn.map(e => DISPOSAL_LIMIT_DAYS - getDaysStored(e.generated_date)))
+    ? Math.min(...wrn.map(e => getStorageLimitDays(e.waste_category, e.waste_type_id) - getDaysStored(e.generated_date)))
     : 0;
 
   const overdueDue = ovd.length > 0
@@ -338,23 +340,24 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
   };
 
   // Compliance Calculations
-  const overdueCount = active.filter((e) => getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS).length;
-  const warningCount = active.filter((e) => {
-    const d = getDaysStored(e.generated_date);
-    return d >= 70 && d < DISPOSAL_LIMIT_DAYS;
-  }).length;
+  const overdueCount = active.filter((e) => isEntryOverdue(e)).length;
+  const warningCount = active.filter((e) => isEntryWarning(e)).length;
 
   const earliestDue = useMemo(() => {
     if (active.length === 0) return null;
-    const sorted = [...active].sort((a, b) => a.generated_date.localeCompare(b.generated_date));
-    const oldest = sorted[0];
-    const gen = new Date(oldest.generated_date + "T00:00:00");
-    gen.setDate(gen.getDate() + DISPOSAL_LIMIT_DAYS);
-    const daysLeft = DISPOSAL_LIMIT_DAYS - getDaysStored(oldest.generated_date);
-    return {
-      date: gen.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
-      daysLeft,
-    };
+    const itemsWithDue = active.map((e) => {
+      const gen = new Date(e.generated_date + "T00:00:00");
+      const limit = getStorageLimitDays(e.waste_category, e.waste_type_id);
+      gen.setDate(gen.getDate() + limit);
+      const daysLeft = limit - getDaysStored(e.generated_date);
+      return {
+        date: gen.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+        daysLeft,
+        time: gen.getTime(),
+      };
+    });
+    itemsWithDue.sort((a, b) => a.time - b.time);
+    return itemsWithDue[0];
   }, [active]);
 
   return (

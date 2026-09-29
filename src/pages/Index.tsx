@@ -11,7 +11,8 @@ import AdminTab from "@/components/AdminTab";
 import RequestSiteAccess from "@/components/RequestSiteAccess";
 import BottomNav, { TabId } from "@/components/BottomNav";
 import EditWasteDialog from "@/components/EditWasteDialog";
-import { WasteEntry, DISPOSAL_LIMIT_DAYS, getDaysStored, isDisposed } from "@/lib/wasteTypes";
+import OfflineBanner from "@/components/OfflineBanner";
+import { WasteEntry, DISPOSAL_LIMIT_DAYS, getDaysStored, isDisposed, isEntryOverdue, isEntryWarning } from "@/lib/wasteTypes";
 
 import SiteSwitcher from "@/components/SiteSwitcher";
 import { Loader2, Bell, Home, List, BarChart3, Settings, Shield } from "lucide-react";
@@ -30,16 +31,12 @@ const Index = () => {
   const [editEntry, setEditEntry] = useState<WasteEntry | null>(null);
 
   const overdueCount = useMemo(
-    () => entries.filter((e) => !isDisposed(e) && getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS).length,
+    () => entries.filter((e) => isEntryOverdue(e)).length,
     [entries],
   );
 
   const warningCount = useMemo(
-    () => entries.filter((e) => {
-      if (isDisposed(e)) return false;
-      const d = getDaysStored(e.generated_date);
-      return d >= 70 && d < DISPOSAL_LIMIT_DAYS;
-    }).length,
+    () => entries.filter((e) => isEntryWarning(e)).length,
     [entries],
   );
 
@@ -125,6 +122,9 @@ const Index = () => {
           </div>
         </div>
       </header>
+
+      {/* Offline Status & Sync Banner */}
+      <OfflineBanner />
 
       {/* Main content */}
       <main className="w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-4 pb-24 lg:pb-8 space-y-4">

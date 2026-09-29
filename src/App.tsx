@@ -14,7 +14,19 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import InstallPrompt from "@/components/InstallPrompt";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 60 * 24 * 7,
+      networkMode: "offlineFirst",
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      networkMode: "offlineFirst",
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

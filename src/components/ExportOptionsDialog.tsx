@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon, FileSpreadsheet, FileText, Download } from "lucide-react";
+import { Calendar as CalendarIcon, FileSpreadsheet, FileText, Download, Tag, FileCheck } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -26,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import MultiSelect from "./MultiSelect";
 
 type PeriodKind = "all" | "month" | "range" | "fy" | "batch";
-type Format = "excel" | "pdf";
+export type ExportFormat = "excel" | "pdf" | "form8" | "form4";
 
 const CATEGORIES = [
   { value: "hazardous", label: "Hazardous" },
@@ -38,16 +38,17 @@ const CATEGORIES = [
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** "excel" or "pdf" — pre-selected based on which button was clicked */
-  initialFormat: Format;
+  /** "excel", "pdf" or "form8" — pre-selected based on which button was clicked */
+  initialFormat: ExportFormat;
   siteName: string;
   entries: any[];
   batches: DisposalBatch[];
   onExport: (opts: {
-    format: Format;
+    format: ExportFormat;
     filteredEntries: any[];
     chosenBatch: DisposalBatch | null;
     periodLabel: string;
+    selectedFy: number;
   }) => void;
 }
 
@@ -60,7 +61,7 @@ export default function ExportOptionsDialog({
   batches,
   onExport,
 }: Props) {
-  const [formatType, setFormatType] = useState<Format>(initialFormat);
+  const [formatType, setFormatType] = useState<ExportFormat>(initialFormat);
   const [periodKind, setPeriodKind] = useState<PeriodKind>("all");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -80,7 +81,7 @@ export default function ExportOptionsDialog({
   useEffect(() => {
     if (open) {
       setFormatType(initialFormat);
-      setPeriodKind("all");
+      setPeriodKind(initialFormat === "form4" ? "fy" : "all");
       setCategories([]);
       setWasteTypeIds([]);
       setRangeStart("");
@@ -214,7 +215,7 @@ export default function ExportOptionsDialog({
   const approvedBatches = batches.filter((b) => (b as any).status === "approved" || !(b as any).status);
 
   const handleExport = () => {
-    onExport({ format: formatType, filteredEntries, chosenBatch, periodLabel });
+    onExport({ format: formatType, filteredEntries, chosenBatch, periodLabel, selectedFy });
     onOpenChange(false);
   };
 
@@ -229,7 +230,7 @@ export default function ExportOptionsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-xl">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-base font-semibold flex items-center gap-2">
             <Download className="h-4 w-4 text-primary" />
@@ -244,30 +245,61 @@ export default function ExportOptionsDialog({
           {/* ── Format selection ── */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold">Report Format</Label>
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
                 type="button"
                 onClick={() => setFormatType("excel")}
-                className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-medium transition-all ${
+                className={`flex flex-col items-center justify-center text-center p-2 rounded-lg border text-xs transition-all ${
                   formatType === "excel"
                     ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary/20"
                     : "border-border hover:bg-muted/70 text-muted-foreground"
                 }`}
               >
-                <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-                <span>Excel Spreadsheet (.xlsx)</span>
+                <FileSpreadsheet className="h-4 w-4 text-emerald-600 mb-1" />
+                <span className="font-semibold text-foreground text-[11px]">Excel (.xlsx)</span>
+                <span className="text-[10px] text-muted-foreground">Full data register</span>
               </button>
               <button
                 type="button"
                 onClick={() => setFormatType("pdf")}
-                className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-medium transition-all ${
+                className={`flex flex-col items-center justify-center text-center p-2 rounded-lg border text-xs transition-all ${
                   formatType === "pdf"
                     ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary/20"
                     : "border-border hover:bg-muted/70 text-muted-foreground"
                 }`}
               >
-                <FileText className="h-4 w-4 text-rose-600" />
-                <span>Form 3 PDF (HOWM)</span>
+                <FileText className="h-4 w-4 text-rose-600 mb-1" />
+                <span className="font-semibold text-foreground text-[11px]">Form 3 PDF</span>
+                <span className="text-[10px] text-muted-foreground">HOWM Passbook</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormatType("form8")}
+                className={`flex flex-col items-center justify-center text-center p-2 rounded-lg border text-xs transition-all ${
+                  formatType === "form8"
+                    ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary/20"
+                    : "border-border hover:bg-muted/70 text-muted-foreground"
+                }`}
+              >
+                <Tag className="h-4 w-4 text-amber-600 mb-1" />
+                <span className="font-semibold text-foreground text-[11px]">Form 8 Labels</span>
+                <span className="text-[10px] text-muted-foreground">Rule 17 Drum Signs</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormatType("form4");
+                  setPeriodKind("fy");
+                }}
+                className={`flex flex-col items-center justify-center text-center p-2 rounded-lg border text-xs transition-all ${
+                  formatType === "form4"
+                    ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary/20"
+                    : "border-border hover:bg-muted/70 text-muted-foreground"
+                }`}
+              >
+                <FileCheck className="h-4 w-4 text-blue-600 mb-1" />
+                <span className="font-semibold text-foreground text-[11px]">Form 4 Return</span>
+                <span className="text-[10px] text-muted-foreground">Rule 20(2) Annual</span>
               </button>
             </div>
           </div>
@@ -472,16 +504,31 @@ export default function ExportOptionsDialog({
           </DialogClose>
           <Button
             size="sm"
-            disabled={filteredEntries.length === 0 || (periodKind === "batch" && !batchId)}
+            disabled={
+              formatType === "form4"
+                ? false
+                : filteredEntries.length === 0 || (periodKind === "batch" && !batchId)
+            }
             onClick={handleExport}
             className="h-9 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
           >
             {formatType === "excel" ? (
               <FileSpreadsheet className="h-4 w-4 mr-1.5" />
-            ) : (
+            ) : formatType === "pdf" ? (
               <FileText className="h-4 w-4 mr-1.5" />
+            ) : formatType === "form8" ? (
+              <Tag className="h-4 w-4 mr-1.5" />
+            ) : (
+              <FileCheck className="h-4 w-4 mr-1.5" />
             )}
-            Generate {formatType === "excel" ? "Excel" : "Form 3 PDF"}
+            Generate{" "}
+            {formatType === "excel"
+              ? "Excel"
+              : formatType === "pdf"
+              ? "Form 3 PDF"
+              : formatType === "form8"
+              ? "Form 8 Labels"
+              : "Form 4 Return"}
           </Button>
         </DialogFooter>
       </DialogContent>

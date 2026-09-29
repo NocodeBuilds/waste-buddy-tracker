@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS, isDisposed, getMeasureUnit, unitLabel, fmtNum } from "@/lib/wasteTypes";
+import {
+  WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS,
+  isDisposed, getMeasureUnit, unitLabel, fmtNum,
+  isEntryOverdue, isEntryWarning,
+} from "@/lib/wasteTypes";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Bell, X, EyeOff } from "lucide-react";
 
@@ -44,13 +48,8 @@ export default function AlertsPanel({ entries }: Props) {
   };
 
   const active = entries.filter((e) => !isDisposed(e));
-  const overdue = active.filter(
-    (e) => getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS && !dismissed.has(e.id)
-  );
-  const warnings = active.filter((e) => {
-    const d = getDaysStored(e.generated_date);
-    return d >= 70 && d < DISPOSAL_LIMIT_DAYS && !dismissed.has(e.id);
-  });
+  const overdue = active.filter((e) => isEntryOverdue(e) && !dismissed.has(e.id));
+  const warnings = active.filter((e) => isEntryWarning(e) && !dismissed.has(e.id));
 
   if (overdue.length === 0 && warnings.length === 0) return null;
 
