@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollText, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuditLogRow as AuditRow } from "@/types";
+import EmptyState from "@/components/ui/empty-state";
 
 export default function AuditTrailView() {
   const [rows, setRows] = useState<AuditRow[]>([]);
@@ -45,7 +46,12 @@ export default function AuditTrailView() {
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : rows.length === 0 ? (
-          <p className="text-xs text-muted-foreground py-4 text-center">No compliance audit activity recorded yet.</p>
+          <EmptyState
+            icon={ScrollText}
+            title="No Audit Activity"
+            description="No compliance audit actions or log records have been recorded yet."
+            compact
+          />
         ) : (
           <div className="divide-y divide-border/60 text-xs rounded-lg border border-border/60 overflow-hidden bg-background">
             {rows.map((r) => (

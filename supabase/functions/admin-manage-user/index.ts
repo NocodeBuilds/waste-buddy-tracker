@@ -26,6 +26,7 @@ function buildCorsHeaders(reqOrigin: string | null): Record<string, string> {
 }
 
 type Action =
+  | { action: "create_user"; email: string; password?: string; site_id: string; role: "admin" | "manager" | "member"; full_name?: string }
   | { action: "invite"; email: string; site_id: string; role: "admin" | "manager" | "member"; full_name?: string }
   | { action: "assign"; user_id: string; site_id: string; role: "admin" | "manager" | "member" }
   | { action: "revoke_role"; user_id: string; site_id: string; role: "admin" | "manager" | "member" }
@@ -85,6 +86,53 @@ Deno.serve(async (req) => {
       .eq("role", "admin")
       .maybeSingle();
     if (!callerRole) return json({ error: "Forbidden — not an admin of this site" }, 403, cors);
+
+    if (body.action === "create_user") {
+      const email = body.email.trim().toLowerCase();
+      const password = (body.password ?? "").trim();
+      if (!email.includes("@")) return json({ error: "Invalid email" }, 400, cors);
+      if (!password || password.length < 6) {
+        return json({ error: "Password must be at least 6 characters" }, 400, cors);
+      }
+
+      let targetId: string | null = null;
+      const { data: existing } = await admin
+        .from("profiles")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (existing) {
+        targetId = existing.id;
+        await admin.auth.admin.updateUserById(targetId, {
+          password,
+          email_confirm: true,
+          user_metadata: { full_name: body.full_name ?? email },
+        });
+      } else {
+        const { data: created, error: createErr } = await admin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: { full_name: body.full_name ?? email },
+        });
+        if (createErr || !created.user) {
+          return json({ error: createErr?.message ?? "User creation failed" }, 400, cors);
+        }
+        targetId = created.user.id;
+      }
+
+      await admin.from("user_sites").upsert(
+        { user_id: targetId, site_id },
+        { onConflict: "user_id,site_id" }
+      );
+      await admin.from("user_roles").upsert(
+        { user_id: targetId, site_id, role: body.role },
+        { onConflict: "user_id,site_id,role" }
+      );
+
+      return json({ ok: true, user_id: targetId }, 200, cors);
+    }
 
     if (body.action === "invite") {
       const email = body.email.trim().toLowerCase();

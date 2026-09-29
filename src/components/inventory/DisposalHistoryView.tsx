@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { History, CheckCircle, X, Download } from "lucide-react";
 import { toast } from "sonner";
-import { exportDisposalBatchPdf } from "@/lib/wasteExports";
 import { DisposalBatch, WasteEntry } from "@/lib/wasteTypes";
+import EmptyState from "@/components/ui/empty-state";
 
 interface Props {
   batches: DisposalBatch[];
@@ -42,13 +42,11 @@ export default function DisposalHistoryView({
       </div>
 
       {batches.length === 0 ? (
-        <Card className="border-border/80 border-dashed p-8 text-center text-muted-foreground">
-          <History className="h-8 w-8 mx-auto mb-2 opacity-40 text-muted-foreground" />
-          <p className="text-sm font-semibold text-foreground">No disposal batches recorded yet</p>
-          <p className="text-xs text-muted-foreground/70 mt-1">
-            When waste is dispatched to an authorized TSDF or recycler, tap <strong>Record Disposal</strong> to generate an official batch and Form 10 manifest.
-          </p>
-        </Card>
+        <EmptyState
+          icon={History}
+          title="No Disposal Batches Recorded"
+          description="When waste is dispatched to an authorized TSDF or recycler, tap 'Record Disposal' to generate a batch and Form 10 manifest."
+        />
       ) : (
         <div className="space-y-2.5">
           {batches.map((b) => {

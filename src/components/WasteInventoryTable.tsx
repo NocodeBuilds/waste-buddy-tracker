@@ -101,6 +101,7 @@ import { toast } from "sonner";
 import ExportOptionsDialog, { ExportFormat } from "./ExportOptionsDialog";
 import StorageBreakdownView from "./inventory/StorageBreakdownView";
 import DisposalHistoryView from "./inventory/DisposalHistoryView";
+import EmptyState from "@/components/ui/empty-state";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
@@ -933,12 +934,11 @@ export default function WasteInventoryTable({
           {/* ── Mobile View: High-Density Compact List (Eliminates vertical scroll overload) ── */}
           <div className="md:hidden space-y-1.5">
             {filtered.length === 0 ? (
-              <Card className="p-8 text-center text-muted-foreground border-border/80 border-dashed">
-                <p className="text-sm font-medium">No waste entries found</p>
-                <p className="text-xs text-muted-foreground/70 mt-1">
-                  Try adjusting your filters or search query.
-                </p>
-              </Card>
+              <EmptyState
+                icon={Package}
+                title="No Waste Entries Found"
+                description="Try adjusting your filters, date range, or search query."
+              />
             ) : (
               <div className="rounded-xl border border-border/80 bg-card divide-y divide-border/60 overflow-hidden shadow-xs">
                 {filtered.map((entry) => {
@@ -1177,13 +1177,13 @@ export default function WasteInventoryTable({
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={isManagerOrAdmin ? 10 : 9} className="text-center py-12">
-                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                          <p className="text-sm font-medium">No waste entries found</p>
-                          <p className="text-xs text-muted-foreground/70">
-                            Try adjusting filters, or tap <strong>+ Log Waste</strong> to record a new entry.
-                          </p>
-                        </div>
+                      <TableCell colSpan={isManagerOrAdmin ? 10 : 9} className="text-center py-8">
+                        <EmptyState
+                          icon={Package}
+                          title="No Waste Entries Found"
+                          description="Try adjusting your filters, date range, or search query."
+                          className="border-none bg-transparent"
+                        />
                       </TableCell>
                     </TableRow>
                   ) : (

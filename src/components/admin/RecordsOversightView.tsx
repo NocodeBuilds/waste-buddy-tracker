@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { WASTE_TYPES } from "@/lib/wasteTypes";
+import EmptyState from "@/components/ui/empty-state";
 
 interface Props {
   siteId: string;
@@ -84,7 +85,12 @@ export default function RecordsOversightView({ siteId }: Props) {
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : filtered.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-4 text-center">No matching records found.</p>
+            <EmptyState
+              icon={FileText}
+              title="No Matching Records"
+              description="No entries matched your search term across this facility."
+              compact
+            />
           ) : (
             <div className="divide-y divide-border/60 text-xs rounded-lg border border-border/60 overflow-hidden bg-background">
               {filtered.map((r) => {

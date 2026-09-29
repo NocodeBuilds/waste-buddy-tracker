@@ -4,10 +4,34 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, UserPlus, UserMinus, Plus, CheckCircle, X, Loader2 } from "lucide-react";
+import {
+  Users,
+  UserPlus,
+  UserMinus,
+  Plus,
+  CheckCircle,
+  X,
+  Loader2,
+  KeyRound,
+  Eye,
+  EyeOff,
+  Copy,
+  Check,
+  Shield,
+  Sparkles,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Role, Member } from "@/types";
+import EmptyState from "@/components/ui/empty-state";
 
 interface Props {
   siteId: string;
@@ -15,15 +39,38 @@ interface Props {
   callerId: string;
 }
 
+function generateRandomPassword() {
+  const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#$%";
+  let pass = "";
+  for (let i = 0; i < 10; i++) {
+    pass += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return pass;
+}
+
 export default function UserManagementView({ siteId, siteName, callerId }: Props) {
   const [members, setMembers] = useState<Member[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<Role>("member");
   const [busy, setBusy] = useState(false);
   const [approveRoles, setApproveRoles] = useState<Record<string, Role>>({});
-  const [showInvite, setShowInvite] = useState(false);
+
+  // Account creation form state
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<Role>("member");
+  const [showPw, setShowPw] = useState(false);
+
+  // Success credentials dialog state
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    email: string;
+    password?: string;
+    name: string;
+    role: string;
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const setReqRole = (reqId: string, r: Role) => setApproveRoles((prev) => ({ ...prev, [reqId]: r }));
 
@@ -94,14 +141,54 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
     return true;
   };
 
-  const invite = async (e: React.FormEvent) => {
+  const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-    const ok = await call({ action: "invite", email, site_id: siteId, role }, `Invited ${email}`);
-    if (ok) {
-      setEmail("");
-      setShowInvite(false);
+    if (!email || !password) return;
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters long");
+      return;
     }
+
+    const ok = await call(
+      {
+        action: "create_user",
+        email,
+        password,
+        full_name: fullName.trim() || email,
+        site_id: siteId,
+        role,
+      },
+      `Account created for ${email}`
+    );
+
+    if (ok) {
+      setCreatedCredentials({
+        email,
+        password,
+        name: fullName || email,
+        role,
+      });
+      setEmail("");
+      setPassword("");
+      setFullName("");
+      setShowCreateUser(false);
+    }
+  };
+
+  const handleCopyCredentials = () => {
+    if (!createdCredentials) return;
+    const text = [
+      `WasteBuddy Portal Credentials`,
+      `Site: ${siteName}`,
+      `Role: ${createdCredentials.role}`,
+      `Email: ${createdCredentials.email}`,
+      `Password: ${createdCredentials.password}`,
+      `Portal: ${window.location.origin}`,
+    ].join("\n");
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast.success("Credentials copied to clipboard");
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const approveReq = async (r: any) => {
@@ -191,29 +278,46 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Site Operators ({members.length})
+                Site Operators & Credentials ({members.length})
               </h3>
             </div>
             <Button
-              variant="ghost"
+              variant="default"
               size="sm"
-              className="h-7 text-xs text-primary hover:text-primary/90 gap-1 px-2"
-              onClick={() => setShowInvite(!showInvite)}
+              className="h-7 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-1 px-2.5 rounded-lg shadow-2xs"
+              onClick={() => {
+                setShowCreateUser(!showCreateUser);
+                if (!password) setPassword(generateRandomPassword());
+              }}
             >
-              <Plus className="h-3.5 w-3.5" />
-              <span>{showInvite ? "Cancel" : "Invite Teammate"}</span>
+              <UserPlus className="h-3.5 w-3.5" />
+              <span>{showCreateUser ? "Cancel" : "Add User Account"}</span>
             </Button>
           </div>
 
-          {/* Invite Drawer */}
-          {showInvite && (
-            <form onSubmit={invite} className="p-3.5 rounded-lg border border-border bg-muted/20 space-y-2.5">
-              <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <UserPlus className="h-3.5 w-3.5 text-primary" /> Invite Operator to {siteName}
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div className="sm:col-span-2 space-y-1">
-                  <Label className="text-[11px] font-semibold">Email address</Label>
+          {/* Direct Credential Provisioning Drawer */}
+          {showCreateUser && (
+            <form onSubmit={handleCreateAccount} className="p-3.5 rounded-lg border border-border bg-muted/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <KeyRound className="h-3.5 w-3.5 text-primary" /> Create User & Provision Credentials
+                </h4>
+                <span className="text-[10px] text-muted-foreground font-medium">Instant Active Login</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold">Full Name</Label>
+                  <Input
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="e.g. Alex Kumar"
+                    className="h-8 text-xs rounded-lg"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold">Email Address (Login ID)</Label>
                   <Input
                     type="email"
                     value={email}
@@ -223,28 +327,72 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
                     required
                   />
                 </div>
+
                 <div className="space-y-1">
-                  <Label className="text-[11px] font-semibold">Role</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[11px] font-semibold">Initial Password</Label>
+                    <button
+                      type="button"
+                      onClick={() => setPassword(generateRandomPassword())}
+                      className="text-[10px] text-primary hover:underline flex items-center gap-1 font-medium"
+                    >
+                      <Sparkles className="h-2.5 w-2.5" /> Generate
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      type={showPw ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Min 6 characters"
+                      className="h-8 text-xs rounded-lg pr-8 font-mono"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPw(!showPw)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPw ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold">Assigned Role</Label>
                   <Select value={role} onValueChange={(v) => setRole(v as Role)}>
                     <SelectTrigger className="h-8 text-xs rounded-lg">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="member">Member</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="member">Member (Log & View)</SelectItem>
+                      <SelectItem value="manager">Manager (Approve Disposals)</SelectItem>
+                      <SelectItem value="admin">Admin (Full Site Control)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <Button
-                type="submit"
-                size="sm"
-                className="w-full h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg"
-                disabled={busy || !email}
-              >
-                {busy && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />} Send Invitation
-              </Button>
+
+              <div className="pt-1 flex items-center gap-2">
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="flex-1 h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg"
+                  disabled={busy || !email || !password}
+                >
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <KeyRound className="h-3.5 w-3.5 mr-1.5" />}
+                  Create Account & Hand Over
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => setShowCreateUser(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
             </form>
           )}
 
@@ -254,7 +402,12 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : members.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-2">No members assigned to this site yet.</p>
+            <EmptyState
+              icon={Users}
+              title="No Team Members"
+              description="No operator accounts are assigned to this facility yet."
+              compact
+            />
           ) : (
             <div className="divide-y divide-border/60 text-xs rounded-lg border border-border/60 overflow-hidden bg-background">
               {members.map((m) => (
@@ -320,6 +473,62 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
           )}
         </CardContent>
       </Card>
+
+      {/* Credentials Created Dialog for Admin to Copy/Handover */}
+      <Dialog open={!!createdCredentials} onOpenChange={(o) => !o && setCreatedCredentials(null)}>
+        <DialogContent className="max-w-md rounded-xl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-emerald-600" /> User Credentials Ready
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              The user account has been provisioned and is active immediately. You can hand over these credentials to the user.
+            </DialogDescription>
+          </DialogHeader>
+
+          {createdCredentials && (
+            <div className="space-y-2.5 p-3.5 rounded-lg border border-border/80 bg-muted/30 text-xs font-mono">
+              <div className="flex justify-between items-center py-1 border-b border-border/40">
+                <span className="text-muted-foreground font-sans">Facility:</span>
+                <span className="font-semibold text-foreground">{siteName}</span>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-border/40">
+                <span className="text-muted-foreground font-sans">Email:</span>
+                <span className="font-semibold text-foreground">{createdCredentials.email}</span>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-border/40">
+                <span className="text-muted-foreground font-sans">Password:</span>
+                <span className="font-semibold text-foreground text-emerald-700 dark:text-emerald-400 bg-background px-1.5 py-0.5 rounded border border-border/60">
+                  {createdCredentials.password}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="text-muted-foreground font-sans">Role:</span>
+                <span className="capitalize font-semibold text-foreground">{createdCredentials.role}</span>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 pt-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-9 text-xs gap-1.5 flex-1"
+              onClick={handleCopyCredentials}
+            >
+              {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? "Copied to Clipboard!" : "Copy Credentials"}
+            </Button>
+            <Button
+              size="sm"
+              className="h-9 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+              onClick={() => setCreatedCredentials(null)}
+            >
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
