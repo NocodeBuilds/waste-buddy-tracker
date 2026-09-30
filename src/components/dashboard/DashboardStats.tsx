@@ -113,16 +113,11 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
   return (
     <div className="flex flex-col h-full justify-between">
       <div>
-        <div className="flex items-center justify-between gap-1 mb-2.5">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <div className={cn("p-1 rounded-md bg-secondary/80 shrink-0", textColor)}>
-              <Icon className="h-3.5 w-3.5" />
-            </div>
-            <span className="text-xs font-semibold text-foreground truncate">{label}</span>
+        <div className="flex items-center gap-1.5 min-w-0 mb-2.5">
+          <div className={cn("p-1 rounded-md bg-secondary/80 shrink-0", textColor)}>
+            <Icon className="h-3.5 w-3.5" />
           </div>
-          <span className="text-[10px] font-mono font-medium text-muted-foreground shrink-0">
-            {catEntries.length} {catEntries.length === 1 ? "item" : "items"}
-          </span>
+          <span className="text-xs font-semibold text-foreground truncate">{label}</span>
         </div>
 
         {/* Status Pill Counters */}
@@ -215,9 +210,11 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
         </div>
       </div>
 
-      {/* Card Footer: Total weight and unit */}
+      {/* Card Footer: Items count (left) and Total weight/unit (right) */}
       <div className="pt-2 border-t border-border/60 flex items-baseline justify-between">
-        <span className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">In Storage</span>
+        <span className="text-[10px] font-mono font-medium text-muted-foreground">
+          {catEntries.length} {catEntries.length === 1 ? "item" : "items"}
+        </span>
         <div className="text-right">
           <span className="text-sm font-bold font-mono text-foreground">{fmtNum(Math.round(totalValue))}</span>{" "}
           <span className="text-[10px] font-medium text-muted-foreground">{unit}</span>
