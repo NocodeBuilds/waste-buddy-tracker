@@ -47,10 +47,10 @@ export default function FuturisticDashboard({ entries, onLogWaste }: Props) {
       <DashboardStats entries={entries} onLogWaste={onLogWaste} />
 
       {/* Recent Entries at a Glance */}
-      <Card className="border-border/80 shadow-xs overflow-hidden">
+      <Card className="border-border/90 shadow-xs overflow-hidden">
         <CardContent className="p-0">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border/70 bg-muted/20">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/80 bg-muted/20">
             <div className="flex items-center gap-2">
               <div className="p-1 rounded-md bg-primary/10 text-primary">
                 <Clock className="h-4 w-4" />

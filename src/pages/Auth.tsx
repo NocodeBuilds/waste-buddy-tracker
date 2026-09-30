@@ -103,7 +103,7 @@ export default function Auth() {
         </div>
 
         {/* Auth card */}
-        <Card className="rounded-2xl border border-border/80 shadow-md bg-card/95 backdrop-blur-xs">
+        <Card className="rounded-2xl border border-border/90 shadow-md bg-card/95 backdrop-blur-xs">
           <CardContent className="p-6 sm:p-7 space-y-4">
             <div className="space-y-1">
               <h2 className="text-lg font-bold text-foreground">{titles[mode]}</h2>

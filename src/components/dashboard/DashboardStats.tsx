@@ -113,20 +113,15 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
   return (
     <div className="flex flex-col h-full justify-between">
       <div>
-        <div className="flex items-center justify-between gap-1 mb-2.5">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <div className={cn("p-1 rounded-md bg-secondary/80 shrink-0", textColor)}>
-              <Icon className="h-3.5 w-3.5" />
-            </div>
-            <span className="text-xs font-semibold text-foreground truncate">{label}</span>
+        <div className="flex items-center justify-center gap-1.5 min-w-0 mb-2 text-center">
+          <div className={cn("p-1 rounded-md bg-secondary/80 shrink-0", textColor)}>
+            <Icon className="h-3.5 w-3.5" />
           </div>
-          <span className="text-[10px] font-mono font-medium text-muted-foreground shrink-0">
-            {catEntries.length} {catEntries.length === 1 ? "item" : "items"}
-          </span>
+          <span className="text-xs font-semibold text-foreground truncate">{label}</span>
         </div>
 
         {/* Status Pill Counters */}
-        <div className="grid grid-cols-3 gap-1 mb-2">
+        <div className="grid grid-cols-3 gap-1 mb-1.5">
           <ComicBubble
             tone="overdue"
             open={openBubble === "overdue"}
@@ -141,7 +136,7 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
             }
           >
             <div className={cn(
-              "w-full h-11 py-1 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
+              "w-full h-9.5 py-0.5 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
               ovd.length > 0
                 ? "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 shadow-2xs"
                 : "bg-muted/30 border-border/60 text-muted-foreground/60"
@@ -167,7 +162,7 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
             }
           >
             <div className={cn(
-              "w-full h-11 py-1 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
+              "w-full h-9.5 py-0.5 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
               wrn.length > 0
                 ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400 shadow-2xs"
                 : "bg-muted/30 border-border/60 text-muted-foreground/60"
@@ -193,7 +188,7 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
             }
           >
             <div className={cn(
-              "w-full h-11 py-1 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
+              "w-full h-9.5 py-0.5 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
               saf.length > 0
                 ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 shadow-2xs"
                 : "bg-muted/30 border-border/60 text-muted-foreground/60"
@@ -208,16 +203,18 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
         </div>
 
         {/* Proportional compliance micro-bar */}
-        <div className="w-full bg-muted/60 h-1.5 rounded-full overflow-hidden flex my-2">
+        <div className="w-full bg-muted/60 h-1.5 rounded-full overflow-hidden flex my-1.5">
           {totalOvdPrc > 0 && <div className="bg-rose-500 h-full" style={{ width: `${totalOvdPrc}%` }} />}
           {totalWrnPrc > 0 && <div className="bg-amber-500 h-full" style={{ width: `${totalWrnPrc}%` }} />}
           {totalSafePrc > 0 && <div className="bg-emerald-500 h-full" style={{ width: `${totalSafePrc}%` }} />}
         </div>
       </div>
 
-      {/* Card Footer: Total weight and unit */}
-      <div className="pt-2 border-t border-border/60 flex items-baseline justify-between">
-        <span className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">In Storage</span>
+      {/* Card Footer: Items count (left) and Total weight/unit (right) */}
+      <div className="pt-1.5 border-t border-border/70 flex items-baseline justify-between">
+        <span className="text-[10px] font-mono font-medium text-muted-foreground">
+          {catEntries.length} {catEntries.length === 1 ? "item" : "items"}
+        </span>
         <div className="text-right">
           <span className="text-sm font-bold font-mono text-foreground">{fmtNum(Math.round(totalValue))}</span>{" "}
           <span className="text-[10px] font-medium text-muted-foreground">{unit}</span>
@@ -581,7 +578,7 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <Card className="hover:border-rose-500/40 transition-colors">
-            <CardContent className="p-3.5 h-full">
+            <CardContent className="p-2.5 sm:p-3 h-full">
               <CategoryBlock
                 entries={entries}
                 label="Hazardous Solids"
@@ -595,7 +592,7 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
           </Card>
 
           <Card className="hover:border-emerald-500/40 transition-colors">
-            <CardContent className="p-3.5 h-full">
+            <CardContent className="p-2.5 sm:p-3 h-full">
               <CategoryBlock
                 entries={entries}
                 label="Non-Haz Solids"
@@ -609,7 +606,7 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
           </Card>
 
           <Card className="hover:border-cyan-500/40 transition-colors">
-            <CardContent className="p-3.5 h-full">
+            <CardContent className="p-2.5 sm:p-3 h-full">
               <CategoryBlock
                 entries={entries}
                 label="Liquid Waste"
@@ -623,7 +620,7 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
           </Card>
 
           <Card className="hover:border-violet-500/40 transition-colors">
-            <CardContent className="p-3.5 h-full">
+            <CardContent className="p-2.5 sm:p-3 h-full">
               <CategoryBlock
                 entries={entries}
                 label="E-Waste"
@@ -637,7 +634,7 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
           </Card>
 
           <Card className="hover:border-amber-500/40 transition-colors">
-            <CardContent className="p-3.5 h-full">
+            <CardContent className="p-2.5 sm:p-3 h-full">
               <CategoryBlock
                 entries={entries}
                 label="Battery Waste"
@@ -651,7 +648,7 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
           </Card>
 
           <Card className="hover:border-slate-500/40 transition-colors">
-            <CardContent className="p-3.5 h-full">
+            <CardContent className="p-2.5 sm:p-3 h-full">
               <CategoryBlock
                 entries={entries}
                 label="Other Wastes"
@@ -667,7 +664,7 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
       </section>
 
       {/* ── Section B: This Month Generation ── */}
-      <section className="space-y-2 pt-1">
+      <section className="space-y-1.5 pt-0.5">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
             This Month's Generation
@@ -677,11 +674,11 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
           </span>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-2 pt-0.5 no-scrollbar snap-x md:grid md:grid-cols-3 lg:grid-cols-6 md:gap-3">
+        <div className="flex gap-2 overflow-x-auto pb-1.5 pt-0.5 no-scrollbar snap-x md:grid md:grid-cols-3 lg:grid-cols-6 md:gap-3">
           {solidsThisMonth.length === 0 && liquidThisMonth.length === 0 && eWasteThisMonth.length === 0 && batteryThisMonth.length === 0 && otherWastesThisMonth.length === 0 ? (
             <div className="w-full md:col-span-full">
               <Card>
-                <CardContent className="py-4 text-center text-muted-foreground flex flex-col items-center gap-1">
+                <CardContent className="py-3 text-center text-muted-foreground flex flex-col items-center gap-1">
                   <Package className="h-4 w-4 opacity-40" />
                   <p className="text-xs">No waste entries recorded this month yet.</p>
                 </CardContent>
@@ -693,11 +690,11 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
                 className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-rose-500/50 min-w-[130px] flex-1 md:min-w-0 snap-start"
                 onClick={() => setSplitBar("hazardous")}
               >
-                <CardContent className="p-2.5 sm:p-3 flex flex-col items-center text-center gap-1">
+                <CardContent className="py-2 px-2.5 sm:py-2 sm:px-3 flex flex-col items-center text-center gap-0.5">
                   <div className="p-1 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400">
                     <ShieldAlert className="h-3.5 w-3.5 shrink-0" />
                   </div>
-                  <p className="text-base sm:text-lg font-bold font-mono leading-tight mt-0.5">
+                  <p className="text-base sm:text-lg font-bold font-mono leading-tight">
                     {fmtNum(hazSolidsKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span>
                   </p>
                   <p className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">Hazardous Solids</p>
@@ -708,11 +705,11 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
                 className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-emerald-500/50 min-w-[130px] flex-1 md:min-w-0 snap-start"
                 onClick={() => setSplitBar("nonHazardous")}
               >
-                <CardContent className="p-2.5 sm:p-3 flex flex-col items-center text-center gap-1">
+                <CardContent className="py-2 px-2.5 sm:py-2 sm:px-3 flex flex-col items-center text-center gap-0.5">
                   <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
                     <Leaf className="h-3.5 w-3.5 shrink-0" />
                   </div>
-                  <p className="text-base sm:text-lg font-bold font-mono leading-tight mt-0.5">
+                  <p className="text-base sm:text-lg font-bold font-mono leading-tight">
                     {fmtNum(nonHazSolidsKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span>
                   </p>
                   <p className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">Non-Haz Solids</p>
@@ -723,11 +720,11 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
                 className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-cyan-500/50 min-w-[130px] flex-1 md:min-w-0 snap-start"
                 onClick={() => setSplitBar("liquid")}
               >
-                <CardContent className="p-2.5 sm:p-3 flex flex-col items-center text-center gap-1">
+                <CardContent className="py-2 px-2.5 sm:py-2 sm:px-3 flex flex-col items-center text-center gap-0.5">
                   <div className="p-1 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
                     <Droplets className="h-3.5 w-3.5 shrink-0" />
                   </div>
-                  <p className="text-base sm:text-lg font-bold font-mono leading-tight mt-0.5">
+                  <p className="text-base sm:text-lg font-bold font-mono leading-tight">
                     {fmtNum(liquidLitres(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">L</span>
                   </p>
                   <p className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">Liquid Waste</p>
@@ -738,11 +735,11 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
                 className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-violet-500/50 min-w-[130px] flex-1 md:min-w-0 snap-start"
                 onClick={() => setSplitBar("ewaste")}
               >
-                <CardContent className="p-2.5 sm:p-3 flex flex-col items-center text-center gap-1">
+                <CardContent className="py-2 px-2.5 sm:py-2 sm:px-3 flex flex-col items-center text-center gap-0.5">
                   <div className="p-1 rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400">
                     <Trash2 className="h-3.5 w-3.5 shrink-0" />
                   </div>
-                  <p className="text-base sm:text-lg font-bold font-mono leading-tight mt-0.5">
+                  <p className="text-base sm:text-lg font-bold font-mono leading-tight">
                     {fmtNum(eWasteKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span>
                   </p>
                   <p className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">E-Waste</p>
@@ -753,11 +750,11 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
                 className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-amber-500/50 min-w-[130px] flex-1 md:min-w-0 snap-start"
                 onClick={() => setSplitBar("battery")}
               >
-                <CardContent className="p-2.5 sm:p-3 flex flex-col items-center text-center gap-1">
+                <CardContent className="py-2 px-2.5 sm:py-2 sm:px-3 flex flex-col items-center text-center gap-0.5">
                   <div className="p-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
                     <Battery className="h-3.5 w-3.5 shrink-0" />
                   </div>
-                  <p className="text-base sm:text-lg font-bold font-mono leading-tight mt-0.5">
+                  <p className="text-base sm:text-lg font-bold font-mono leading-tight">
                     {fmtNum(batteryKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span>
                   </p>
                   <p className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">Battery Waste</p>
@@ -768,11 +765,11 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
                 className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-xs hover:border-slate-500/50 min-w-[130px] flex-1 md:min-w-0 snap-start"
                 onClick={() => setSplitBar("other")}
               >
-                <CardContent className="p-2.5 sm:p-3 flex flex-col items-center text-center gap-1">
+                <CardContent className="py-2 px-2.5 sm:py-2 sm:px-3 flex flex-col items-center text-center gap-0.5">
                   <div className="p-1 rounded-md bg-slate-500/10 text-slate-600 dark:text-slate-400">
                     <Recycle className="h-3.5 w-3.5 shrink-0" />
                   </div>
-                  <p className="text-base sm:text-lg font-bold font-mono leading-tight mt-0.5">
+                  <p className="text-base sm:text-lg font-bold font-mono leading-tight">
                     {fmtNum(otherWastesKg(thisMonthEntries))} <span className="text-[10px] font-normal text-muted-foreground">kg</span>
                   </p>
                   <p className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">Other Wastes</p>
