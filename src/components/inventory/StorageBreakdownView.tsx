@@ -35,7 +35,7 @@ export default function StorageBreakdownView({
           In Storage by Statutory Category
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-          <Card className="border-border/80 hover:border-rose-500/40 transition-colors">
+          <Card className="border-border/90 hover:border-rose-500/40 transition-colors">
             <CardContent className="p-3 flex flex-col items-center text-center gap-1">
               <div className="flex items-center gap-1.5">
                 <ShieldAlert className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0" />
@@ -48,7 +48,7 @@ export default function StorageBreakdownView({
             </CardContent>
           </Card>
 
-          <Card className="border-border/80 hover:border-emerald-600/40 transition-colors">
+          <Card className="border-border/90 hover:border-emerald-600/40 transition-colors">
             <CardContent className="p-3 flex flex-col items-center text-center gap-1">
               <div className="flex items-center gap-1.5">
                 <Leaf className="h-4 w-4 text-emerald-600 shrink-0" />
@@ -61,7 +61,7 @@ export default function StorageBreakdownView({
             </CardContent>
           </Card>
 
-          <Card className="border-border/80 hover:border-cyan-500/40 transition-colors">
+          <Card className="border-border/90 hover:border-cyan-500/40 transition-colors">
             <CardContent className="p-3 flex flex-col items-center text-center gap-1">
               <div className="flex items-center gap-1.5">
                 <Droplets className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
@@ -74,7 +74,7 @@ export default function StorageBreakdownView({
             </CardContent>
           </Card>
 
-          <Card className="border-border/80 hover:border-violet-500/40 transition-colors">
+          <Card className="border-border/90 hover:border-violet-500/40 transition-colors">
             <CardContent className="p-3 flex flex-col items-center text-center gap-1">
               <div className="flex items-center gap-1.5">
                 <Cpu className="h-4 w-4 text-violet-600 dark:text-violet-400 shrink-0" />
@@ -87,7 +87,7 @@ export default function StorageBreakdownView({
             </CardContent>
           </Card>
 
-          <Card className="border-border/80 hover:border-amber-500/40 transition-colors">
+          <Card className="border-border/90 hover:border-amber-500/40 transition-colors">
             <CardContent className="p-3 flex flex-col items-center text-center gap-1">
               <div className="flex items-center gap-1.5">
                 <Battery className="h-4 w-4 text-amber-600 shrink-0" />
@@ -100,7 +100,7 @@ export default function StorageBreakdownView({
             </CardContent>
           </Card>
 
-          <Card className="border-border/80 hover:border-slate-500/40 transition-colors">
+          <Card className="border-border/90 hover:border-slate-500/40 transition-colors">
             <CardContent className="p-3 flex flex-col items-center text-center gap-1">
               <div className="flex items-center gap-1.5">
                 <Recycle className="h-4 w-4 text-slate-600 dark:text-slate-400 shrink-0" />
@@ -117,7 +117,7 @@ export default function StorageBreakdownView({
 
       {/* Waste Type Progress Breakdown */}
       {byType.length > 0 && (
-        <Card className="border-border/80 shadow-xs">
+        <Card className="border-border/90 shadow-xs">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
