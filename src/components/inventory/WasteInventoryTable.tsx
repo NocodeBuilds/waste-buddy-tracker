@@ -60,6 +60,10 @@ import {
   Layers,
   History,
   Tag,
+  MapPin,
+  Wrench,
+  Camera,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   exportInventoryToExcel,
@@ -117,6 +121,83 @@ interface Props {
   onRejectDisposal?: (batchId: string, reason?: string) => Promise<void>;
 }
 
+interface HeaderSortButtonProps {
+  col: string;
+  label: string;
+  align?: "left" | "center" | "right";
+  sortColumn: string | null;
+  sortDir: "asc" | "desc";
+  onSort: (col: string) => void;
+}
+
+function HeaderSortButton({
+  col,
+  label,
+  align = "center",
+  sortColumn,
+  sortDir,
+  onSort,
+}: HeaderSortButtonProps) {
+  const isActive = sortColumn === col;
+  return (
+    <div
+      className={cn(
+        "flex items-center w-full",
+        align === "center" ? "justify-center" : align === "right" ? "justify-end" : "justify-start"
+      )}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(col)}
+        className={cn(
+          "inline-flex items-center justify-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary",
+          isActive
+            ? "text-primary bg-primary/10 ring-1 ring-primary/25 shadow-xs font-extrabold"
+            : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
+        )}
+        aria-sort={isActive ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+        title={`Sort by ${label} (${isActive ? (sortDir === "asc" ? "Ascending — click for Descending" : "Descending — click for Ascending") : "Click to sort"})`}
+      >
+        <span>{label}</span>
+        <span className="inline-flex items-center justify-center shrink-0">
+          {isActive ? (
+            sortDir === "asc" ? (
+              <ArrowUp className="h-3 w-3 text-primary stroke-[2.5]" />
+            ) : (
+              <ArrowDown className="h-3 w-3 text-primary stroke-[2.5]" />
+            )
+          ) : (
+            <ArrowUpDown className="h-2.5 w-2.5 opacity-40 group-hover:opacity-100 transition-opacity" />
+          )}
+        </span>
+      </button>
+    </div>
+  );
+}
+
+interface HeaderStaticCellProps {
+  label: string;
+  align?: "left" | "center" | "right";
+}
+
+function HeaderStaticCell({
+  label,
+  align = "center",
+}: HeaderStaticCellProps) {
+  return (
+    <div
+      className={cn(
+        "flex items-center w-full",
+        align === "center" ? "justify-center" : align === "right" ? "justify-end" : "justify-start"
+      )}
+    >
+      <span className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground select-none">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 export default function WasteInventoryTable({
   entries,
   batches,
@@ -150,7 +231,6 @@ export default function WasteInventoryTable({
   const [selectedForDisposal, setSelectedForDisposal] = useState<Set<string>>(new Set());
   const [disposalScope, setDisposalScope] = useState<"all" | "selected">("all");
   const [byTypeOpen, setByTypeOpen] = useState(true);
-  const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null);
 
   const years = useMemo(() => {
     const cur = new Date().getFullYear();
@@ -211,16 +291,26 @@ export default function WasteInventoryTable({
           case "activity":
             return dir * (a.activity_type ?? "").localeCompare(b.activity_type ?? "");
           case "waste_type":
-            return dir * (a.waste_type_id ?? "").localeCompare(b.waste_type_id ?? "");
+            return dir * getWasteName(a.waste_type_id).localeCompare(getWasteName(b.waste_type_id));
           case "category":
             return dir * (a.waste_category ?? "").localeCompare(b.waste_category ?? "");
           case "weight":
-            return dir * (Number(b.weight_kg ?? 0) - Number(a.weight_kg ?? 0));
+            return dir * (Number(a.weight_kg ?? 0) - Number(b.weight_kg ?? 0));
           case "days":
-            return dir * (getDaysStored(b.generated_date) - getDaysStored(a.generated_date));
+            return dir * (getDaysStored(a.generated_date) - getDaysStored(b.generated_date));
+          case "status": {
+            const getStatusRank = (e: WasteEntry) => {
+              if (isDisposed(e)) return 4;
+              const s = getStatus(e);
+              if (s === "overdue") return 1;
+              if (s === "warning") return 2;
+              return 3;
+            };
+            return dir * (getStatusRank(a) - getStatusRank(b));
+          }
           case "generated_date":
           default:
-            return dir * (new Date(b.generated_date).getTime() - new Date(a.generated_date).getTime());
+            return dir * (new Date(a.generated_date).getTime() - new Date(b.generated_date).getTime());
         }
       });
   }, [periodFiltered, filter, searchQuery, sortColumn, sortDir]);
@@ -230,19 +320,12 @@ export default function WasteInventoryTable({
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
       setSortColumn(col);
-      setSortDir("desc");
+      if (col === "location" || col === "activity" || col === "waste_type" || col === "category") {
+        setSortDir("asc");
+      } else {
+        setSortDir("desc");
+      }
     }
-  };
-
-  const SortIcon = ({ col }: { col: string }) => {
-    if (sortColumn !== col) {
-      return <ArrowUpDown className="h-3 w-3 text-muted-foreground/40 ml-1 inline shrink-0" />;
-    }
-    return sortDir === "asc" ? (
-      <ArrowUp className="h-3 w-3 text-primary ml-1 inline shrink-0" />
-    ) : (
-      <ArrowDown className="h-3 w-3 text-primary ml-1 inline shrink-0" />
-    );
   };
 
   const totals = sumByUnit(activeEntries);
@@ -931,245 +1014,115 @@ export default function WasteInventoryTable({
             )}
           </div>
 
-          {/* ── Mobile View: High-Density Compact List (Eliminates vertical scroll overload) ── */}
-          <div className="md:hidden space-y-1.5">
-            {filtered.length === 0 ? (
-              <EmptyState
-                icon={Package}
-                title="No Waste Entries Found"
-                description="Try adjusting your filters, date range, or search query."
-              />
-            ) : (
-              <div className="rounded-xl border border-border/80 bg-card divide-y divide-border/60 overflow-hidden shadow-xs">
-                {filtered.map((entry) => {
-                  const days = getDaysStored(entry.generated_date);
-                  const isDisp = isDisposed(entry);
-                  const status = getStatus(entry);
-                  const isExpanded = expandedEntryId === entry.id;
+          {/* ── Waste Inventory Records Table (Unified Responsive Desktop & Mobile Layout) ── */}
+          <div className="rounded-xl border border-border/80 bg-card overflow-hidden shadow-xs">
+            {/* Mobile Horizontal Scroll Indicator Banner */}
+            <div className="md:hidden flex items-center justify-between px-3 py-1.5 bg-muted/40 border-b border-border/60 text-[11px] text-muted-foreground select-none">
+              <span className="flex items-center gap-1.5 font-medium">
+                <ArrowUpDown className="h-3 w-3 rotate-90 text-primary" />
+                <span>Swipe table horizontally to view all columns</span>
+              </span>
+              <span className="font-mono text-[10px] bg-background px-1.5 py-0.5 rounded border border-border/60">
+                {filtered.length} {filtered.length === 1 ? "entry" : "entries"}
+              </span>
+            </div>
 
-                  return (
-                    <div key={entry.id} className="transition-colors hover:bg-muted/20">
-                      {/* High-density compact row */}
-                      <div
-                        className="p-2.5 flex items-center justify-between gap-2.5 cursor-pointer select-none active:bg-muted/40"
-                        onClick={() => setExpandedEntryId(isExpanded ? null : entry.id)}
-                      >
-                        {/* Status bar + Info */}
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          <div
-                            className={cn(
-                              "w-1 h-9 rounded-full shrink-0",
-                              isDisp
-                                ? "bg-muted-foreground/30"
-                                : status === "overdue"
-                                ? "bg-rose-500 shadow-xs shadow-rose-500/50"
-                                : status === "warning"
-                                ? "bg-amber-500"
-                                : "bg-emerald-600"
-                            )}
-                          />
-
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-mono font-bold text-xs text-foreground bg-muted/70 px-1.5 py-0.2 rounded border border-border/50 shrink-0">
-                                {entry.location || "General"}
-                              </span>
-                              <h4 className="text-xs font-semibold text-foreground truncate">
-                                {getWasteName(entry.waste_type_id)}
-                              </h4>
-                              {getStatutoryCode(entry.waste_type_id) !== "—" && (
-                                <span className="text-[10px] font-mono px-1 py-0.2 bg-muted text-muted-foreground rounded">
-                                  {getStatutoryCode(entry.waste_type_id)}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
-                              <span>{entry.generated_date}</span>
-                              <span>•</span>
-                              <span className="uppercase text-[10px] font-semibold text-muted-foreground/80">
-                                {entry.activity_type === "preventive"
-                                  ? "PM"
-                                  : entry.activity_type === "breakdown"
-                                  ? "BM"
-                                  : entry.activity_type === "5s"
-                                  ? "5S"
-                                  : "OTH"}
-                              </span>
-                              {!isDisp && (
-                                <>
-                                  <span>•</span>
-                                  <span
-                                    className={cn(
-                                      "font-mono font-medium",
-                                      isEntryOverdue(entry)
-                                        ? "text-rose-600 dark:text-rose-400 font-bold"
-                                        : isEntryWarning(entry)
-                                        ? "text-amber-600 font-semibold"
-                                        : "text-muted-foreground"
-                                    )}
-                                  >
-                                    {days}d
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Right: Quantity + Chevron */}
-                        <div className="flex items-center gap-2 shrink-0">
-                          <div className="text-right font-mono">
-                            <div className="text-sm font-bold text-foreground leading-tight">
-                              {fmtNum(Number(entry.weight_kg ?? 0))}{" "}
-                              <span className="text-[10px] font-sans font-normal text-muted-foreground">
-                                {unitLabel(getMeasureUnit(entry.waste_type_id))}
-                              </span>
-                            </div>
-                            {entry.piece_count != null && (
-                              <div className="text-[10px] text-muted-foreground">
-                                {entry.piece_count} pcs
-                              </div>
-                            )}
-                          </div>
-                          <ChevronDown
-                            className={cn(
-                              "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200",
-                              isExpanded && "rotate-180"
-                            )}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Expandable Action Drawer */}
-                      {isExpanded && (
-                        <div className="px-3 pb-3 pt-2 bg-muted/20 border-t border-border/40 text-xs space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[11px] text-muted-foreground">Category:</span>
-                              {renderCategoryBadge(entry.waste_category)}
-                            </div>
-                            <div>{statusBadge(entry)}</div>
-                          </div>
-
-                          {entry.notes && (
-                            <p className="text-[11px] text-muted-foreground italic bg-muted/40 p-2 rounded-lg break-words">
-                              {entry.notes}
-                            </p>
-                          )}
-
-                          <div className="flex items-center justify-between pt-1 border-t border-border/40">
-                            <div className="flex items-center gap-2">
-                              <EntryPhotosButton
-                                entryId={entry.id}
-                                count={photoCounts[entry.id] ?? 0}
-                                canDelete={isManagerOrAdmin}
-                              />
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-7 text-xs gap-1 px-2 text-amber-700 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 rounded-lg"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  exportForm8ContainerLabelsPdf([entry], currentSite?.name ?? "Site");
-                                  toast.success("Form 8 Label downloaded");
-                                }}
-                              >
-                                <Tag className="h-3 w-3" /> Label
-                              </Button>
-                            </div>
-                            {isManagerOrAdmin && !isDisp && (
-                              <div className="flex items-center gap-1.5">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 text-xs gap-1 px-2.5 rounded-lg"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onEdit(entry);
-                                  }}
-                                >
-                                  <Pencil className="h-3 w-3" /> Edit
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 text-xs gap-1 px-2.5 text-destructive border-destructive/30 hover:bg-destructive/10 rounded-lg"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDelete(entry.id);
-                                  }}
-                                >
-                                  <Trash2 className="h-3 w-3" /> Delete
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* ── Desktop View: Full Data Table ── */}
-          <div className="hidden md:block rounded-xl border border-border/80 bg-card overflow-hidden shadow-xs">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/40 hover:bg-muted/40 border-b border-border/80">
-                    <TableHead
-                      className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground h-10 px-3"
-                      onClick={() => handleSort("location")}
-                    >
-                      Location <SortIcon col="location" />
+            <div className="overflow-x-auto w-full touch-pan-x scrollbar-thin">
+              <Table className="min-w-[960px] w-full text-xs">
+                <TableHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur-md border-b border-border/80 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+                  <TableRow className="hover:bg-transparent border-none">
+                    <TableHead className="w-[110px] min-w-[100px] h-10 px-3 text-center">
+                      <HeaderSortButton
+                        col="location"
+                        label="Location"
+                        align="center"
+                        sortColumn={sortColumn}
+                        sortDir={sortDir}
+                        onSort={handleSort}
+                      />
                     </TableHead>
-                    <TableHead
-                      className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground h-10 px-3"
-                      onClick={() => handleSort("activity")}
-                    >
-                      Activity <SortIcon col="activity" />
+                    <TableHead className="w-[90px] min-w-[85px] h-10 px-3 text-center">
+                      <HeaderSortButton
+                        col="activity"
+                        label="Activity"
+                        align="center"
+                        sortColumn={sortColumn}
+                        sortDir={sortDir}
+                        onSort={handleSort}
+                      />
                     </TableHead>
-                    <TableHead
-                      className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground h-10 px-3"
-                      onClick={() => handleSort("waste_type")}
-                    >
-                      Waste Type <SortIcon col="waste_type" />
+                    <TableHead className="min-w-[220px] max-w-[280px] h-10 px-4 text-left">
+                      <HeaderSortButton
+                        col="waste_type"
+                        label="Waste Type"
+                        align="left"
+                        sortColumn={sortColumn}
+                        sortDir={sortDir}
+                        onSort={handleSort}
+                      />
                     </TableHead>
-                    <TableHead
-                      className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground h-10 px-3"
-                      onClick={() => handleSort("category")}
-                    >
-                      Category <SortIcon col="category" />
+                    <TableHead className="w-[105px] min-w-[95px] h-10 px-3 text-center">
+                      <HeaderSortButton
+                        col="category"
+                        label="Category"
+                        align="center"
+                        sortColumn={sortColumn}
+                        sortDir={sortDir}
+                        onSort={handleSort}
+                      />
                     </TableHead>
-                    <TableHead
-                      className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground h-10 px-3 text-right"
-                      onClick={() => handleSort("weight")}
-                    >
-                      Quantity <SortIcon col="weight" />
+                    <TableHead className="w-[125px] min-w-[115px] h-10 px-3 text-center">
+                      <HeaderSortButton
+                        col="weight"
+                        label="Quantity"
+                        align="center"
+                        sortColumn={sortColumn}
+                        sortDir={sortDir}
+                        onSort={handleSort}
+                      />
                     </TableHead>
-                    <TableHead
-                      className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground h-10 px-3"
-                      onClick={() => handleSort("generated_date")}
-                    >
-                      Generated <SortIcon col="generated_date" />
+                    <TableHead className="w-[120px] min-w-[110px] h-10 px-3 text-center">
+                      <HeaderSortButton
+                        col="generated_date"
+                        label="Generated"
+                        align="center"
+                        sortColumn={sortColumn}
+                        sortDir={sortDir}
+                        onSort={handleSort}
+                      />
                     </TableHead>
-                    <TableHead
-                      className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground h-10 px-3 text-center"
-                      onClick={() => handleSort("days")}
-                    >
-                      Days <SortIcon col="days" />
+                    <TableHead className="w-[90px] min-w-[85px] h-10 px-3 text-center">
+                      <HeaderSortButton
+                        col="days"
+                        label="Days"
+                        align="center"
+                        sortColumn={sortColumn}
+                        sortDir={sortDir}
+                        onSort={handleSort}
+                      />
                     </TableHead>
-                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground h-10 px-3">
-                      Status
+                    <TableHead className="w-[120px] min-w-[110px] h-10 px-3 text-center">
+                      <HeaderSortButton
+                        col="status"
+                        label="Status"
+                        align="center"
+                        sortColumn={sortColumn}
+                        sortDir={sortDir}
+                        onSort={handleSort}
+                      />
                     </TableHead>
-                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground text-center h-10 px-3">
-                      Photos
+                    <TableHead className="w-[80px] min-w-[75px] h-10 px-3 text-center">
+                      <HeaderStaticCell
+                        label="Photos"
+                        align="center"
+                      />
                     </TableHead>
                     {isManagerOrAdmin && (
-                      <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground text-right h-10 px-3">
-                        Actions
+                      <TableHead className="w-[120px] min-w-[110px] h-10 px-3 text-center">
+                        <HeaderStaticCell
+                          label="Actions"
+                          align="center"
+                        />
                       </TableHead>
                     )}
                   </TableRow>
@@ -1177,7 +1130,7 @@ export default function WasteInventoryTable({
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={isManagerOrAdmin ? 10 : 9} className="text-center py-8">
+                      <TableCell colSpan={isManagerOrAdmin ? 10 : 9} className="text-center py-10">
                         <EmptyState
                           icon={Package}
                           title="No Waste Entries Found"
@@ -1190,18 +1143,23 @@ export default function WasteInventoryTable({
                     filtered.map((entry) => {
                       const days = getDaysStored(entry.generated_date);
                       const isDisp = isDisposed(entry);
+                      const status = getStatus(entry);
                       return (
                         <TableRow
                           key={entry.id}
-                          className={`transition-colors border-b border-border/50 hover:bg-muted/30 ${
-                            getStatus(entry) === "overdue" && !isDisp ? "bg-rose-500/[0.04]" : ""
-                          }`}
+                          className={cn(
+                            "transition-colors border-b border-border/50 hover:bg-muted/30 group",
+                            status === "overdue" && !isDisp && "bg-rose-500/[0.04] dark:bg-rose-500/[0.08]"
+                          )}
                         >
-                          <TableCell className="font-mono font-bold text-xs px-3 py-3 text-foreground">
+                          {/* Location - Centered */}
+                          <TableCell className="text-center font-mono font-bold text-xs px-3 py-2.5 sm:py-3 text-foreground whitespace-nowrap">
                             {entry.location ?? "—"}
                           </TableCell>
-                          <TableCell className="text-xs px-3 py-3 text-muted-foreground">
-                            <span className="font-medium bg-muted px-1.5 py-0.5 rounded text-[11px]">
+
+                          {/* Activity - Centered */}
+                          <TableCell className="text-center px-3 py-2.5 sm:py-3 whitespace-nowrap">
+                            <span className="inline-block font-semibold bg-muted/80 text-foreground px-2 py-0.5 rounded text-[11px] border border-border/40">
                               {entry.activity_type === "preventive"
                                 ? "PM"
                                 : entry.activity_type === "breakdown"
@@ -1211,62 +1169,94 @@ export default function WasteInventoryTable({
                                 : "OTH"}
                             </span>
                           </TableCell>
-                          <TableCell className="max-w-[220px] px-3 py-3">
-                            <div className="text-xs font-semibold text-foreground truncate">
+
+                          {/* Waste Type - Left-aligned matching px-4 */}
+                          <TableCell className="min-w-[220px] max-w-[280px] px-4 py-2.5 sm:py-3 text-left">
+                            <div className="text-xs font-semibold text-foreground truncate" title={getWasteName(entry.waste_type_id)}>
                               {getWasteName(entry.waste_type_id)}
                             </div>
-                            {getStatutoryCode(entry.waste_type_id) !== "—" && (
-                              <div className="text-[10px] font-mono text-muted-foreground">
-                                {getStatutoryCode(entry.waste_type_id)}
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-xs px-3 py-3">
-                            {renderCategoryBadge(entry.waste_category)}
-                          </TableCell>
-                          <TableCell className="px-3 py-3 text-right">
-                            <div className="whitespace-nowrap">
-                              <span className="font-mono font-bold text-xs text-foreground">
-                                {fmtNum(Number(entry.weight_kg ?? 0))}
-                              </span>{" "}
-                              <span className="text-[11px] text-muted-foreground font-medium">
-                                {unitLabel(getMeasureUnit(entry.waste_type_id))}
-                              </span>
+                            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                              {getStatutoryCode(entry.waste_type_id) !== "—" && (
+                                <span className="text-[10px] font-mono text-muted-foreground bg-muted/60 px-1 py-0.2 rounded border border-border/40">
+                                  {getStatutoryCode(entry.waste_type_id)}
+                                </span>
+                              )}
+                              {entry.notes && (
+                                <span className="text-[10px] text-muted-foreground/80 italic truncate max-w-[180px]" title={entry.notes}>
+                                  • {entry.notes}
+                                </span>
+                              )}
                             </div>
-                            {entry.piece_count != null && (
-                              <div className="text-[10px] text-muted-foreground font-mono">
-                                {entry.piece_count} pcs
-                              </div>
-                            )}
                           </TableCell>
-                          <TableCell className="text-xs font-mono px-3 py-3 text-muted-foreground">
+
+                          {/* Category - Centered */}
+                          <TableCell className="text-center px-3 py-2.5 sm:py-3 whitespace-nowrap">
+                            <div className="flex justify-center items-center">
+                              {renderCategoryBadge(entry.waste_category)}
+                            </div>
+                          </TableCell>
+
+                          {/* Quantity - Centered */}
+                          <TableCell className="text-center px-3 py-2.5 sm:py-3 whitespace-nowrap">
+                            <div className="inline-flex flex-col items-center justify-center">
+                              <div className="font-mono font-bold text-xs text-foreground">
+                                {fmtNum(Number(entry.weight_kg ?? 0))}{" "}
+                                <span className="text-[11px] text-muted-foreground font-medium">
+                                  {unitLabel(getMeasureUnit(entry.waste_type_id))}
+                                </span>
+                              </div>
+                              {entry.piece_count != null && (
+                                <div className="text-[10px] text-muted-foreground font-mono">
+                                  {entry.piece_count} pcs
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+
+                          {/* Generated Date - Centered */}
+                          <TableCell className="text-center text-xs font-mono px-3 py-2.5 sm:py-3 text-muted-foreground whitespace-nowrap">
                             {entry.generated_date}
                           </TableCell>
-                          <TableCell className="text-center px-3 py-3">
+
+                          {/* Days - Centered */}
+                          <TableCell className="text-center px-3 py-2.5 sm:py-3 whitespace-nowrap font-mono text-xs">
                             <span
-                              className={
+                              className={cn(
+                                "inline-block font-mono text-xs",
                                 isEntryOverdue(entry) && !isDisp
-                                  ? "text-rose-600 font-bold font-mono text-xs"
+                                  ? "text-rose-600 font-bold bg-rose-500/10 px-2 py-0.5 rounded-full text-[11px]"
                                   : isEntryWarning(entry) && !isDisp
-                                  ? "text-amber-600 font-semibold font-mono text-xs"
-                                  : "text-muted-foreground font-mono text-xs"
-                              }
+                                  ? "text-amber-600 font-semibold bg-amber-500/10 px-2 py-0.5 rounded-full text-[11px]"
+                                  : "text-muted-foreground"
+                              )}
                             >
                               {isDisp ? "—" : `${days}d`}
                             </span>
                           </TableCell>
-                          <TableCell className="px-3 py-3">{statusBadge(entry)}</TableCell>
-                          <TableCell className="text-center px-3 py-3">
-                            <EntryPhotosButton
-                              entryId={entry.id}
-                              count={photoCounts[entry.id] ?? 0}
-                              canDelete={isManagerOrAdmin}
-                            />
+
+                          {/* Status - Centered */}
+                          <TableCell className="text-center px-3 py-2.5 sm:py-3 whitespace-nowrap">
+                            <div className="flex justify-center items-center">
+                              {statusBadge(entry)}
+                            </div>
                           </TableCell>
+
+                          {/* Photos - Centered */}
+                          <TableCell className="text-center px-3 py-2.5 sm:py-3 whitespace-nowrap">
+                            <div className="flex justify-center items-center">
+                              <EntryPhotosButton
+                                entryId={entry.id}
+                                count={photoCounts[entry.id] ?? 0}
+                                canDelete={isManagerOrAdmin}
+                              />
+                            </div>
+                          </TableCell>
+
+                          {/* Actions - Centered */}
                           {isManagerOrAdmin && (
-                            <TableCell className="text-right whitespace-nowrap px-3 py-3">
+                            <TableCell className="text-center whitespace-nowrap px-3 py-2.5 sm:py-3">
                               {!isDisp && (
-                                <div className="inline-flex items-center gap-1">
+                                <div className="inline-flex items-center justify-center gap-1">
                                   <Button
                                     size="icon"
                                     variant="ghost"
@@ -1285,6 +1275,7 @@ export default function WasteInventoryTable({
                                     variant="ghost"
                                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
                                     onClick={() => onEdit(entry)}
+                                    title="Edit Record"
                                     aria-label="Edit"
                                   >
                                     <Pencil className="h-3.5 w-3.5" />
@@ -1294,6 +1285,7 @@ export default function WasteInventoryTable({
                                     variant="ghost"
                                     className="h-8 w-8 text-destructive hover:bg-destructive/10"
                                     onClick={() => onDelete(entry.id)}
+                                    title="Delete Record"
                                     aria-label="Delete"
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />
