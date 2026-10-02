@@ -8,6 +8,9 @@ import {
   sumByUnit,
   WasteEntry,
   WASTE_TYPES,
+  parseLocalDate,
+  formatDateDDMMYYYY,
+  formatDateTimeDDMMYYYY,
 } from "@/lib/wasteTypes";
 import {
   saveToPendingQueue,
@@ -137,3 +140,76 @@ describe("Offline Mutation Sync Queue", () => {
     expect(getPendingQueue().length).toBe(0);
   });
 });
+
+describe("Physical Generation Date Attribution (generated_date vs created_at)", () => {
+  it("parses local date strings at local midnight without UTC skew", () => {
+    const d = parseLocalDate("2026-10-02");
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(9); // 0-indexed October
+    expect(d.getDate()).toBe(2);
+    expect(d.getHours()).toBe(0);
+    expect(d.getMinutes()).toBe(0);
+  });
+
+  it("strictly places delayed/retroactive entries into their physical generation week, ignoring entry date", () => {
+    // Technician generated 40kg of waste on Monday 2026-09-21 in the wind turbine
+    // but only logged it on Friday 2026-10-02 (2 weeks later)
+    const delayedEntry: WasteEntry = {
+      id: "delayed-1",
+      site_id: "site-1",
+      waste_type_id: "oil-cotton",
+      waste_category: "hazardous",
+      weight_kg: 40,
+      generated_date: "2026-09-21", // Physical generation date (Week 38)
+      activity_type: "preventive",
+      created_at: "2026-10-02T10:30:00Z", // Entry date (Week 40)
+    };
+
+    const week38Start = parseLocalDate("2026-09-21");
+    const week38End = new Date(week38Start);
+    week38End.setDate(week38End.getDate() + 6);
+    week38End.setHours(23, 59, 59, 999);
+
+    const week40Start = parseLocalDate("2026-09-28");
+    const week40End = new Date(week40Start);
+    week40End.setDate(week40End.getDate() + 6);
+    week40End.setHours(23, 59, 59, 999);
+
+    const genDate = parseLocalDate(delayedEntry.generated_date);
+
+    // Entry MUST match Week 38 (when work occurred)
+    expect(genDate >= week38Start && genDate <= week38End).toBe(true);
+
+    // Entry MUST NOT match Week 40 (when user typed it)
+    expect(genDate >= week40Start && genDate <= week40End).toBe(false);
+
+    // Verify retroactive entry detection
+    const isRetroactive = delayedEntry.created_at!.slice(0, 10) > delayedEntry.generated_date;
+    expect(isRetroactive).toBe(true);
+  });
+});
+
+describe("Global DD-MM-YYYY Date Formatting Standard", () => {
+  it("formats YYYY-MM-DD date strings into DD-MM-YYYY", () => {
+    expect(formatDateDDMMYYYY("2026-10-02")).toBe("02-10-2026");
+    expect(formatDateDDMMYYYY("2026-05-09")).toBe("09-05-2026");
+    expect(formatDateDDMMYYYY("2025-12-31")).toBe("31-12-2025");
+  });
+
+  it("formats Date objects into DD-MM-YYYY", () => {
+    const d = new Date(2026, 9, 2); // 2nd October 2026
+    expect(formatDateDDMMYYYY(d)).toBe("02-10-2026");
+  });
+
+  it("handles null, undefined, or empty values gracefully with fallback", () => {
+    expect(formatDateDDMMYYYY(null)).toBe("—");
+    expect(formatDateDDMMYYYY(undefined)).toBe("—");
+    expect(formatDateDDMMYYYY("")).toBe("—");
+  });
+
+  it("formats timestamp strings into DD-MM-YYYY HH:mm", () => {
+    const formatted = formatDateTimeDDMMYYYY("2026-10-02T10:30:00Z");
+    expect(formatted).toMatch(/^\d{2}-\d{2}-2026 \d{2}:\d{2}$/);
+  });
+});
+

@@ -32,7 +32,7 @@ export default function DesktopSidebar({
   const userInitial = user?.email?.charAt(0).toUpperCase() ?? "U";
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 xl:w-72 h-screen sticky top-0 border-r border-border/80 bg-card/75 backdrop-blur-xl shrink-0 z-30 select-none">
+    <aside className="hidden lg:flex flex-col w-64 xl:w-72 h-full border-r border-border/80 bg-card/75 backdrop-blur-xl shrink-0 z-30 select-none">
       {/* ── Brand Logo Header (Clean without v2.0 badge) ── */}
       <div className="h-16 px-5 border-b border-border/70 flex items-center gap-3">
         <img

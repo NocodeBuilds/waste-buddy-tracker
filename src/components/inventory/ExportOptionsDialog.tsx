@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DisposalBatch, fmtNum, WASTE_TYPES } from "@/lib/wasteTypes";
+import { DisposalBatch, fmtNum, WASTE_TYPES, formatDateDDMMYYYY } from "@/lib/wasteTypes";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import MultiSelect from "./MultiSelect";
@@ -219,14 +219,7 @@ export default function ExportOptionsDialog({
     onOpenChange(false);
   };
 
-  const fmtDate = (s: string) =>
-    s
-      ? new Date(s + "T00:00:00").toLocaleDateString("en-IN", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        })
-      : "";
+  const fmtDate = (s: string) => (s ? formatDateDDMMYYYY(s) : "");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

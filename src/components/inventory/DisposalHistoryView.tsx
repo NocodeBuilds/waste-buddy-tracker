@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { History, CheckCircle, X, Download } from "lucide-react";
 import { toast } from "sonner";
-import { DisposalBatch, WasteEntry } from "@/lib/wasteTypes";
+import { DisposalBatch, WasteEntry, formatDateDDMMYYYY } from "@/lib/wasteTypes";
 import EmptyState from "@/components/ui/empty-state";
 
 interface Props {
@@ -69,7 +69,7 @@ export default function DisposalHistoryView({
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold text-foreground">{b.disposed_date}</p>
+                        <p className="text-sm font-semibold text-foreground">{formatDateDDMMYYYY(b.disposed_date)}</p>
                         {isPending && <Badge variant="warning">Pending Approval</Badge>}
                         {isRejected && <Badge variant="destructive">Rejected</Badge>}
                         {!isPending && !isRejected && <Badge variant="success">Approved</Badge>}

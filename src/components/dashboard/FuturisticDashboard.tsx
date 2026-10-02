@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { WasteEntry, fmtNum, WASTE_TYPES } from "@/lib/wasteTypes";
+import { WasteEntry, fmtNum, WASTE_TYPES, formatDateDDMMYYYY } from "@/lib/wasteTypes";
 import DashboardStats from "./DashboardStats";
 import { format } from "date-fns";
 import { Clock, Inbox, ShieldAlert, Leaf, Droplets, Trash2, Battery, Recycle } from "lucide-react";
@@ -88,7 +88,7 @@ export default function FuturisticDashboard({ entries, onLogWaste }: Props) {
                       return (
                         <tr key={entry.id} className="hover:bg-muted/30 transition-colors">
                           <td className="py-2 px-3 font-mono text-muted-foreground text-[11px]">
-                            {format(new Date(entry.generated_date + "T00:00:00"), "dd MMM")}
+                            {formatDateDDMMYYYY(entry.generated_date)}
                           </td>
                           <td className="py-2 px-3 font-medium text-foreground">
                             {entry.location || "—"}
@@ -126,7 +126,7 @@ export default function FuturisticDashboard({ entries, onLogWaste }: Props) {
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-foreground">{entry.location || "Facility Area"}</span>
                         <span className="text-[11px] font-mono text-muted-foreground">
-                          {format(new Date(entry.generated_date + "T00:00:00"), "dd MMM")}
+                          {formatDateDDMMYYYY(entry.generated_date)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-xs">

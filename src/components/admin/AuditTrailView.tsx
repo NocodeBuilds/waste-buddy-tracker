@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollText, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuditLogRow as AuditRow } from "@/types";
+import { formatDateTimeDDMMYYYY } from "@/lib/wasteTypes";
 import EmptyState from "@/components/ui/empty-state";
 
 export default function AuditTrailView() {
@@ -62,7 +63,7 @@ export default function AuditTrailView() {
                     <code className="bg-muted px-1.5 py-0.2 rounded text-[10px] font-mono">{r.table_name}</code>
                   </span>
                   <span className="text-[10px] text-muted-foreground font-mono">
-                    {new Date(r.created_at).toLocaleString()}
+                    {formatDateTimeDDMMYYYY(r.created_at)}
                   </span>
                 </div>
                 <p className="text-[11px] text-muted-foreground truncate">

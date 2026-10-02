@@ -25,7 +25,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Plus, Loader2, Camera, X, Calendar as CalendarIcon, Trash2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { WASTE_TYPES, WasteCategory, ActivityType, unitLabel, getLocalDate } from "@/lib/wasteTypes";
+import { WASTE_TYPES, WasteCategory, ActivityType, unitLabel, getLocalDate, formatDateDDMMYYYY } from "@/lib/wasteTypes";
 import { useSiteLocations } from "@/hooks/useSiteLocations";
 import { Badge } from "@/components/ui/badge";
 
@@ -335,7 +335,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
               <Button variant="outline" className="h-9 w-full text-xs justify-start gap-1.5 px-2.5 rounded-lg">
                 <CalendarIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <span className="truncate">
-                  {format(new Date(generatedDate + "T00:00:00"), "dd MMM yyyy")}
+                  {formatDateDDMMYYYY(generatedDate)}
                 </span>
               </Button>
             </PopoverTrigger>
@@ -522,7 +522,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
               Confirm Waste Entry Log
             </DialogTitle>
             <DialogDescription className="text-xs">
-              {format(new Date(generatedDate + "T00:00:00"), "dd MMM yyyy")} · {location} · {activityLabel}
+              {formatDateDDMMYYYY(generatedDate)} · {location} · {activityLabel}
               {notes && <span className="block mt-0.5 text-muted-foreground">Note: {notes}</span>}
               {photos.length > 0 && (
                 <span className="block mt-0.5 text-muted-foreground">

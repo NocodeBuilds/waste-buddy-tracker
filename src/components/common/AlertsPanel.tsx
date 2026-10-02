@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
   WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS,
   isDisposed, getMeasureUnit, unitLabel, fmtNum,
-  isEntryOverdue, isEntryWarning,
+  isEntryOverdue, isEntryWarning, formatDateDDMMYYYY,
 } from "@/lib/wasteTypes";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Bell, X, EyeOff } from "lucide-react";
@@ -89,7 +89,7 @@ export default function AlertsPanel({ entries }: Props) {
               <div className="mt-0.5 text-[11px] text-muted-foreground flex items-center gap-1 flex-wrap">
                 <span>{formatQty(e)}</span>
                 <span>•</span>
-                <span className="font-bold text-rose-600 dark:text-rose-400">Stored {getDaysStored(e.generated_date)}d (Overdue!)</span>
+                <span className="font-bold text-rose-600 dark:text-rose-400">Stored {getDaysStored(e.generated_date)}d (Since {formatDateDDMMYYYY(e.generated_date)})</span>
               </div>
             </div>
             <Button
@@ -113,7 +113,7 @@ export default function AlertsPanel({ entries }: Props) {
               <div className="mt-0.5 text-[11px] text-muted-foreground flex items-center gap-1 flex-wrap">
                 <span>{formatQty(e)}</span>
                 <span>•</span>
-                <span className="font-semibold text-amber-600 dark:text-amber-400">Stored {getDaysStored(e.generated_date)}d (Warning)</span>
+                <span className="font-semibold text-amber-600 dark:text-amber-400">Stored {getDaysStored(e.generated_date)}d (Since {formatDateDDMMYYYY(e.generated_date)})</span>
               </div>
             </div>
             <Button

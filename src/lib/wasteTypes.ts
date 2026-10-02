@@ -96,7 +96,7 @@ export interface DisposalBatch {
 export const DISPOSAL_LIMIT_DAYS = 90;
 
 export function getDaysStored(generatedDate: string): number {
-  const gen = new Date(generatedDate);
+  const gen = parseLocalDate(generatedDate);
   const now = new Date();
   return Math.floor((now.getTime() - gen.getTime()) / (1000 * 60 * 60 * 24));
 }
@@ -171,6 +171,59 @@ export function getLocalDate(date: Date = new Date()): string {
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
+}
+
+/**
+ * Parse a date string ("YYYY-MM-DD" or ISO) into a local Date object set to local midnight (00:00:00.000).
+ * Prevents UTC string parsing shifts (where "2026-10-01" in UTC is 05:30 IST and shifts across day boundaries).
+ */
+export function parseLocalDate(dateStr: string): Date {
+  if (!dateStr) return new Date();
+  const clean = dateStr.slice(0, 10);
+  const parts = clean.split("-").map(Number);
+  if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+    return new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0);
+  }
+  return new Date(dateStr);
+}
+
+/**
+ * Format any date input (YYYY-MM-DD string, ISO timestamp, or Date object)
+ * into standard DD-MM-YYYY format across the entire PWA.
+ * Example: "2026-10-02" -> "02-10-2026"
+ */
+export function formatDateDDMMYYYY(dateInput: string | Date | null | undefined): string {
+  if (!dateInput) return "—";
+  if (typeof dateInput === "string") {
+    const clean = dateInput.slice(0, 10);
+    const parts = clean.split("-");
+    if (parts.length === 3 && parts[0].length === 4) {
+      // Direct YYYY-MM-DD -> DD-MM-YYYY without timezone hazards
+      return `${parts[2].padStart(2, "0")}-${parts[1].padStart(2, "0")}-${parts[0]}`;
+    }
+  }
+  const d = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  if (isNaN(d.getTime())) return typeof dateInput === "string" ? dateInput : "—";
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
+/**
+ * Format timestamp input into DD-MM-YYYY HH:mm format.
+ * Example: "2026-10-02T10:30:00Z" -> "02-10-2026 16:00"
+ */
+export function formatDateTimeDDMMYYYY(dateInput: string | Date | null | undefined): string {
+  if (!dateInput) return "—";
+  const d = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  if (isNaN(d.getTime())) return "—";
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${day}-${month}-${year} ${hours}:${minutes}`;
 }
 
 /** Clamp a date string (YYYY-MM-DD) so it is not in the future. Returns the clamped string. */

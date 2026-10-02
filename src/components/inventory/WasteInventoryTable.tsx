@@ -28,6 +28,7 @@ import {
   isEntryOverdue,
   isEntryWarning,
   getStorageLimitDays,
+  formatDateDDMMYYYY,
 } from "@/lib/wasteTypes";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -722,7 +723,7 @@ export default function WasteInventoryTable({
                                   <div className="text-[10px] text-muted-foreground flex items-center gap-2 mt-0.5">
                                     <span>{e.location || "General"}</span>
                                     <span>·</span>
-                                    <span>{e.generated_date}</span>
+                                    <span>{formatDateDDMMYYYY(e.generated_date)}</span>
                                     <span>·</span>
                                     <span>{getDaysStored(e.generated_date)}d stored</span>
                                   </div>
@@ -746,7 +747,7 @@ export default function WasteInventoryTable({
                         <PopoverTrigger asChild>
                           <Button variant="outline" className="w-full justify-start text-left font-normal h-9 text-xs rounded-lg">
                             <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                            {disposalDate}
+                            {formatDateDDMMYYYY(disposalDate)}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -941,7 +942,7 @@ export default function WasteInventoryTable({
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="h-7 text-xs font-normal px-2 rounded-md">
                       <CalendarIcon className="mr-1 h-3 w-3 text-muted-foreground" />
-                      {rangeStart || "From Date"}
+                      {rangeStart ? formatDateDDMMYYYY(rangeStart) : "From Date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -962,7 +963,7 @@ export default function WasteInventoryTable({
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="h-7 text-xs font-normal px-2 rounded-md">
                       <CalendarIcon className="mr-1 h-3 w-3 text-muted-foreground" />
-                      {rangeEnd || "To Date"}
+                      {rangeEnd ? formatDateDDMMYYYY(rangeEnd) : "To Date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -1215,7 +1216,7 @@ export default function WasteInventoryTable({
 
                           {/* Generated Date - Centered */}
                           <TableCell className="text-center text-xs font-mono px-3 py-2.5 sm:py-3 text-muted-foreground whitespace-nowrap">
-                            {entry.generated_date}
+                            {formatDateDDMMYYYY(entry.generated_date)}
                           </TableCell>
 
                           {/* Days - Centered */}

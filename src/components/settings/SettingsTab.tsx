@@ -20,7 +20,7 @@ import {
   ChevronRight,
   ShieldCheck,
 } from "lucide-react";
-import { WasteEntry, WASTE_TYPES } from "@/lib/wasteTypes";
+import { WasteEntry, WASTE_TYPES, formatDateDDMMYYYY } from "@/lib/wasteTypes";
 import {
   Select,
   SelectContent,
@@ -116,7 +116,7 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
           sanitizeCsv(unit),
           sanitizeCsv(e.piece_count ?? ""),
           sanitizeCsv(e.activity_type),
-          sanitizeCsv(e.generated_date),
+          sanitizeCsv(formatDateDDMMYYYY(e.generated_date)),
           sanitizeCsv(e.disposal_batch_id ?? ""),
           sanitizeCsv(e.notes ?? ""),
         ].join(",");

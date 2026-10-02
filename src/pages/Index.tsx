@@ -79,7 +79,7 @@ const Index = () => {
   const ActiveTabIcon = currentTab.icon;
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row">
+    <div className="h-screen h-[100dvh] bg-background text-foreground flex flex-col lg:flex-row overflow-hidden">
       {/* ── Left Sidebar (Desktop Only: lg and above) ── */}
       <DesktopSidebar
         activeTab={activeTab}
@@ -90,9 +90,9 @@ const Index = () => {
       />
 
       {/* ── Main Content Area ── */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Modern Sticky Top Header */}
-        <header className="sticky top-0 z-20 w-full border-b border-border/80 bg-card/90 backdrop-blur-md">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        {/* Modern Fixed Top Header (Non-scrolling on Mobile and Desktop) */}
+        <header className="sticky top-0 shrink-0 z-20 w-full border-b border-border/80 bg-card/90 backdrop-blur-md safe-area-top">
           <div className="w-full px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-3">
             {/* Desktop View Header (Left side of top bar on desktop) */}
             <div className="hidden lg:flex items-center gap-3">
@@ -150,8 +150,8 @@ const Index = () => {
         {/* Offline Status & Sync Banner */}
         <OfflineBanner />
 
-        {/* Main content */}
-        <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 lg:pb-8 space-y-4">
+        {/* Main content - Scrollable */}
+        <main className="flex-1 overflow-y-auto min-h-0 w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 lg:pb-8 space-y-4 overscroll-y-contain">
           {isLoading || siteLoading ? (
             <div className="space-y-4">
               {/* Skeleton header */}
@@ -202,7 +202,13 @@ const Index = () => {
                   onRejectDisposal={(id, reason) => approveDisposalBatch.mutateAsync({ batchId: id, action: "reject", reason, siteId: currentSite?.id ?? "" })}
                 />
               )}
-              {activeTab === "analytics" && <AnalyticsTab entries={entries} batches={batches} />}
+              {activeTab === "analytics" && (
+                <AnalyticsTab
+                  entries={entries}
+                  batches={batches}
+                  onNavigateToInventory={() => setActiveTab("inventory")}
+                />
+              )}
               {activeTab === "settings" && (
                 <SettingsTab entries={entries} onNavigateToAdmin={() => setActiveTab("admin")} />
               )}
