@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { WASTE_TYPES, WasteCategory, WasteEntry, ActivityType, unitLabel, clampDateNotFuture } from "@/lib/wasteTypes";
+import { WASTE_TYPES, WasteCategory, WasteEntry, ActivityType, unitLabel, clampDateNotFuture, formatDateDDMMYYYY } from "@/lib/wasteTypes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -176,7 +176,7 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-start text-left font-normal h-9 text-xs rounded-lg">
                     <CalendarIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                    {date}
+                    {formatDateDDMMYYYY(date)}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">

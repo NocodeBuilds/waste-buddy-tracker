@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { WASTE_TYPES } from "@/lib/wasteTypes";
+import { WASTE_TYPES, formatDateDDMMYYYY } from "@/lib/wasteTypes";
 import EmptyState from "@/components/ui/empty-state";
 
 interface Props {
@@ -105,7 +105,7 @@ export default function RecordsOversightView({ siteId }: Props) {
                         {wt?.name ?? r.waste_type_id}
                       </p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {r.generated_date} · {r.weight_kg ?? r.quantity ?? "—"} kg · {r.activity_type}
+                        {formatDateDDMMYYYY(r.generated_date)} · {r.weight_kg ?? r.quantity ?? "—"} kg · {r.activity_type}
                         {r.disposal_batch_id ? " · (Disposed)" : ""}
                       </p>
                     </div>

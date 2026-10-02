@@ -17,6 +17,9 @@ import {
   filterByPeriod,
   PeriodKind,
   AnalyticsPeriod,
+  parseLocalDate,
+  WASTE_TYPES,
+  formatDateDDMMYYYY,
 } from "@/lib/wasteTypes";
 import {
   BarChart3,
@@ -33,6 +36,8 @@ import {
   Layers,
   PieChart as PieChartIcon,
   History,
+  CalendarCheck,
+  Info,
 } from "lucide-react";
 import {
   Bar,
@@ -63,13 +68,15 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import PredictiveWasteForecast from "@/components/analytics/PredictiveWasteForecast";
 
 interface Props {
   entries: WasteEntry[];
   batches: DisposalBatch[];
+  onNavigateToInventory?: () => void;
 }
 
-export default function AnalyticsTab({ entries, batches }: Props) {
+export default function AnalyticsTab({ entries, batches, onNavigateToInventory }: Props) {
   const [activeSegment, setActiveSegment] = useState<"overview" | "aging" | "trends" | "disposals">("overview");
 
   // ── Period state ──────────────────────────────────────────────
@@ -163,28 +170,96 @@ export default function AnalyticsTab({ entries, batches }: Props) {
     });
   }, [periodActive]);
 
-  // ── 12-week trend ───────────────────────────────────────────
-  const trendData = useMemo(() => {
-    const weeks: { week: string; kg: number; litres: number }[] = [];
+  // ── 12-week generation trend (strictly based on actual physical generated_date) ──────
+  const { trendData, retroactiveStats } = useMemo(() => {
+    const weeks: {
+      week: string;
+      fullRange: string;
+      kg: number;
+      litres: number;
+      eventCount: number;
+      retroactiveCount: number;
+      topTypes: string[];
+      isCurrentWeek: boolean;
+    }[] = [];
+
     const now = new Date();
+    const currentDay = now.getDay(); // 0 is Sunday, 1 is Monday...
+    const daysSinceMonday = (currentDay + 6) % 7;
+    // Current week's Monday at local midnight
+    const currentWeekMonday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceMonday, 0, 0, 0, 0);
+
+    let totalRetroactiveIn12Weeks = 0;
+    let totalEntriesIn12Weeks = 0;
+
     for (let i = 11; i >= 0; i--) {
-      const end = new Date(now);
-      end.setDate(end.getDate() - i * 7);
-      const start = new Date(end);
-      start.setDate(start.getDate() - 7);
-      const inRange = periodEntries.filter((e) => {
-        const d = new Date(e.generated_date);
-        return d >= start && d < end;
+      const weekStart = new Date(currentWeekMonday);
+      weekStart.setDate(weekStart.getDate() - i * 7);
+      weekStart.setHours(0, 0, 0, 0);
+
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
+
+      const isCurrentWeek = i === 0;
+
+      // Filter from ALL site entries strictly by physical generated_date (never created_at or truncated by period)
+      const inRange = entries.filter((e) => {
+        if (!e.generated_date) return false;
+        const genDate = parseLocalDate(e.generated_date);
+        return genDate >= weekStart && genDate <= weekEnd;
       });
+
+      let retroactiveInWeek = 0;
+      for (const e of inRange) {
+        totalEntriesIn12Weeks++;
+        if (e.created_at) {
+          const createdDateStr = e.created_at.slice(0, 10);
+          const genDateStr = (e.generated_date || "").slice(0, 10);
+          if (createdDateStr > genDateStr) {
+            retroactiveInWeek++;
+            totalRetroactiveIn12Weeks++;
+          }
+        }
+      }
+
       const t = sumByUnit(inRange);
+
+      // Top waste types in this week
+      const typeFreq = new Map<string, number>();
+      for (const e of inRange) {
+        typeFreq.set(e.waste_type_id, (typeFreq.get(e.waste_type_id) || 0) + Number(e.weight_kg ?? 0));
+      }
+      const topTypes = Array.from(typeFreq.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 2)
+        .map(([id]) => WASTE_TYPES.find((w) => w.id === id)?.name || id);
+
+      const startDay = String(weekStart.getDate()).padStart(2, "0");
+      const startMonth = String(weekStart.getMonth() + 1).padStart(2, "0");
+      const weekLabel = `${startDay}-${startMonth}`;
+      const fullRange = `${formatDateDDMMYYYY(weekStart)} – ${formatDateDDMMYYYY(weekEnd)}`;
+
       weeks.push({
-        week: `${end.getMonth() + 1}/${end.getDate()}`,
+        week: weekLabel,
+        fullRange,
         kg: +t.kg.toFixed(2),
         litres: +t.litres.toFixed(2),
+        eventCount: inRange.length,
+        retroactiveCount: retroactiveInWeek,
+        topTypes,
+        isCurrentWeek,
       });
     }
-    return weeks;
-  }, [periodEntries]);
+
+    return {
+      trendData: weeks,
+      retroactiveStats: {
+        totalEntries: totalEntriesIn12Weeks,
+        retroactiveCount: totalRetroactiveIn12Weeks,
+      },
+    };
+  }, [entries]);
 
   // ── Top Locations ────────────────────────────────────────────
   const locMap = new Map<string, { kg: number; litres: number }>();
@@ -208,6 +283,63 @@ export default function AnalyticsTab({ entries, batches }: Props) {
     fontSize: "12px",
     color: "hsl(var(--foreground))",
     padding: "8px 12px",
+  };
+
+  const TrendTooltip = ({ active, payload }: { active?: boolean; payload?: any[] }) => {
+    if (!active || !payload || !payload.length) return null;
+    const data = payload[0]?.payload;
+    if (!data) return null;
+
+    return (
+      <div className="bg-popover/95 backdrop-blur-md border border-border/80 rounded-xl p-3 shadow-xl text-xs space-y-2 min-w-[210px]">
+        <div className="border-b border-border/60 pb-1.5 flex items-center justify-between gap-2">
+          <span className="font-bold text-foreground flex items-center gap-1.5">
+            <CalendarIcon className="h-3.5 w-3.5 text-primary" />
+            {data.fullRange}
+          </span>
+          {data.isCurrentWeek && (
+            <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 font-normal">
+              Current Week
+            </Badge>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-medium">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              Solids
+            </span>
+            <span className="font-mono font-bold">{data.kg.toFixed(2)} kg</span>
+          </div>
+          <div className="flex items-center justify-between text-sky-600 dark:text-sky-400 font-medium">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-sky-500" />
+              Liquids
+            </span>
+            <span className="font-mono font-bold">{data.litres.toFixed(2)} L</span>
+          </div>
+        </div>
+
+        <div className="pt-1.5 border-t border-border/50 text-[11px] text-muted-foreground space-y-1">
+          <div className="flex items-center justify-between">
+            <span>Field Maintenance Logs:</span>
+            <span className="font-semibold text-foreground">{data.eventCount}</span>
+          </div>
+          {data.retroactiveCount > 0 && (
+            <div className="flex items-center justify-between text-amber-600 dark:text-amber-400 text-[10px]">
+              <span>Delayed entry logged later:</span>
+              <span className="font-semibold">{data.retroactiveCount}</span>
+            </div>
+          )}
+          {data.topTypes && data.topTypes.length > 0 && (
+            <div className="text-[10px] text-muted-foreground pt-0.5 truncate">
+              Key streams: {data.topTypes.join(", ")}
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -323,7 +455,7 @@ export default function AnalyticsTab({ entries, batches }: Props) {
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="h-8 text-xs font-normal px-2 rounded-md">
                     <CalendarIcon className="mr-1 h-3 w-3 text-muted-foreground" />
-                    {rangeStart || "From"}
+                    {rangeStart ? formatDateDDMMYYYY(rangeStart) : "From"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -344,7 +476,7 @@ export default function AnalyticsTab({ entries, batches }: Props) {
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="h-8 text-xs font-normal px-2 rounded-md">
                     <CalendarIcon className="mr-1 h-3 w-3 text-muted-foreground" />
-                    {rangeEnd || "To"}
+                    {rangeEnd ? formatDateDDMMYYYY(rangeEnd) : "To"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -599,11 +731,41 @@ export default function AnalyticsTab({ entries, batches }: Props) {
               {/* 12-Week Generation Trend Line Chart */}
               <Card className="border-border/80 shadow-xs">
                 <CardContent className="p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <TrendingUp className="h-3.5 w-3.5 text-primary" /> 12-Week Generation Trend
-                    </h3>
-                    <span className="text-[11px] text-muted-foreground font-mono">Weekly aggregate</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div>
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <TrendingUp className="h-3.5 w-3.5 text-primary" /> 12-Week Generation Trend
+                      </h3>
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <CalendarCheck className="h-3 w-3 text-emerald-600 shrink-0" />
+                        <span>Sourced strictly from physical <strong>generation date</strong> (<code>generated_date</code>)</span>
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {retroactiveStats.retroactiveCount > 0 ? (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 gap-1 font-normal"
+                          title="Entries where the user logged the waste on a later date than the actual maintenance generation date"
+                        >
+                          <Info className="h-3 w-3" />
+                          {retroactiveStats.retroactiveCount} delayed {retroactiveStats.retroactiveCount === 1 ? "log" : "logs"} placed on generation date
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] text-muted-foreground border-border/80 font-normal">
+                          Rolling 12 Calendar Weeks (Mon–Sun)
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Informational Callout Reassuring the User */}
+                  <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted/40 border border-border/60 text-[11px] text-muted-foreground">
+                    <CalendarCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    <span>
+                      Each entry is placed in the week when waste was physically produced on-site. Entries logged on subsequent days are accurately mapped back to their original maintenance date.
+                    </span>
                   </div>
 
                   <div className="h-[210px] w-full">
@@ -619,7 +781,7 @@ export default function AnalyticsTab({ entries, batches }: Props) {
                           tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                           axisLine={{ stroke: "hsl(var(--border))" }}
                         />
-                        <Tooltip contentStyle={tooltipStyle} />
+                        <Tooltip content={<TrendTooltip />} />
                         <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
                         <Line
                           type="monotone"
@@ -644,6 +806,12 @@ export default function AnalyticsTab({ entries, batches }: Props) {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Predictive Waste Generation Forecast Module */}
+              <PredictiveWasteForecast
+                entries={entries}
+                onNavigateToInventory={onNavigateToInventory}
+              />
 
               {/* Top Locations */}
               {topLocs.length > 0 && (
@@ -720,7 +888,7 @@ export default function AnalyticsTab({ entries, batches }: Props) {
                         <div key={b.id} className="flex items-center justify-between py-2.5 text-xs first:pt-1 last:pb-1">
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-foreground">{b.disposed_date}</span>
+                              <span className="font-semibold text-foreground">{formatDateDDMMYYYY(b.disposed_date)}</span>
                               {status === "approved" ? (
                                 <Badge variant="success" className="text-[10px]">
                                   Approved

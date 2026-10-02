@@ -5,6 +5,7 @@ import {
   WasteEntry, WASTE_TYPES, getDaysStored, DISPOSAL_LIMIT_DAYS,
   getStatus, isDisposed, getMeasureUnit, fmtNum,
   isEntryOverdue, isEntryWarning, getStorageLimitDays,
+  formatDateDDMMYYYY,
 } from "@/lib/wasteTypes";
 import {
   Package, ShieldAlert, Leaf, Trash2, Recycle, Battery, Droplets,
@@ -79,7 +80,7 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
   const safW = Math.round(sumWeight(saf));
 
   // Bubble detail helpers
-  const fmtDate = (s: string) => new Date(s + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  const fmtDate = (s: string) => formatDateDDMMYYYY(s);
   const dueDate = (entry: WasteEntry) => {
     const gen = new Date(entry.generated_date + "T00:00:00");
     const limit = getStorageLimitDays(entry.waste_category, entry.waste_type_id);
@@ -385,7 +386,7 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
       gen.setDate(gen.getDate() + limit);
       const daysLeft = limit - getDaysStored(e.generated_date);
       return {
-        date: gen.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+        date: formatDateDDMMYYYY(gen),
         daysLeft,
         time: gen.getTime(),
       };

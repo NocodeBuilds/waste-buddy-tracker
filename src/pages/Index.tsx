@@ -202,7 +202,13 @@ const Index = () => {
                   onRejectDisposal={(id, reason) => approveDisposalBatch.mutateAsync({ batchId: id, action: "reject", reason, siteId: currentSite?.id ?? "" })}
                 />
               )}
-              {activeTab === "analytics" && <AnalyticsTab entries={entries} batches={batches} />}
+              {activeTab === "analytics" && (
+                <AnalyticsTab
+                  entries={entries}
+                  batches={batches}
+                  onNavigateToInventory={() => setActiveTab("inventory")}
+                />
+              )}
               {activeTab === "settings" && (
                 <SettingsTab entries={entries} onNavigateToAdmin={() => setActiveTab("admin")} />
               )}

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Site, AccessRequestRow as Req } from "@/types";
+import { formatDateDDMMYYYY } from "@/lib/wasteTypes";
 import { Badge } from "@/components/ui/badge";
 
 export default function RequestSiteAccess({ onApproved }: { onApproved: () => void }) {
@@ -171,7 +172,7 @@ export default function RequestSiteAccess({ onApproved }: { onApproved: () => vo
                           <div className="min-w-0">
                             <p className="text-xs font-semibold text-foreground truncate">{s?.name ?? r.site_id}</p>
                             <p className="text-[11px] text-muted-foreground">
-                              Requested {new Date(r.created_at).toLocaleDateString()}
+                              Requested {formatDateDDMMYYYY(r.created_at)}
                             </p>
                           </div>
                           <Button

@@ -4,7 +4,7 @@ import autoTable from "jspdf-autotable";
 import {
   WasteEntry, WASTE_TYPES, getMeasureUnit, unitLabel, sumByUnit, fmtNum,
   getDaysStored, isDisposed, DisposalBatch,
-  filterByPeriod, AnalyticsPeriod,
+  filterByPeriod, AnalyticsPeriod, formatDateDDMMYYYY,
 } from "./wasteTypes";
 
 const wasteName = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.name ?? id;
@@ -31,7 +31,7 @@ export function exportInventoryToExcel(
 
   const detail = inStorage.map((e, i) => ({
     "Sl. No.": i + 1,
-    "Date Generated": e.generated_date,
+    "Date Generated": formatDateDDMMYYYY(e.generated_date),
     "Location": e.location ?? "—",
     "Waste Description": wasteName(e.waste_type_id),
     "Physical Form": wasteCat(e.waste_type_id),
@@ -148,7 +148,7 @@ export function exportForm3Pdf(entries: WasteEntry[], siteName: string, period?:
 
   const body = inStorage.map((e, i) => [
     String(i + 1),
-    e.generated_date,
+    formatDateDDMMYYYY(e.generated_date),
     e.activity_type === "preventive" ? "PM" : e.activity_type === "breakdown" ? "BM" : e.activity_type === "5s" ? "5S" : "Others",
     e.location ?? "—",
     wasteName(e.waste_type_id),
@@ -221,7 +221,7 @@ export function exportDisposalBatchPdf(
 
   doc.setFontSize(8.5);
   doc.text(`Generating Facility / Site: ${siteName}`, 10, 28);
-  doc.text(`Disposal / Dispatch Date: ${batch.disposed_date}`, 10, 33);
+  doc.text(`Disposal / Dispatch Date: ${formatDateDDMMYYYY(batch.disposed_date)}`, 10, 33);
   doc.text(`Manifest / Batch ID: ${batch.id.slice(0, 8).toUpperCase()}`, pageW - 10, 28, { align: "right" });
   doc.text(
     `Total Dispatched: ${fmtNum(totals.kg)} kg  ·  ${fmtNum(totals.litres)} L`,
@@ -240,7 +240,7 @@ export function exportDisposalBatchPdf(
     const code = wt?.statutoryCode ? ` (${wt.statutoryCode})` : "";
     return [
       String(i + 1),
-      e.generated_date,
+      formatDateDDMMYYYY(e.generated_date),
       e.location ?? "—",
       `${wasteName(e.waste_type_id)}${code}`,
       e.waste_category === "hazardous" ? "HAZ" : e.waste_category === "non_hazardous" ? "NON-HAZ" : "OTHER",
@@ -389,7 +389,7 @@ export function exportForm8ContainerLabelsPdf(
     addRow("Regulatory Stream:", `${cat} (${statCode})`);
     addRow("Physical State:", physicalForm);
     addRow("Total Quantity / Net:", qty);
-    addRow("Generation Date:", entry.generated_date);
+    addRow("Generation Date:", formatDateDDMMYYYY(entry.generated_date));
     addRow("Occupier / Facility:", siteName);
     addRow("Origin Location:", entry.location || "Facility Yard");
     addRow("In Emergency Contact:", "Plant EHS / Site In-charge");

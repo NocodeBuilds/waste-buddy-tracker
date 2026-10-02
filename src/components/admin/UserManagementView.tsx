@@ -31,6 +31,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Role, Member } from "@/types";
+import { formatDateDDMMYYYY } from "@/lib/wasteTypes";
 import EmptyState from "@/components/ui/empty-state";
 
 interface Props {
@@ -224,7 +225,7 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
                       {r.profile?.full_name ?? r.profile?.email ?? r.user_id}
                     </p>
                     <p className="text-[11px] text-muted-foreground truncate">
-                      {r.profile?.email} · {new Date(r.created_at).toLocaleDateString()}
+                      {r.profile?.email} · {formatDateDDMMYYYY(r.created_at)}
                     </p>
                     {r.note && (
                       <p className="text-[11px] italic text-muted-foreground mt-0.5 bg-muted/40 p-1.5 rounded">
