@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 const TAB_CONFIG: Record<TabId, { title: string; subtitle: string; icon: typeof Home }> = {
   home: {
@@ -93,7 +94,7 @@ const Index = () => {
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Modern Fixed Top Header (Non-scrolling on Mobile and Desktop) */}
         <header className="sticky top-0 shrink-0 z-20 w-full border-b border-border/80 bg-card/90 backdrop-blur-md safe-area-top">
-          <div className="w-full px-3 sm:px-6 lg:px-8 h-13 sm:h-16 flex items-center justify-between gap-2.5">
+          <div className="w-full px-3.5 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2.5 sm:gap-3">
             {/* Desktop View Header (Left side of top bar on desktop) */}
             <div className="hidden lg:flex items-center gap-3">
               <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0">
@@ -110,30 +111,30 @@ const Index = () => {
             </div>
 
             {/* Mobile Brand Mark (Left side of top bar on mobile only) */}
-            <div className="flex lg:hidden items-center gap-2 shrink-0">
+            <div className="flex lg:hidden items-center gap-2 sm:gap-2.5 shrink-0">
               <img
                 src="/icons/icon-192x192.png"
                 alt="WasteBuddy"
-                className="h-7 w-7 rounded-lg shadow-xs object-cover border border-primary/20 shrink-0"
+                className="h-8 w-8 rounded-lg shadow-xs object-cover border border-primary/20 shrink-0"
               />
               <div className="flex items-center gap-1">
-                <span className="text-xs font-bold tracking-tight text-foreground">
+                <span className="text-sm font-bold tracking-tight text-foreground">
                   Waste<span className="text-primary font-bold">Buddy</span>
                 </span>
               </div>
             </div>
 
             {/* Header Right Actions */}
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-2">
               <SiteSwitcher />
 
               {/* Notification Bell */}
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="icon" className="relative h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-foreground">
-                    <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <Button variant="outline" size="icon" className="relative h-9 w-9 text-muted-foreground hover:text-foreground">
+                    <Bell className="h-4 w-4" />
                     {alertCount > 0 && (
-                      <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] sm:min-w-[18px] sm:h-[18px] rounded-full bg-rose-500 text-[9px] sm:text-[10px] font-bold text-white flex items-center justify-center px-1 shadow-xs ring-2 ring-card">
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-rose-500 text-[10px] font-bold text-white flex items-center justify-center px-1 shadow-xs ring-2 ring-card">
                         {alertCount > 9 ? "9+" : alertCount}
                       </span>
                     )}
@@ -150,8 +151,15 @@ const Index = () => {
         {/* Offline Status & Sync Banner */}
         <OfflineBanner />
 
-        {/* Main content - Scrollable */}
-        <main className="flex-1 overflow-y-auto min-h-0 w-full px-3 sm:px-6 lg:px-8 py-3 sm:py-6 pb-20 lg:pb-8 space-y-3 sm:space-y-4 overscroll-y-contain">
+        {/* Main content */}
+        <main
+          className={cn(
+            "flex-1 min-h-0 w-full px-3.5 sm:px-6 lg:px-8",
+            activeTab === "inventory"
+              ? "flex flex-col py-2 sm:py-3 pb-20 lg:pb-3 overflow-hidden"
+              : "overflow-y-auto py-3 sm:py-6 pb-20 lg:pb-8 space-y-3 sm:space-y-4 overscroll-y-contain"
+          )}
+        >
           {isLoading || siteLoading ? (
             <div className="space-y-4">
               {/* Skeleton header */}

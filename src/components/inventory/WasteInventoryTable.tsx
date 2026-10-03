@@ -571,9 +571,9 @@ export default function WasteInventoryTable({
   };
 
   return (
-    <div className="space-y-3.5">
-      {/* ── Sub-Navigation Pill Segment Switcher (eliminates vertical scroll overload) ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/60 pb-2">
+    <div className="h-full flex flex-col min-h-0 space-y-2 sm:space-y-2.5">
+      {/* ── Sub-Navigation Pill Segment Switcher (Fixed at top) ── */}
+      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/60 pb-2">
         <div className="grid grid-cols-3 sm:flex p-1 bg-muted/70 rounded-xl gap-1 w-full sm:w-auto">
           <button
             type="button"
@@ -869,9 +869,9 @@ export default function WasteInventoryTable({
 
       {/* ────────────────────────── VIEW 1: RECORDS (DEFAULT) ────────────────────────── */}
       {activeView === "records" && (
-        <div className="space-y-2.5">
-          {/* Streamlined Search & Filter Bar */}
-          <div className="rounded-xl border border-border/80 bg-card p-2.5 shadow-xs space-y-2">
+        <div className="flex-1 min-h-0 flex flex-col space-y-2 sm:space-y-2.5 overflow-hidden">
+          {/* Streamlined Search & Filter Bar (Fixed) */}
+          <div className="shrink-0 rounded-xl border border-border/80 bg-card p-2.5 shadow-xs space-y-2">
             <div className="flex items-center gap-1.5 sm:gap-2">
               {/* Search Box */}
               <div className="relative flex-1">
@@ -1079,9 +1079,9 @@ export default function WasteInventoryTable({
           </div>
 
           {/* ── Waste Inventory Records Table (Unified Responsive Desktop & Mobile Layout) ── */}
-          <div className="rounded-xl border border-border/80 bg-card overflow-hidden shadow-xs">
+          <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border/80 bg-card overflow-hidden shadow-xs">
             {/* Mobile Horizontal Scroll Indicator Banner */}
-            <div className="md:hidden flex items-center justify-between px-3 py-1.5 bg-muted/40 border-b border-border/60 text-[11px] text-muted-foreground select-none">
+            <div className="shrink-0 md:hidden flex items-center justify-between px-3 py-1.5 bg-muted/40 border-b border-border/60 text-[11px] text-muted-foreground select-none">
               <span className="flex items-center gap-1.5 font-medium">
                 <ArrowUpDown className="h-3 w-3 rotate-90 text-primary" />
                 <span>Swipe table horizontally to view all columns</span>
@@ -1091,9 +1091,11 @@ export default function WasteInventoryTable({
               </span>
             </div>
 
-            <div className="overflow-x-auto w-full touch-pan-x scrollbar-thin">
-              <Table className="min-w-[960px] w-full text-xs">
-                <TableHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur-md border-b border-border/80 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+            <Table
+              containerClassName="flex-1 min-h-0 w-full overflow-auto touch-pan-x scrollbar-thin"
+              className="min-w-[960px] w-full text-xs"
+            >
+              <TableHeader className="sticky top-0 z-20 bg-card border-b border-border/80 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
                   <TableRow className="hover:bg-transparent border-none">
                     <TableHead className="w-[110px] min-w-[100px] h-10 px-3 text-center">
                       <HeaderSortButton
@@ -1364,61 +1366,64 @@ export default function WasteInventoryTable({
                   )}
                 </TableBody>
               </Table>
-            </div>
           </div>
         </div>
       )}
 
       {/* ────────────────────────── VIEW 2: STORAGE BREAKDOWN ────────────────────────── */}
       {activeView === "summary" && (
-        <StorageBreakdownView
-          hazKg={hazKg}
-          nonHazKg={nonHazKg}
-          totals={totals}
-          eWasteKg={eWasteKg}
-          batteryKg={batteryKg}
-          otherKg={otherKg}
-          byType={byType}
-          period={period}
-          periodKind={periodKind}
-          onPeriodKindChange={setPeriodKind}
-          selectedYear={selectedYear}
-          onYearChange={setSelectedYear}
-          selectedMonth={selectedMonth}
-          onMonthChange={setSelectedMonth}
-          rangeStart={rangeStart}
-          onRangeStartChange={setRangeStart}
-          rangeEnd={rangeEnd}
-          onRangeEndChange={setRangeEnd}
-          rangeOpenStart={rangeOpenStart}
-          onRangeOpenStartChange={setRangeOpenStart}
-          rangeOpenEnd={rangeOpenEnd}
-          onRangeOpenEndChange={setRangeOpenEnd}
-          selectedFy={selectedFy}
-          onFyChange={setSelectedFy}
-          years={years}
-          monthOpts={monthOpts}
-          fyOpts={fyOpts}
-          periodActiveCount={activeEntries.length}
-          periodDisposedCount={periodFiltered.filter(isDisposed).length}
-          periodTotalCount={periodFiltered.length}
-          allActiveCount={allActiveEntries.length}
-          allTimeMetrics={allTimeMetrics}
-          periodTotalMetrics={periodTotalMetrics}
-        />
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain pr-0.5">
+          <StorageBreakdownView
+            hazKg={hazKg}
+            nonHazKg={nonHazKg}
+            totals={totals}
+            eWasteKg={eWasteKg}
+            batteryKg={batteryKg}
+            otherKg={otherKg}
+            byType={byType}
+            period={period}
+            periodKind={periodKind}
+            onPeriodKindChange={setPeriodKind}
+            selectedYear={selectedYear}
+            onYearChange={setSelectedYear}
+            selectedMonth={selectedMonth}
+            onMonthChange={setSelectedMonth}
+            rangeStart={rangeStart}
+            onRangeStartChange={setRangeStart}
+            rangeEnd={rangeEnd}
+            onRangeEndChange={setRangeEnd}
+            rangeOpenStart={rangeOpenStart}
+            onRangeOpenStartChange={setRangeOpenStart}
+            rangeOpenEnd={rangeOpenEnd}
+            onRangeOpenEndChange={setRangeOpenEnd}
+            selectedFy={selectedFy}
+            onFyChange={setSelectedFy}
+            years={years}
+            monthOpts={monthOpts}
+            fyOpts={fyOpts}
+            periodActiveCount={activeEntries.length}
+            periodDisposedCount={periodFiltered.filter(isDisposed).length}
+            periodTotalCount={periodFiltered.length}
+            allActiveCount={allActiveEntries.length}
+            allTimeMetrics={allTimeMetrics}
+            periodTotalMetrics={periodTotalMetrics}
+          />
+        </div>
       )}
 
       {/* ────────────────────────── VIEW 3: DISPOSALS & MANIFESTS ────────────────────────── */}
       {activeView === "disposals" && (
-        <DisposalHistoryView
-          batches={batches}
-          entries={entries}
-          allActiveEntries={allActiveEntries}
-          isManagerOrAdmin={isManagerOrAdmin}
-          currentSiteName={currentSite?.name ?? "Site"}
-          onApproveDisposal={onApproveDisposal}
-          onRejectDisposal={onRejectDisposal}
-        />
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain pr-0.5">
+          <DisposalHistoryView
+            batches={batches}
+            entries={entries}
+            allActiveEntries={allActiveEntries}
+            isManagerOrAdmin={isManagerOrAdmin}
+            currentSiteName={currentSite?.name ?? "Site"}
+            onApproveDisposal={onApproveDisposal}
+            onRejectDisposal={onRejectDisposal}
+          />
+        </div>
       )}
 
       {/* Export options dialog */}
