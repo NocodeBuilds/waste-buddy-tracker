@@ -271,7 +271,7 @@ export function rangePeriod(startStr: string, endStr: string): AnalyticsPeriod {
     kind: "range",
     start: getLocalDate(start),
     end: getLocalDate(end),
-    label: `${startStr} → ${endStr}`,
+    label: `${formatDateDDMMYYYY(startStr)} → ${formatDateDDMMYYYY(endStr)}`,
   };
 }
 

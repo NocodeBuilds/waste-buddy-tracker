@@ -51,6 +51,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -891,35 +892,102 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
           </div>
 
           {/* Operational Sensitivity / Load Variance Slider */}
-          <div className="flex items-center justify-between gap-4 pt-1.5 border-t border-border/50 text-xs">
-            <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
-              <span className="font-semibold text-foreground whitespace-nowrap">Operational Load Variance:</span>
-              <span className="text-[11px] text-muted-foreground hidden sm:inline">
-                (Adjust for expected high-wind / heavy overhaul campaigns)
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pt-2 border-t border-border/50 text-xs">
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-foreground whitespace-nowrap">Operational Load Variance:</span>
+                <span
+                  className={cn(
+                    "font-mono font-bold text-xs px-2 py-0.5 rounded-md border transition-colors",
+                    sensitivity > 0
+                      ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
+                      : sensitivity < 0
+                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                      : "bg-muted text-foreground border-border/60"
+                  )}
+                >
+                  {sensitivity > 0 ? `+${sensitivity}% Surge` : sensitivity < 0 ? `${sensitivity}% Lean` : "0% Nominal"}
+                </span>
+                {sensitivity !== 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSensitivity(0)}
+                    className="text-[11px] text-muted-foreground hover:text-primary underline flex items-center gap-1 transition-colors"
+                    title="Reset to 0% Nominal"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    <span>Reset</span>
+                  </button>
+                )}
+              </div>
+              <span className="text-[11px] text-muted-foreground">
+                Adjust for expected high-wind output surges, heavy overhaul campaigns, or lean periods.
               </span>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="font-mono font-bold text-primary min-w-[42px] text-right">
-                {sensitivity > 0 ? `+${sensitivity}%` : `${sensitivity}%`}
-              </span>
-              <input
-                type="range"
-                min={-30}
-                max={50}
-                step={5}
-                value={sensitivity}
-                onChange={(e) => setSensitivity(Number(e.target.value))}
-                className="w-24 sm:w-32 h-1.5 bg-muted rounded-lg accent-primary cursor-pointer"
-              />
-              {sensitivity !== 0 && (
-                <button
+
+            <div className="flex flex-col gap-1.5 shrink-0 sm:items-end">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Button
                   type="button"
-                  onClick={() => setSensitivity(0)}
-                  className="text-[10px] text-muted-foreground hover:text-foreground underline ml-1"
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 rounded-md shrink-0 select-none hover:bg-muted"
+                  disabled={sensitivity <= -30}
+                  onClick={() => setSensitivity((s) => Math.max(-30, s - 5))}
+                  title="Decrease variance by 5%"
                 >
-                  Reset
-                </button>
-              )}
+                  <Minus className="h-3.5 w-3.5" />
+                </Button>
+
+                <div className="w-36 sm:w-44 md:w-52 py-2">
+                  <Slider
+                    value={[sensitivity]}
+                    onValueChange={([val]) => setSensitivity(val)}
+                    min={-30}
+                    max={50}
+                    step={5}
+                    className="cursor-grab active:cursor-grabbing touch-none select-none"
+                    aria-label="Operational Load Variance Sensitivity"
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 rounded-md shrink-0 select-none hover:bg-muted"
+                  disabled={sensitivity >= 50}
+                  onClick={() => setSensitivity((s) => Math.min(50, s + 5))}
+                  title="Increase variance by 5%"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
+              {/* Quick Click Simulation Presets */}
+              <div className="flex items-center gap-1 self-start sm:self-auto text-[10px] text-muted-foreground">
+                <span className="font-semibold text-foreground/80 mr-0.5">Quick:</span>
+                {[
+                  { label: "-20% Lean", val: -20 },
+                  { label: "0% Nominal", val: 0 },
+                  { label: "+25% Heavy", val: 25 },
+                  { label: "+50% Overhaul", val: 50 },
+                ].map((p) => (
+                  <button
+                    key={p.val}
+                    type="button"
+                    onClick={() => setSensitivity(p.val)}
+                    className={cn(
+                      "px-1.5 py-0.5 rounded border transition-colors font-medium",
+                      sensitivity === p.val
+                        ? "bg-primary text-primary-foreground border-primary font-bold shadow-xs"
+                        : "bg-muted/70 text-muted-foreground hover:text-foreground hover:bg-muted border-border/50"
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>

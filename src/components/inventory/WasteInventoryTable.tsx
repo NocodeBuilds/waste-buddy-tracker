@@ -359,6 +359,66 @@ export default function WasteInventoryTable({
       .sort((a, b) => b.total - a.total);
   }, [activeEntries]);
 
+  // Metrics for all active yard storage (all-time)
+  const allTimeMetrics = useMemo(() => {
+    const solids = allActiveEntries.filter((e) => getMeasureUnit(e.waste_type_id) === "kg");
+    const hazKg = solids
+      .filter((e) => e.waste_category === "hazardous")
+      .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+    const nonHazKg = solids
+      .filter((e) => e.waste_category === "non_hazardous")
+      .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+    const eWasteKg = solids
+      .filter((e) => e.waste_category === "e_waste" && e.waste_type_id !== "used-batteries")
+      .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+    const batteryKg = solids
+      .filter((e) => e.waste_type_id === "used-batteries")
+      .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+    const otherKg = solids
+      .filter((e) => e.waste_category === "other_wastes")
+      .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+    const totals = sumByUnit(allActiveEntries);
+    const byType = WASTE_TYPES.map((wt) => {
+      const items = allActiveEntries.filter((e) => e.waste_type_id === wt.id);
+      const total = items.reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+      return { ...wt, total };
+    })
+      .filter((w) => w.total > 0)
+      .sort((a, b) => b.total - a.total);
+
+    return { hazKg, nonHazKg, totals, eWasteKg, batteryKg, otherKg, byType };
+  }, [allActiveEntries]);
+
+  // Metrics for all waste generated in the period (active + disposed)
+  const periodTotalMetrics = useMemo(() => {
+    const solids = periodFiltered.filter((e) => getMeasureUnit(e.waste_type_id) === "kg");
+    const hazKg = solids
+      .filter((e) => e.waste_category === "hazardous")
+      .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+    const nonHazKg = solids
+      .filter((e) => e.waste_category === "non_hazardous")
+      .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+    const eWasteKg = solids
+      .filter((e) => e.waste_category === "e_waste" && e.waste_type_id !== "used-batteries")
+      .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+    const batteryKg = solids
+      .filter((e) => e.waste_type_id === "used-batteries")
+      .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+    const otherKg = solids
+      .filter((e) => e.waste_category === "other_wastes")
+      .reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+    const totals = sumByUnit(periodFiltered);
+    const byType = WASTE_TYPES.map((wt) => {
+      const items = periodFiltered.filter((e) => e.waste_type_id === wt.id);
+      const total = items.reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+      return { ...wt, total };
+    })
+      .filter((w) => w.total > 0)
+      .sort((a, b) => b.total - a.total);
+
+    return { hazKg, nonHazKg, totals, eWasteKg, batteryKg, otherKg, byType };
+  }, [periodFiltered]);
+
   const overdueCount = allActiveEntries.filter((e) => getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS).length;
 
   const statusBadge = (entry: WasteEntry) => {
@@ -1316,6 +1376,32 @@ export default function WasteInventoryTable({
           batteryKg={batteryKg}
           otherKg={otherKg}
           byType={byType}
+          period={period}
+          periodKind={periodKind}
+          onPeriodKindChange={setPeriodKind}
+          selectedYear={selectedYear}
+          onYearChange={setSelectedYear}
+          selectedMonth={selectedMonth}
+          onMonthChange={setSelectedMonth}
+          rangeStart={rangeStart}
+          onRangeStartChange={setRangeStart}
+          rangeEnd={rangeEnd}
+          onRangeEndChange={setRangeEnd}
+          rangeOpenStart={rangeOpenStart}
+          onRangeOpenStartChange={setRangeOpenStart}
+          rangeOpenEnd={rangeOpenEnd}
+          onRangeOpenEndChange={setRangeOpenEnd}
+          selectedFy={selectedFy}
+          onFyChange={setSelectedFy}
+          years={years}
+          monthOpts={monthOpts}
+          fyOpts={fyOpts}
+          periodActiveCount={activeEntries.length}
+          periodDisposedCount={periodFiltered.filter(isDisposed).length}
+          periodTotalCount={periodFiltered.length}
+          allActiveCount={allActiveEntries.length}
+          allTimeMetrics={allTimeMetrics}
+          periodTotalMetrics={periodTotalMetrics}
         />
       )}
 
