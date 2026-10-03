@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DisposalBatch, fmtNum, WASTE_TYPES, formatDateDDMMYYYY } from "@/lib/wasteTypes";
+import { DisposalBatch, fmtNum, WASTE_TYPES, formatDateDDMMYYYY, getMeasureUnit } from "@/lib/wasteTypes";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import MultiSelect from "./MultiSelect";
@@ -186,9 +186,9 @@ export default function ExportOptionsDialog({
   const periodLabel = useMemo(() => {
     if (periodKind === "all") return "All Time";
     if (periodKind === "month") return `${monthLabels[selectedMonth]} ${selectedYear}`;
-    if (periodKind === "range" && rangeStart && rangeEnd) return `${rangeStart} → ${rangeEnd}`;
+    if (periodKind === "range" && rangeStart && rangeEnd) return `${formatDateDDMMYYYY(rangeStart)} → ${formatDateDDMMYYYY(rangeEnd)}`;
     if (periodKind === "fy") return `FY ${selectedFy}-${String(selectedFy + 1).slice(-2)}`;
-    if (periodKind === "batch" && chosenBatch) return `Batch ${chosenBatch.disposed_date}`;
+    if (periodKind === "batch" && chosenBatch) return `Batch ${formatDateDDMMYYYY(chosenBatch.disposed_date)}`;
     return "All Time";
   }, [periodKind, selectedYear, selectedMonth, rangeStart, rangeEnd, selectedFy, batchId, chosenBatch]);
 
@@ -198,13 +198,7 @@ export default function ExportOptionsDialog({
       count = 0;
     for (const e of filteredEntries) {
       const w = Number(e.weight_kg ?? 0);
-      const u =
-        e.measureUnit ??
-        (["any-liquid", "waste-oil", "waste-chemical", "waste-water", "waste-gas", "liquid-chemical"].includes(
-          e.waste_type_id
-        )
-          ? "litres"
-          : "kg");
+      const u = e.measureUnit ?? getMeasureUnit(e.waste_type_id);
       if (u === "litres") litres += w;
       else kg += w;
       count += 1;

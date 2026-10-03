@@ -123,7 +123,7 @@ export function exportForm3Pdf(entries: WasteEntry[], siteName: string, period?:
 
   doc.setFontSize(9);
   doc.text(`Name of the occupier / facility: ${siteName}`, 10, 26);
-  doc.text(`Date of report: ${new Date().toLocaleDateString()}`, pageW - 10, 26, { align: "right" });
+  doc.text(`Date of report: ${formatDateDDMMYYYY(new Date())}`, pageW - 10, 26, { align: "right" });
   if (period && period.kind !== "all") {
     doc.text(`Period: ${period.label}`, 10, 31);
   }
@@ -461,7 +461,7 @@ export function exportForm4AnnualReturnPdf(
   doc.text(`1. Name and address of facility: ${siteName}`, 14, 29);
   doc.text(`2. Financial Year: ${fyLabel} (01-Apr-${financialYear} to 31-Mar-${financialYear + 1})`, 14, 34);
   doc.text(`3. SPCB Authorization / Registration No.: SPCB/HOWM/${safeName(siteName)}/REG`, pageW - 14, 29, { align: "right" });
-  doc.text(`4. Date of Submission: ${new Date().toLocaleDateString("en-IN")}`, pageW - 14, 34, { align: "right" });
+  doc.text(`4. Date of Submission: ${formatDateDDMMYYYY(new Date())}`, pageW - 14, 34, { align: "right" });
 
   // Calculation per waste type
   const tableData: any[] = [];

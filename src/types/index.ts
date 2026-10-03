@@ -7,16 +7,16 @@
 
 // ── Supabase-generated ──────────────────────────────────────────────
 import type {
-  Database as _Database,
-  Tables as _Tables,
-  TablesInsert as _TablesInsert,
-  TablesUpdate as _TablesUpdate,
-  Enums as _Enums,
-  CompositeTypes as _CompositeTypes,
+  Database,
+  Tables,
+  TablesInsert,
+  TablesUpdate,
+  Enums,
+  CompositeTypes,
+  Json,
 } from "@/integrations/supabase/types";
-import type { Json } from "@/integrations/supabase/types";
 
-export type { _Database as Database, _Tables as Tables, _TablesInsert as TablesInsert, _TablesUpdate as TablesUpdate, _Enums as Enums, _CompositeTypes as CompositeTypes, Json };
+export type { Database, Tables, TablesInsert, TablesUpdate, Enums, CompositeTypes, Json };
 
 // ── Table row aliases (shorthand) ──────────────────────────────────
 export type SiteRow = Database["public"]["Tables"]["sites"]["Row"];

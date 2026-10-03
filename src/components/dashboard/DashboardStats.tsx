@@ -137,16 +137,16 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
             }
           >
             <div className={cn(
-              "w-full h-9.5 py-0.5 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
+              "w-full h-8 sm:h-9.5 py-0.5 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
               ovd.length > 0
                 ? "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 shadow-2xs"
                 : "bg-muted/30 border-border/60 text-muted-foreground/60"
             )}>
               <div className="flex items-baseline justify-center gap-0.5 max-w-full px-0.5 truncate leading-tight">
-                <span className="text-[11px] font-bold font-mono">{fmtNum(ovdW)}</span>
-                <span className="text-[8.5px] font-medium opacity-80">{unit}</span>
+                <span className="text-[10px] sm:text-[11px] font-bold font-mono">{fmtNum(ovdW)}</span>
+                <span className="text-[8px] sm:text-[8.5px] font-medium opacity-80">{unit}</span>
               </div>
-              <span className="text-[8px] font-semibold uppercase tracking-wider mt-0.5 leading-none">Overdue</span>
+              <span className="text-[7.5px] sm:text-[8px] font-semibold uppercase tracking-wider mt-0.5 leading-none">Overdue</span>
             </div>
           </ComicBubble>
 
@@ -163,16 +163,16 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
             }
           >
             <div className={cn(
-              "w-full h-9.5 py-0.5 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
+              "w-full h-8 sm:h-9.5 py-0.5 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
               wrn.length > 0
                 ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400 shadow-2xs"
                 : "bg-muted/30 border-border/60 text-muted-foreground/60"
             )}>
               <div className="flex items-baseline justify-center gap-0.5 max-w-full px-0.5 truncate leading-tight">
-                <span className="text-[11px] font-bold font-mono">{fmtNum(wrnW)}</span>
-                <span className="text-[8.5px] font-medium opacity-80">{unit}</span>
+                <span className="text-[10px] sm:text-[11px] font-bold font-mono">{fmtNum(wrnW)}</span>
+                <span className="text-[8px] sm:text-[8.5px] font-medium opacity-80">{unit}</span>
               </div>
-              <span className="text-[8px] font-semibold uppercase tracking-wider mt-0.5 leading-none">Warning</span>
+              <span className="text-[7.5px] sm:text-[8px] font-semibold uppercase tracking-wider mt-0.5 leading-none">Warning</span>
             </div>
           </ComicBubble>
 
@@ -189,16 +189,16 @@ function CategoryBlock({ entries, label, Icon, textColor, unit, filterFn, totalV
             }
           >
             <div className={cn(
-              "w-full h-9.5 py-0.5 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
+              "w-full h-8 sm:h-9.5 py-0.5 px-0.5 rounded-lg border flex flex-col items-center justify-center text-center transition-all",
               saf.length > 0
                 ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 shadow-2xs"
                 : "bg-muted/30 border-border/60 text-muted-foreground/60"
             )}>
               <div className="flex items-baseline justify-center gap-0.5 max-w-full px-0.5 truncate leading-tight">
-                <span className="text-[11px] font-bold font-mono">{fmtNum(safW)}</span>
-                <span className="text-[8.5px] font-medium opacity-80">{unit}</span>
+                <span className="text-[10px] sm:text-[11px] font-bold font-mono">{fmtNum(safW)}</span>
+                <span className="text-[8px] sm:text-[8.5px] font-medium opacity-80">{unit}</span>
               </div>
-              <span className="text-[8px] font-semibold uppercase tracking-wider mt-0.5 leading-none">Safe</span>
+              <span className="text-[7.5px] sm:text-[8px] font-semibold uppercase tracking-wider mt-0.5 leading-none">Safe</span>
             </div>
           </ComicBubble>
         </div>
@@ -577,9 +577,9 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
           <Card className="hover:border-rose-500/40 transition-colors">
-            <CardContent className="p-2.5 sm:p-3 h-full">
+            <CardContent className="p-2 sm:p-2.5 h-full">
               <CategoryBlock
                 entries={entries}
                 label="Hazardous Solids"
@@ -593,7 +593,7 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
           </Card>
 
           <Card className="hover:border-emerald-500/40 transition-colors">
-            <CardContent className="p-2.5 sm:p-3 h-full">
+            <CardContent className="p-2 sm:p-2.5 h-full">
               <CategoryBlock
                 entries={entries}
                 label="Non-Haz Solids"
@@ -607,7 +607,7 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
           </Card>
 
           <Card className="hover:border-cyan-500/40 transition-colors">
-            <CardContent className="p-2.5 sm:p-3 h-full">
+            <CardContent className="p-2 sm:p-2.5 h-full">
               <CategoryBlock
                 entries={entries}
                 label="Liquid Waste"
@@ -621,7 +621,7 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
           </Card>
 
           <Card className="hover:border-violet-500/40 transition-colors">
-            <CardContent className="p-2.5 sm:p-3 h-full">
+            <CardContent className="p-2 sm:p-2.5 h-full">
               <CategoryBlock
                 entries={entries}
                 label="E-Waste"
@@ -635,7 +635,7 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
           </Card>
 
           <Card className="hover:border-amber-500/40 transition-colors">
-            <CardContent className="p-2.5 sm:p-3 h-full">
+            <CardContent className="p-2 sm:p-2.5 h-full">
               <CategoryBlock
                 entries={entries}
                 label="Battery Waste"
@@ -649,7 +649,7 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
           </Card>
 
           <Card className="hover:border-slate-500/40 transition-colors">
-            <CardContent className="p-2.5 sm:p-3 h-full">
+            <CardContent className="p-2 sm:p-2.5 h-full">
               <CategoryBlock
                 entries={entries}
                 label="Other Wastes"

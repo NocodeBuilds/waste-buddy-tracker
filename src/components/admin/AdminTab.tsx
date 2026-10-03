@@ -38,66 +38,70 @@ export default function AdminTab() {
   return (
     <div className="space-y-3.5 max-w-4xl mx-auto">
       {/* ── Sub-Navigation Pill Segment Switcher (eliminates vertical scroll overload) ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 border-b border-border/60 pb-2">
-        <div className="inline-flex p-1 bg-muted/70 rounded-xl gap-1 overflow-x-auto no-scrollbar">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/60 pb-2">
+        <div className="grid grid-cols-4 sm:flex p-1 bg-muted/70 rounded-xl gap-1 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setActiveTab("users")}
             className={cn(
-              "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              "px-1.5 py-1.5 sm:px-3 sm:py-1.5 text-[11px] sm:text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 shrink-0",
               activeTab === "users"
                 ? "bg-card text-foreground shadow-xs font-bold"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
             <Users className="h-3.5 w-3.5 text-primary" />
-            <span>Team & Access</span>
+            <span className="sm:hidden">Team</span>
+            <span className="hidden sm:inline">Team & Access</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("sites")}
             className={cn(
-              "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              "px-1.5 py-1.5 sm:px-3 sm:py-1.5 text-[11px] sm:text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 shrink-0",
               activeTab === "sites"
                 ? "bg-card text-foreground shadow-xs font-bold"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
             <Building2 className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
-            <span>Facilities & Tags</span>
+            <span className="sm:hidden">Facilities</span>
+            <span className="hidden sm:inline">Facilities & Tags</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("records")}
             className={cn(
-              "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              "px-1.5 py-1.5 sm:px-3 sm:py-1.5 text-[11px] sm:text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 shrink-0",
               activeTab === "records"
                 ? "bg-card text-foreground shadow-xs font-bold"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
             <FileText className="h-3.5 w-3.5 text-amber-600" />
-            <span>Records Oversight</span>
+            <span className="sm:hidden">Records</span>
+            <span className="hidden sm:inline">Records Oversight</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("audit")}
             className={cn(
-              "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              "px-1.5 py-1.5 sm:px-3 sm:py-1.5 text-[11px] sm:text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 shrink-0",
               activeTab === "audit"
                 ? "bg-card text-foreground shadow-xs font-bold"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
             <History className="h-3.5 w-3.5 text-emerald-600" />
-            <span>Audit Trail</span>
+            <span className="sm:hidden">Audit</span>
+            <span className="hidden sm:inline">Audit Trail</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground self-end sm:self-auto">
+        <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
           <Shield className="h-3.5 w-3.5 text-primary" />
           <span className="font-semibold text-foreground">{currentSite.name}</span>
         </div>

@@ -18,7 +18,7 @@ export default function ResetPassword() {
 
   useEffect(() => {
     // Only allow access if this is a genuine password recovery flow
-    const { data: sub } = supabase.auth.onAuthStateChange((evt) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((evt: string) => {
       setReady(evt === "PASSWORD_RECOVERY");
     });
 

@@ -63,7 +63,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
       .select("role")
       .eq("user_id", user.id)
       .eq("site_id", currentSite.id)
-      .then(({ data }) => {
+      .then(({ data }: any) => {
         setRoles((data ?? []).map((r: any) => r.role as Role));
       });
   }, [user, currentSite]);

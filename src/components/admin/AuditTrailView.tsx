@@ -19,8 +19,8 @@ export default function AuditTrailView() {
         .select("id, actor_id, table_name, action, row_id, site_id, created_at")
         .order("created_at", { ascending: false })
         .limit(100);
-      setRows(data ?? []);
-      const ids = Array.from(new Set((data ?? []).map((r) => r.actor_id).filter(Boolean) as string[]));
+      setRows((data ?? []) as AuditRow[]);
+      const ids = Array.from(new Set(((data ?? []) as any[]).map((r: any) => r.actor_id).filter(Boolean) as string[]));
       if (ids.length) {
         const { data: ps } = await supabase.from("profiles").select("id, email").in("id", ids);
         const map: Record<string, string> = {};
@@ -35,7 +35,7 @@ export default function AuditTrailView() {
 
   return (
     <Card className="border-border/80 shadow-xs">
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="p-3.5 sm:p-4 space-y-2.5 sm:space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
             <ScrollText className="h-4 w-4 text-primary" /> Statutory Audit Trail

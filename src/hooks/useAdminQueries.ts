@@ -37,7 +37,7 @@ export function useMembers(siteId: string) {
         .eq("site_id", siteId);
       if (mErr) throw new Error(mErr.message);
 
-      const userIds = memberships.map((m) => m.user_id);
+      const userIds = (memberships as any[]).map((m: any) => m.user_id);
       if (userIds.length === 0) return [];
 
       const { data: profiles, error: pErr } = await supabase
@@ -46,11 +46,11 @@ export function useMembers(siteId: string) {
         .in("id", userIds);
       if (pErr) throw new Error(pErr.message);
 
-      const profileMap = new Map(profiles.map((p) => [p.id, p]));
+      const profileMap = new Map((profiles as any[]).map((p: any) => [p.id, p]));
 
-      return memberships.map((m) => {
+      return (memberships as any[]).map((m: any) => {
         const roles = (m.user_roles as { role: string }[] | null | undefined)?.map((r) => r.role as "admin" | "manager" | "member") ?? [];
-        const profile = profileMap.get(m.user_id);
+        const profile: any = profileMap.get(m.user_id);
         return {
           user_id: m.user_id,
           email: profile?.email ?? null,

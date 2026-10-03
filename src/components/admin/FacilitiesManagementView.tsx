@@ -16,11 +16,11 @@ import {
 import { useSite } from "@/contexts/SiteContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { SiteRow } from "@/types";
+import { Site } from "@/types";
 import LocationMasterView from "./LocationMasterView";
 
 interface Props {
-  sites: SiteRow[];
+  sites: Site[];
   onChanged: () => Promise<void>;
 }
 
@@ -29,9 +29,9 @@ export default function FacilitiesManagementView({ sites, onChanged }: Props) {
   const [name, setName] = useState("");
   const [loc, setLoc] = useState("");
   const [busy, setBusy] = useState(false);
-  const [renameTarget, setRenameTarget] = useState<SiteRow | null>(null);
+  const [renameTarget, setRenameTarget] = useState<Site | null>(null);
   const [renameValue, setRenameValue] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<SiteRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Site | null>(null);
   const [showAddSite, setShowAddSite] = useState(false);
 
   const create = async (e: React.FormEvent) => {
@@ -54,7 +54,7 @@ export default function FacilitiesManagementView({ sites, onChanged }: Props) {
     setCurrentSite({ id: data.id, name: data.name, location: data.location });
   };
 
-  const openRename = (s: SiteRow) => {
+  const openRename = (s: Site) => {
     setRenameTarget(s);
     setRenameValue(s.name);
   };
@@ -75,28 +75,6 @@ export default function FacilitiesManagementView({ sites, onChanged }: Props) {
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
-    const { count: entryCount } = await supabase
-      .from("waste_entries")
-      .select("*", { count: "exact", head: true })
-      .eq("site_id", deleteTarget.id);
-    const { count: batchCount } = await supabase
-      .from("disposal_batches")
-      .select("*", { count: "exact", head: true })
-      .eq("site_id", deleteTarget.id);
-    const { count: memberCount } = await supabase
-      .from("user_sites")
-      .select("*", { count: "exact", head: true })
-      .eq("site_id", deleteTarget.id);
-    const total = (entryCount ?? 0) + (batchCount ?? 0) + (memberCount ?? 0);
-    if (
-      total > 0 &&
-      !confirm(
-        `"${deleteTarget.name}" has ${entryCount ?? 0} waste entries, ${batchCount ?? 0} disposal batches, and ${
-          memberCount ?? 0
-        } members. Deleting the site will permanently remove all of them. This cannot be undone. Continue?`
-      )
-    )
-      return;
     const { error } = await supabase.from("sites").delete().eq("id", deleteTarget.id);
     if (error) return toast.error(error.message);
     toast.success("Site deleted");
@@ -107,7 +85,7 @@ export default function FacilitiesManagementView({ sites, onChanged }: Props) {
   return (
     <div className="space-y-3">
       <Card className="border-border/80 shadow-xs">
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-3.5 sm:p-4 space-y-2.5 sm:space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Building2 className="h-4 w-4 text-primary" />

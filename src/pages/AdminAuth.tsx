@@ -28,7 +28,7 @@ export default function AdminAuth() {
   const [adminExists, setAdminExists] = useState<boolean | null>(null);
 
   useEffect(() => {
-    supabase.rpc("admin_exists").then(({ data }) => setAdminExists(!!data));
+    supabase.rpc("admin_exists").then(({ data }: any) => setAdminExists(!!data));
   }, []);
 
   if (!loading && session) return <Navigate to="/app" replace />;

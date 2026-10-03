@@ -188,11 +188,15 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
 
   const [generatedDate, setGeneratedDate] = useState(getLocalDate());
   const [location, setLocation] = useState("");
+  const [customLocation, setCustomLocation] = useState("");
   const [activityType, setActivityType] = useState<ActivityType>("preventive");
   const [notes, setNotes] = useState("");
   const [photos, setPhotos] = useState<File[]>([]);
   const [dateOpen, setDateOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const isCustomLocation = location === "__custom__" || (locations.length === 0 && !locLoading);
+  const effectiveLocation = isCustomLocation ? customLocation.trim() : location;
 
   const [lines, setLines] = useState<EntryLineData[]>(() => [INITIAL_LINE]);
 
@@ -232,14 +236,14 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
   }, []);
 
   const validationError = useMemo(() => {
-    if (!location) return "Please select a location";
+    if (!effectiveLocation) return "Please select or enter a location";
     for (const line of lines) {
       if (!line.waste_type_id) return "Select a waste type for each line";
       const w = Number(line.weight_kg);
       if (!line.weight_kg || w <= 0) return "Enter a valid weight for each line";
     }
     return null;
-  }, [location, lines]);
+  }, [effectiveLocation, lines]);
 
   // Build entries and show confirmation dialog
   const handleReview = (e: React.FormEvent) => {
@@ -259,7 +263,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         piece_count: selectedWaste?.countable && line.piece_count ? Number(line.piece_count) : null,
         generated_date: generatedDate,
         activity_type: activityType,
-        location,
+        location: effectiveLocation,
         notes: notes || undefined,
         photos: photos.length > 0 ? [...photos] : undefined,
       };
@@ -356,34 +360,64 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         </div>
 
         <div className="space-y-1">
-          <Label className="text-[11px] font-medium text-muted-foreground">Location</Label>
-          <Select value={location} onValueChange={setLocation}>
-            <SelectTrigger className="h-9 text-xs rounded-lg">
-              <SelectValue placeholder={locLoading ? "..." : "Select location"} />
-            </SelectTrigger>
-            <SelectContent className="max-h-60">
-              {siteCodes.length > 0 && (
-                <SelectGroup>
-                  <SelectLabel className="text-[10px]">Site codes</SelectLabel>
-                  {siteCodes.map((l) => (
-                    <SelectItem key={l.id} value={l.code} className="text-xs">
-                      {l.code}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              )}
-              {commonCodes.length > 0 && (
-                <SelectGroup>
-                  <SelectLabel className="text-[10px]">Common</SelectLabel>
-                  {commonCodes.map((l) => (
-                    <SelectItem key={l.id} value={l.code} className="text-xs">
-                      {l.code}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              )}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center justify-between">
+            <Label className="text-[11px] font-medium text-muted-foreground">Location</Label>
+            {locations.length > 0 && (
+              <button
+                type="button"
+                className="text-[10px] text-primary hover:underline"
+                onClick={() => {
+                  if (location === "__custom__") {
+                    setLocation("");
+                  } else {
+                    setLocation("__custom__");
+                  }
+                }}
+              >
+                {location === "__custom__" ? "Select from list" : "+ Custom location"}
+              </button>
+            )}
+          </div>
+          {locations.length > 0 && location !== "__custom__" ? (
+            <Select value={location} onValueChange={setLocation}>
+              <SelectTrigger className="h-9 text-xs rounded-lg">
+                <SelectValue placeholder={locLoading ? "..." : "Select location"} />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {siteCodes.length > 0 && (
+                  <SelectGroup>
+                    <SelectLabel className="text-[10px]">Site codes</SelectLabel>
+                    {siteCodes.map((l) => (
+                      <SelectItem key={l.id} value={l.code} className="text-xs">
+                        {l.code}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                )}
+                {commonCodes.length > 0 && (
+                  <SelectGroup>
+                    <SelectLabel className="text-[10px]">Common</SelectLabel>
+                    {commonCodes.map((l) => (
+                      <SelectItem key={l.id} value={l.code} className="text-xs">
+                        {l.code}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                )}
+                <SelectItem value="__custom__" className="text-xs text-primary font-medium">
+                  + Other / Custom Location...
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              placeholder="e.g. WTG-42, Substation Bay 3, Scrap Yard..."
+              value={customLocation}
+              onChange={(e) => setCustomLocation(e.target.value)}
+              className="h-9 text-xs rounded-lg"
+              autoFocus={location === "__custom__"}
+            />
+          )}
         </div>
 
         <div className="space-y-1">

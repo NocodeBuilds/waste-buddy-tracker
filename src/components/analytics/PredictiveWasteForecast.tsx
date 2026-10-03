@@ -51,6 +51,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -679,13 +680,13 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
   return (
     <Card className="border-border/90 shadow-xs overflow-hidden">
       <CardContent className="p-4 sm:p-5 space-y-4">
-        {/* ── Header & Main Controls ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/70 pb-3">
-          <div className="flex items-center gap-2.5">
+        {/* ── Header: Title, Confidence & Export Action ── */}
+        <div className="flex items-start sm:items-center justify-between gap-3 border-b border-border/70 pb-3">
+          <div className="flex items-center gap-2.5 min-w-0">
             <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shrink-0">
               <Sparkles className="h-4 w-4" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-bold tracking-tight text-foreground">
                   Predictive Waste Generation Forecast
@@ -693,7 +694,7 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
                 <Badge
                   variant="outline"
                   className={cn(
-                    "text-[10px] font-mono uppercase px-1.5 py-0",
+                    "text-[10px] font-mono uppercase px-1.5 py-0 shrink-0",
                     historyStats.confidence === "high"
                       ? "border-emerald-500/40 text-emerald-600 bg-emerald-500/10"
                       : historyStats.confidence === "medium"
@@ -710,8 +711,23 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
             </div>
           </div>
 
-          {/* Model Controls Toolbar */}
-          <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+          {/* Export Report CTA - strictly inline on the card header */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleExportForecast}
+            className="h-8 px-2.5 text-xs gap-1.5 border-border/80 shadow-2xs font-medium shrink-0"
+            title="Download Excel spreadsheet of forecast"
+          >
+            <Download className="h-3.5 w-3.5 text-emerald-600" />
+            <span className="sm:hidden">Export</span>
+            <span className="hidden sm:inline">Export Excel</span>
+          </Button>
+        </div>
+
+        {/* ── Model Controls Toolbar ── */}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Location Selector (Facility Wide vs Turbine) */}
             {availableLocations.length > 0 && (
               <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/60 text-xs">
@@ -753,57 +769,45 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
                 </button>
               ))}
             </div>
+          </div>
 
-            {/* Mode: Auto vs Scenario */}
-            <div className="inline-flex p-0.5 bg-muted/70 rounded-lg border border-border/60 shrink-0">
-              <button
-                type="button"
-                onClick={() => setForecastMode("auto")}
-                className={cn(
-                  "px-2.5 py-1 text-xs font-semibold rounded-md transition-all flex items-center gap-1",
-                  forecastMode === "auto"
-                    ? "bg-card text-foreground shadow-xs font-bold"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <TrendingUp className="h-3 w-3 text-primary" />
-                <span>Auto</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setForecastMode("scenario")}
-                className={cn(
-                  "px-2.5 py-1 text-xs font-semibold rounded-md transition-all flex items-center gap-1",
-                  forecastMode === "scenario"
-                    ? "bg-card text-foreground shadow-xs font-bold"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Sliders className="h-3 w-3 text-cyan-600" />
-                <span>Scenario</span>
-              </button>
-            </div>
-
-            {/* Export Report CTA */}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleExportForecast}
-              className="h-7 px-2.5 text-xs gap-1.5 border-border/80 shadow-2xs font-medium"
-              title="Download Excel spreadsheet of forecast"
+          {/* Mode: Auto vs Scenario */}
+          <div className="inline-flex p-0.5 bg-muted/70 rounded-lg border border-border/60 shrink-0">
+            <button
+              type="button"
+              onClick={() => setForecastMode("auto")}
+              className={cn(
+                "px-2.5 py-1 text-xs font-semibold rounded-md transition-all flex items-center gap-1",
+                forecastMode === "auto"
+                  ? "bg-card text-foreground shadow-xs font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
             >
-              <Download className="h-3 w-3 text-emerald-600" />
-              <span className="hidden md:inline">Export Excel</span>
-            </Button>
+              <TrendingUp className="h-3 w-3 text-primary" />
+              <span>Auto</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setForecastMode("scenario")}
+              className={cn(
+                "px-2.5 py-1 text-xs font-semibold rounded-md transition-all flex items-center gap-1",
+                forecastMode === "scenario"
+                  ? "bg-card text-foreground shadow-xs font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Sliders className="h-3 w-3 text-cyan-600" />
+              <span>Scenario</span>
+            </button>
           </div>
         </div>
 
         {/* ── Forecast Horizon Controls & Operational Load Variance Slider ── */}
-        <div className="space-y-2 bg-muted/30 p-2.5 rounded-xl border border-border/60">
-          <div className="flex flex-wrap items-center justify-between gap-2.5">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mr-1 flex items-center gap-1">
-                <Clock className="h-3 w-3" /> Target Horizon:
+        <div className="space-y-2 bg-muted/30 p-2 sm:p-2.5 rounded-xl border border-border/60">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mr-0.5 sm:mr-1 flex items-center gap-1">
+                <Clock className="h-3 w-3" /> <span className="hidden sm:inline">Target Horizon:</span><span className="sm:hidden">Horizon:</span>
               </span>
 
               {(["7d", "30d", "90d", "180d", "365d"] as const).map((h) => (
@@ -812,21 +816,24 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
                   type="button"
                   onClick={() => setHorizon(h)}
                   className={cn(
-                    "px-2.5 py-1 text-xs rounded-lg transition-all font-medium",
+                    "px-2 sm:px-2.5 py-1 text-xs rounded-lg transition-all font-medium",
                     horizon === h
                       ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                       : "bg-background text-muted-foreground hover:text-foreground border border-border/60"
                   )}
                 >
-                  {h === "7d"
-                    ? "1 Week"
-                    : h === "30d"
-                    ? "1 Month"
-                    : h === "90d"
-                    ? "1 Quarter"
-                    : h === "180d"
-                    ? "Half Year"
-                    : "1 Year"}
+                  <span className="sm:hidden">{h}</span>
+                  <span className="hidden sm:inline">
+                    {h === "7d"
+                      ? "1 Week"
+                      : h === "30d"
+                      ? "1 Month"
+                      : h === "90d"
+                      ? "1 Quarter"
+                      : h === "180d"
+                      ? "Half Year"
+                      : "1 Year"}
+                  </span>
                 </button>
               ))}
 
@@ -837,14 +844,14 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
                     type="button"
                     onClick={() => setHorizon("custom")}
                     className={cn(
-                      "px-2.5 py-1 text-xs rounded-lg transition-all font-medium flex items-center gap-1.5 border",
+                      "px-2 sm:px-2.5 py-1 text-xs rounded-lg transition-all font-medium flex items-center gap-1 sm:gap-1.5 border",
                       horizon === "custom"
                         ? "bg-primary text-primary-foreground font-semibold shadow-xs border-primary"
                         : "bg-background text-muted-foreground hover:text-foreground border-border/60"
                     )}
                   >
                     <CalendarIcon className="h-3 w-3" />
-                    <span>{horizon === "custom" ? `${horizonDays} Days` : "Custom"}</span>
+                    <span>{horizon === "custom" ? `${horizonDays}d` : "Custom"}</span>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-3 space-y-3" align="start">
@@ -885,41 +892,107 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
             </div>
 
             <span className="text-[11px] text-muted-foreground font-mono">
-              Target: <strong>{horizonDays} days</strong> (through{" "}
-              {formatDateDDMMYYYY(addDays(new Date(), horizonDays))})
+              Target: <strong>{horizonDays}d</strong> <span className="hidden sm:inline">(through {formatDateDDMMYYYY(addDays(new Date(), horizonDays))})</span>
             </span>
           </div>
 
           {/* Operational Sensitivity / Load Variance Slider */}
-          <div className="flex items-center justify-between gap-4 pt-1.5 border-t border-border/50 text-xs">
-            <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
-              <span className="font-semibold text-foreground whitespace-nowrap">Operational Load Variance:</span>
-              <span className="text-[11px] text-muted-foreground hidden sm:inline">
-                (Adjust for expected high-wind / heavy overhaul campaigns)
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pt-2 border-t border-border/50 text-xs">
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-foreground whitespace-nowrap">Load Variance:</span>
+                <span
+                  className={cn(
+                    "font-mono font-bold text-xs px-2 py-0.5 rounded-md border transition-colors",
+                    sensitivity > 0
+                      ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
+                      : sensitivity < 0
+                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                      : "bg-muted text-foreground border-border/60"
+                  )}
+                >
+                  {sensitivity > 0 ? `+${sensitivity}% Surge` : sensitivity < 0 ? `${sensitivity}% Lean` : "0% Nominal"}
+                </span>
+                {sensitivity !== 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSensitivity(0)}
+                    className="text-[11px] text-muted-foreground hover:text-primary underline flex items-center gap-1 transition-colors"
+                    title="Reset to 0% Nominal"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    <span>Reset</span>
+                  </button>
+                )}
+              </div>
+              <span className="text-[11px] text-muted-foreground hidden sm:block">
+                Adjust for expected high-wind output surges, heavy overhaul campaigns, or lean periods.
               </span>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="font-mono font-bold text-primary min-w-[42px] text-right">
-                {sensitivity > 0 ? `+${sensitivity}%` : `${sensitivity}%`}
-              </span>
-              <input
-                type="range"
-                min={-30}
-                max={50}
-                step={5}
-                value={sensitivity}
-                onChange={(e) => setSensitivity(Number(e.target.value))}
-                className="w-24 sm:w-32 h-1.5 bg-muted rounded-lg accent-primary cursor-pointer"
-              />
-              {sensitivity !== 0 && (
-                <button
+
+            <div className="flex flex-col gap-1.5 shrink-0 sm:items-end w-full sm:w-auto">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Button
                   type="button"
-                  onClick={() => setSensitivity(0)}
-                  className="text-[10px] text-muted-foreground hover:text-foreground underline ml-1"
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 rounded-md shrink-0 select-none hover:bg-muted"
+                  disabled={sensitivity <= -30}
+                  onClick={() => setSensitivity((s) => Math.max(-30, s - 5))}
+                  title="Decrease variance by 5%"
                 >
-                  Reset
-                </button>
-              )}
+                  <Minus className="h-3.5 w-3.5" />
+                </Button>
+
+                <div className="flex-1 sm:w-44 md:w-52 py-2">
+                  <Slider
+                    value={[sensitivity]}
+                    onValueChange={([val]) => setSensitivity(val)}
+                    min={-30}
+                    max={50}
+                    step={5}
+                    className="cursor-grab active:cursor-grabbing touch-none select-none"
+                    aria-label="Operational Load Variance Sensitivity"
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 rounded-md shrink-0 select-none hover:bg-muted"
+                  disabled={sensitivity >= 50}
+                  onClick={() => setSensitivity((s) => Math.min(50, s + 5))}
+                  title="Increase variance by 5%"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
+              {/* Quick Click Simulation Presets */}
+              <div className="flex items-center gap-1 self-start sm:self-auto text-[10px] text-muted-foreground overflow-x-auto no-scrollbar w-full sm:w-auto">
+                <span className="font-semibold text-foreground/80 mr-0.5">Quick:</span>
+                {[
+                  { label: "-20% Lean", val: -20 },
+                  { label: "0% Nominal", val: 0 },
+                  { label: "+25% Heavy", val: 25 },
+                  { label: "+50% Overhaul", val: 50 },
+                ].map((p) => (
+                  <button
+                    key={p.val}
+                    type="button"
+                    onClick={() => setSensitivity(p.val)}
+                    className={cn(
+                      "px-1.5 py-0.5 rounded border transition-colors font-medium shrink-0",
+                      sensitivity === p.val
+                        ? "bg-primary text-primary-foreground border-primary font-bold shadow-xs"
+                        : "bg-muted/70 text-muted-foreground hover:text-foreground hover:bg-muted border-border/50"
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>

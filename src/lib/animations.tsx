@@ -1,8 +1,8 @@
 "use client";
 
-// Re-export from framer-motion for components that need it
+import type { Variants } from "framer-motion";
 export { motion, useReducedMotion } from "framer-motion";
-export type { Variants } from "framer-motion";
+export type { Variants };
 
 // ── Easing ───────────────────────────────────────────────────────
 
