@@ -3,9 +3,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { History, CheckCircle, X, Download } from "lucide-react";
+import { History, CheckCircle, X, Download, Search, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { DisposalBatch, WasteEntry, formatDateDDMMYYYY } from "@/lib/wasteTypes";
+import { exportDisposalBatchPdf } from "@/lib/wasteExports";
 import EmptyState from "@/components/ui/empty-state";
 
 interface Props {
@@ -29,17 +30,68 @@ export default function DisposalHistoryView({
 }: Props) {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "approved" | "pending" | "rejected">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredBatches = batches.filter((b) => {
+    const status = (b as any).status ?? "approved";
+    if (statusFilter !== "all" && status !== statusFilter) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const notes = (b.notes ?? "").toLowerCase();
+      const dateStr = formatDateDDMMYYYY(b.disposed_date).toLowerCase();
+      const idMatch = b.id.toLowerCase().includes(q);
+      if (!notes.includes(q) && !dateStr.includes(q) && !idMatch) return false;
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Official Disposal Batches & Manifests
         </h3>
         <span className="text-[11px] font-mono text-muted-foreground">
-          {batches.length} {batches.length === 1 ? "batch" : "batches"}
+          {filteredBatches.length} of {batches.length} {batches.length === 1 ? "batch" : "batches"}
         </span>
       </div>
+
+      {batches.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            <Input
+              placeholder="Search batches by date, notes, ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-8 text-xs rounded-lg bg-background"
+            />
+          </div>
+          <div className="grid grid-cols-4 sm:flex items-center gap-1">
+            {(
+              [
+                { id: "all", label: "All" },
+                { id: "approved", label: "Approved" },
+                { id: "pending", label: "Pending" },
+                { id: "rejected", label: "Rejected" },
+              ] as const
+            ).map((opt) => (
+              <Button
+                key={opt.id}
+                size="sm"
+                variant={statusFilter === opt.id ? "default" : "outline"}
+                className={`h-7 px-1.5 sm:px-2.5 text-[11px] rounded-lg justify-center ${
+                  statusFilter === opt.id ? "bg-primary text-primary-foreground font-semibold" : "text-muted-foreground"
+                }`}
+                onClick={() => setStatusFilter(opt.id)}
+              >
+                {opt.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {batches.length === 0 ? (
         <EmptyState
@@ -47,9 +99,15 @@ export default function DisposalHistoryView({
           title="No Disposal Batches Recorded"
           description="When waste is dispatched to an authorized TSDF or recycler, tap 'Record Disposal' to generate a batch and Form 10 manifest."
         />
+      ) : filteredBatches.length === 0 ? (
+        <EmptyState
+          icon={History}
+          title="No Matching Batches Found"
+          description="No disposal batches match your current filter and search criteria."
+        />
       ) : (
         <div className="space-y-2.5">
-          {batches.map((b) => {
+          {filteredBatches.map((b) => {
             const inBatch = entries.filter((e) => e.disposal_batch_id === b.id);
             const status = (b as any).status ?? "approved";
             const isPending = status === "pending";
@@ -164,10 +222,12 @@ export default function DisposalHistoryView({
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-8 text-xs gap-1.5 shadow-xs rounded-lg"
+                          className="h-8 text-xs gap-1 sm:gap-1.5 shadow-xs rounded-lg px-2 sm:px-3"
                           onClick={() => exportDisposalBatchPdf(b, inBatch, currentSiteName)}
                         >
-                          <Download className="h-3.5 w-3.5 text-primary" /> Form 10 Manifest
+                          <Download className="h-3.5 w-3.5 text-primary" />
+                          <span className="sm:hidden">Form 10</span>
+                          <span className="hidden sm:inline">Form 10 Manifest</span>
                         </Button>
                       )}
                     </div>

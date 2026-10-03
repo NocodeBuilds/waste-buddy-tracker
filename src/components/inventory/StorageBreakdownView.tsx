@@ -165,16 +165,17 @@ export default function StorageBreakdownView({
   return (
     <div className="space-y-3.5">
       {/* ── Period Filter & Perspective Toolbar ── */}
-      <div className="rounded-xl border border-border/80 bg-card p-3 shadow-xs space-y-2.5">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2.5">
+      <div className="rounded-xl border border-border/80 bg-card p-2.5 sm:p-3 shadow-xs space-y-2 sm:space-y-2.5">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 sm:gap-2.5">
           {/* Period selector dropdown */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            <div className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-foreground">
               <CalendarIcon className="h-4 w-4 text-primary" />
               <span>Storage Period Filter:</span>
             </div>
+            <CalendarIcon className="h-3.5 w-3.5 text-primary sm:hidden shrink-0" />
             <Select value={periodKind} onValueChange={(v) => onPeriodKindChange(v as PeriodKind)}>
-              <SelectTrigger className="h-8 text-xs w-[130px] rounded-lg bg-background">
+              <SelectTrigger className="h-7 sm:h-8 text-xs w-[115px] sm:w-[130px] rounded-lg bg-background">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -188,7 +189,7 @@ export default function StorageBreakdownView({
             {/* Active Period Label Badge */}
             <Badge
               variant="outline"
-              className="text-xs font-mono font-medium px-2 py-0.5 bg-muted/60 border-border/80 text-foreground"
+              className="text-[11px] sm:text-xs font-mono font-medium px-1.5 sm:px-2 py-0.5 bg-muted/60 border-border/80 text-foreground truncate max-w-[130px] sm:max-w-none"
             >
               {period.label}
             </Badge>
@@ -198,7 +199,7 @@ export default function StorageBreakdownView({
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                className="h-7 px-1.5 sm:px-2 text-xs text-muted-foreground hover:text-foreground gap-1 ml-auto sm:ml-0"
                 onClick={() => onPeriodKindChange("all")}
                 title="Reset filter to All Time"
               >
@@ -209,77 +210,82 @@ export default function StorageBreakdownView({
           </div>
 
           {/* Perspective Focus Selector (Active vs Generated vs Entire Yard) */}
-          <div className="inline-flex p-0.5 bg-muted/70 rounded-lg gap-0.5 text-xs self-start md:self-auto overflow-x-auto no-scrollbar">
+          <div className="grid grid-cols-3 sm:flex p-0.5 bg-muted/70 rounded-lg gap-0.5 text-xs w-full md:w-auto">
             <button
               type="button"
               onClick={() => setFocusMode("active")}
               className={cn(
-                "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap",
+                "px-1.5 sm:px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all text-center truncate",
                 focusMode === "active"
                   ? "bg-card text-foreground shadow-xs font-bold"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              In Storage ({periodActiveCount})
+              <span className="sm:hidden">Storage ({periodActiveCount})</span>
+              <span className="hidden sm:inline">In Storage ({periodActiveCount})</span>
             </button>
             <button
               type="button"
               onClick={() => setFocusMode("generated")}
               className={cn(
-                "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap",
+                "px-1.5 sm:px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all text-center truncate",
                 focusMode === "generated"
                   ? "bg-card text-foreground shadow-xs font-bold"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              Period Output ({periodTotalCount})
+              <span className="sm:hidden">Output ({periodTotalCount})</span>
+              <span className="hidden sm:inline">Period Output ({periodTotalCount})</span>
             </button>
             <button
               type="button"
               onClick={() => setFocusMode("all_yard")}
               className={cn(
-                "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap",
+                "px-1.5 sm:px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all text-center truncate",
                 focusMode === "all_yard"
                   ? "bg-card text-foreground shadow-xs font-bold"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              Entire Yard Active ({allActiveCount})
+              <span className="sm:hidden">Yard ({allActiveCount})</span>
+              <span className="hidden sm:inline">Entire Yard Active ({allActiveCount})</span>
             </button>
           </div>
         </div>
 
         {/* ── Sub-Filters for Month / Custom Range / FY ── */}
         {periodKind === "month" && (
-          <div className="flex items-center gap-2 pt-2 border-t border-border/50 flex-wrap">
-            <span className="text-[11px] font-medium text-muted-foreground">Select Month:</span>
-            <Select value={String(selectedYear)} onValueChange={(v) => onYearChange(Number(v))}>
-              <SelectTrigger className="h-7 text-xs w-20 rounded-md bg-background">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {years.slice(-6).map((y) => (
-                  <SelectItem key={y} value={String(y)}>
-                    {y}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={String(selectedMonth)} onValueChange={(v) => onMonthChange(Number(v))}>
-              <SelectTrigger className="h-7 text-xs w-28 rounded-md bg-background">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {monthOpts
-                  .filter((o) => o.year === selectedYear)
-                  .map((o) => (
-                    <SelectItem key={o.monthIndex} value={String(o.monthIndex)}>
-                      {o.label}
+          <div className="flex items-center gap-1.5 sm:gap-2 pt-1.5 sm:pt-2 border-t border-border/50">
+            <span className="hidden sm:inline text-[11px] font-medium text-muted-foreground">Select Month:</span>
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 flex-1 sm:flex-initial">
+              <Select value={String(selectedYear)} onValueChange={(v) => onYearChange(Number(v))}>
+                <SelectTrigger className="h-7 text-xs w-full sm:w-20 rounded-md bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.slice(-6).map((y) => (
+                    <SelectItem key={y} value={String(y)}>
+                      {y}
                     </SelectItem>
                   ))}
-              </SelectContent>
-            </Select>
+                </SelectContent>
+              </Select>
+
+              <Select value={String(selectedMonth)} onValueChange={(v) => onMonthChange(Number(v))}>
+                <SelectTrigger className="h-7 text-xs w-full sm:w-28 rounded-md bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {monthOpts
+                    .filter((o) => o.year === selectedYear)
+                    .map((o) => (
+                      <SelectItem key={o.monthIndex} value={String(o.monthIndex)}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             <span className="text-[11px] text-muted-foreground ml-auto hidden sm:inline">
               Filtering waste records generated in {period.label}
@@ -288,57 +294,57 @@ export default function StorageBreakdownView({
         )}
 
         {periodKind === "range" && (
-          <div className="flex items-center gap-2 pt-2 border-t border-border/50 flex-wrap">
-            <span className="text-[11px] font-medium text-muted-foreground">Custom Date Range:</span>
-            <Popover open={rangeOpenStart} onOpenChange={onRangeOpenStartChange}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-7 text-xs font-normal px-2.5 rounded-md bg-background">
-                  <CalendarIcon className="mr-1.5 h-3 w-3 text-muted-foreground" />
-                  {rangeStart ? formatDateDDMMYYYY(rangeStart) : "From Date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={rangeStart ? new Date(rangeStart + "T00:00:00") : undefined}
-                  onSelect={(d) => {
-                    if (d) {
-                      onRangeStartChange(format(d, "yyyy-MM-dd"));
-                      onRangeOpenStartChange(false);
-                    }
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 pt-1.5 sm:pt-2 border-t border-border/50">
+            <span className="hidden sm:inline text-[11px] font-medium text-muted-foreground">Custom Date Range:</span>
+            <div className="grid grid-cols-2 gap-1.5 items-center flex-1 sm:flex-initial">
+              <Popover open={rangeOpenStart} onOpenChange={onRangeOpenStartChange}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-7 text-xs font-normal px-2 rounded-md bg-background justify-start truncate">
+                    <CalendarIcon className="mr-1 h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="truncate">{rangeStart ? formatDateDDMMYYYY(rangeStart) : "From Date"}</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={rangeStart ? new Date(rangeStart + "T00:00:00") : undefined}
+                    onSelect={(d) => {
+                      if (d) {
+                        onRangeStartChange(format(d, "yyyy-MM-dd"));
+                        onRangeOpenStartChange(false);
+                      }
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
 
-            <ArrowRight className="h-3 w-3 text-muted-foreground" />
-
-            <Popover open={rangeOpenEnd} onOpenChange={onRangeOpenEndChange}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-7 text-xs font-normal px-2.5 rounded-md bg-background">
-                  <CalendarIcon className="mr-1.5 h-3 w-3 text-muted-foreground" />
-                  {rangeEnd ? formatDateDDMMYYYY(rangeEnd) : "To Date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={rangeEnd ? new Date(rangeEnd + "T00:00:00") : undefined}
-                  onSelect={(d) => {
-                    if (d) {
-                      onRangeEndChange(format(d, "yyyy-MM-dd"));
-                      onRangeOpenEndChange(false);
-                    }
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
+              <Popover open={rangeOpenEnd} onOpenChange={onRangeOpenEndChange}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-7 text-xs font-normal px-2 rounded-md bg-background justify-start truncate">
+                    <CalendarIcon className="mr-1 h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="truncate">{rangeEnd ? formatDateDDMMYYYY(rangeEnd) : "To Date"}</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={rangeEnd ? new Date(rangeEnd + "T00:00:00") : undefined}
+                    onSelect={(d) => {
+                      if (d) {
+                        onRangeEndChange(format(d, "yyyy-MM-dd"));
+                        onRangeOpenEndChange(false);
+                      }
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
 
             {(rangeStart || rangeEnd) && (
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-7 px-1.5 text-xs text-muted-foreground hover:text-foreground"
+                className="h-7 px-1.5 text-xs text-muted-foreground hover:text-foreground self-end sm:self-auto"
                 onClick={() => {
                   onRangeStartChange("");
                   onRangeEndChange("");
@@ -357,10 +363,10 @@ export default function StorageBreakdownView({
         )}
 
         {periodKind === "fy" && (
-          <div className="flex items-center gap-2 pt-2 border-t border-border/50 flex-wrap">
-            <span className="text-[11px] font-medium text-muted-foreground">Select Financial Year:</span>
+          <div className="flex items-center gap-1.5 sm:gap-2 pt-1.5 sm:pt-2 border-t border-border/50">
+            <span className="hidden sm:inline text-[11px] font-medium text-muted-foreground">Select Financial Year:</span>
             <Select value={String(selectedFy)} onValueChange={(v) => onFyChange(Number(v))}>
-              <SelectTrigger className="h-7 text-xs w-32 rounded-md bg-background">
+              <SelectTrigger className="h-7 text-xs w-full sm:w-32 rounded-md bg-background">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -378,8 +384,8 @@ export default function StorageBreakdownView({
           </div>
         )}
 
-        {/* ── Period Summary Context Chips ── */}
-        <div className="flex items-center gap-3 pt-2 border-t border-border/40 text-xs flex-wrap">
+        {/* ── Period Summary Context Chips: Desktop full view ── */}
+        <div className="hidden sm:flex items-center gap-3 pt-2 border-t border-border/40 text-xs flex-wrap">
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <span className="font-semibold text-foreground">Showing:</span>
             <span className="text-foreground">
@@ -403,6 +409,15 @@ export default function StorageBreakdownView({
               Entries: <strong className="text-foreground">{currentCount}</strong>
             </span>
           </div>
+        </div>
+
+        {/* Mobile ultra-compact 1-line mini metric indicator */}
+        <div className="sm:hidden flex items-center justify-between text-[10px] font-mono text-muted-foreground pt-1 border-t border-border/40 px-0.5">
+          <span>{fmtNum(activeDisplayMetrics.totals.kg)} kg solids</span>
+          <span>·</span>
+          <span>{fmtNum(activeDisplayMetrics.totals.litres)} L liquids</span>
+          <span>·</span>
+          <span>{currentCount} items</span>
         </div>
       </div>
 

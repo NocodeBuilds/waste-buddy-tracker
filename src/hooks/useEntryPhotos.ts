@@ -23,13 +23,13 @@ export function useEntryPhotos(entryId: string | undefined, enabled = true) {
       if (error) throw new Error(error.message);
       if (!data || data.length === 0) return [];
 
-      const paths = data.map((r) => r.storage_path);
+      const paths = (data as any[]).map((r: any) => r.storage_path);
       const { data: signed, error: sErr } = await supabase.storage
         .from("waste-photos")
         .createSignedUrls(paths, 3600);
       if (sErr) throw new Error(sErr.message);
 
-      return data.map((r, i) => ({
+      return (data as any[]).map((r: any, i: number) => ({
         id: r.id,
         storage_path: r.storage_path,
         created_at: r.created_at,

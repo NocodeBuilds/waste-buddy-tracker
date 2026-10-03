@@ -262,7 +262,7 @@ export default function WasteInventoryTable({
       .filter((e) => {
         if (filter === "active" && isDisposed(e)) return false;
         if (filter === "disposed" && !isDisposed(e)) return false;
-        if (filter === "overdue" && (isDisposed(e) || getDaysStored(e.generated_date) < DISPOSAL_LIMIT_DAYS)) {
+        if (filter === "overdue" && !isEntryOverdue(e)) {
           return false;
         }
 
@@ -419,7 +419,7 @@ export default function WasteInventoryTable({
     return { hazKg, nonHazKg, totals, eWasteKg, batteryKg, otherKg, byType };
   }, [periodFiltered]);
 
-  const overdueCount = allActiveEntries.filter((e) => getDaysStored(e.generated_date) >= DISPOSAL_LIMIT_DAYS).length;
+  const overdueCount = allActiveEntries.filter((e) => isEntryOverdue(e)).length;
 
   const statusBadge = (entry: WasteEntry) => {
     if (isDisposed(entry)) {
@@ -573,19 +573,19 @@ export default function WasteInventoryTable({
   return (
     <div className="space-y-3.5">
       {/* ── Sub-Navigation Pill Segment Switcher (eliminates vertical scroll overload) ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 border-b border-border/60 pb-2">
-        <div className="inline-flex p-1 bg-muted/70 rounded-xl gap-1 overflow-x-auto no-scrollbar">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/60 pb-2">
+        <div className="grid grid-cols-3 sm:flex p-1 bg-muted/70 rounded-xl gap-1 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setActiveView("records")}
             className={cn(
-              "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              "px-2 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 text-center truncate",
               activeView === "records"
                 ? "bg-card text-foreground shadow-xs font-bold"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Package className="h-3.5 w-3.5 text-primary" />
+            <Package className="h-3.5 w-3.5 text-primary shrink-0" />
             <span>Records</span>
             <span className="font-mono text-[10px] bg-muted px-1.5 py-0.2 rounded-full">
               {filtered.length}
@@ -596,28 +596,30 @@ export default function WasteInventoryTable({
             type="button"
             onClick={() => setActiveView("summary")}
             className={cn(
-              "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              "px-2 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 text-center truncate",
               activeView === "summary"
                 ? "bg-card text-foreground shadow-xs font-bold"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Scale className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
-            <span>Storage Breakdown</span>
+            <Scale className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+            <span className="sm:hidden">Breakdown</span>
+            <span className="hidden sm:inline">Storage Breakdown</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveView("disposals")}
             className={cn(
-              "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              "px-2 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 text-center truncate",
               activeView === "disposals"
                 ? "bg-card text-foreground shadow-xs font-bold"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <History className="h-3.5 w-3.5 text-amber-600" />
-            <span>Disposal History</span>
+            <History className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+            <span className="sm:hidden">History</span>
+            <span className="hidden sm:inline">Disposal History</span>
             {batches.length > 0 && (
               <span className="font-mono text-[10px] bg-muted px-1.5 py-0.2 rounded-full">
                 {batches.length}
@@ -626,8 +628,8 @@ export default function WasteInventoryTable({
           </button>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 shadow-xs" onClick={() => openExport("excel")}>
+        <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
+          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 shadow-xs flex-1 sm:flex-initial" onClick={() => openExport("excel")}>
             <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
             <span className="font-medium">Export</span>
           </Button>
@@ -641,7 +643,7 @@ export default function WasteInventoryTable({
                   setDisposalScope("all");
                   setDialogOpen(true);
                 }}
-                className="h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs"
+                className="h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs flex-1 sm:flex-initial"
               >
                 <CheckCircle className="h-3.5 w-3.5 mr-1" />
                 Record Disposal
@@ -870,13 +872,13 @@ export default function WasteInventoryTable({
         <div className="space-y-2.5">
           {/* Streamlined Search & Filter Bar */}
           <div className="rounded-xl border border-border/80 bg-card p-2.5 shadow-xs space-y-2">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {/* Search Box */}
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder="Filter records by waste name, turbine/location, or notes…"
+                  placeholder="Filter records…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="h-8 pl-8 pr-8 text-xs rounded-lg bg-background"
@@ -893,9 +895,9 @@ export default function WasteInventoryTable({
               </div>
 
               {/* Period Dropdown */}
-              <div className="flex items-center gap-1.5">
+              <div className="shrink-0">
                 <Select value={periodKind} onValueChange={(v) => setPeriodKind(v as PeriodKind)}>
-                  <SelectTrigger className="h-8 text-xs w-[120px] rounded-lg">
+                  <SelectTrigger className="h-8 text-xs w-[110px] sm:w-[125px] rounded-lg">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -909,24 +911,25 @@ export default function WasteInventoryTable({
             </div>
 
             {/* Quick Status Chips */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
+            <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
               <button
                 type="button"
                 onClick={() => setFilter("active")}
                 className={cn(
-                  "px-2.5 py-1 rounded-full text-[11px] transition-colors whitespace-nowrap font-medium",
+                  "px-2 sm:px-2.5 py-1 rounded-full text-[11px] transition-colors whitespace-nowrap font-medium",
                   filter === "active"
                     ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                     : "bg-muted/80 text-muted-foreground hover:text-foreground"
                 )}
               >
-                In Storage ({allActiveEntries.length})
+                <span className="sm:hidden">Storage</span>
+                <span className="hidden sm:inline">In Storage</span> ({allActiveEntries.length})
               </button>
               <button
                 type="button"
                 onClick={() => setFilter("overdue")}
                 className={cn(
-                  "px-2.5 py-1 rounded-full text-[11px] transition-colors whitespace-nowrap font-medium flex items-center gap-1",
+                  "px-2 sm:px-2.5 py-1 rounded-full text-[11px] transition-colors whitespace-nowrap font-medium flex items-center gap-1",
                   filter === "overdue"
                     ? "bg-rose-600 text-white font-semibold shadow-xs"
                     : overdueCount > 0
@@ -940,19 +943,20 @@ export default function WasteInventoryTable({
                 type="button"
                 onClick={() => setFilter("all")}
                 className={cn(
-                  "px-2.5 py-1 rounded-full text-[11px] transition-colors whitespace-nowrap font-medium",
+                  "px-2 sm:px-2.5 py-1 rounded-full text-[11px] transition-colors whitespace-nowrap font-medium",
                   filter === "all"
                     ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                     : "bg-muted/80 text-muted-foreground hover:text-foreground"
                 )}
               >
-                All Records ({periodFiltered.length})
+                <span className="sm:hidden">All</span>
+                <span className="hidden sm:inline">All Records</span> ({periodFiltered.length})
               </button>
               <button
                 type="button"
                 onClick={() => setFilter("disposed")}
                 className={cn(
-                  "px-2.5 py-1 rounded-full text-[11px] transition-colors whitespace-nowrap font-medium",
+                  "px-2 sm:px-2.5 py-1 rounded-full text-[11px] transition-colors whitespace-nowrap font-medium",
                   filter === "disposed"
                     ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                     : "bg-muted/80 text-muted-foreground hover:text-foreground"
@@ -964,10 +968,9 @@ export default function WasteInventoryTable({
 
             {/* Conditional period sub-filters */}
             {periodKind === "month" && (
-              <div className="flex items-center gap-2 pt-1 border-t border-border/50">
-                <span className="text-[11px] text-muted-foreground">Month:</span>
+              <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 pt-1 border-t border-border/50">
                 <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
-                  <SelectTrigger className="h-7 text-xs w-20 rounded-md">
+                  <SelectTrigger className="h-7 text-xs w-full sm:w-20 rounded-md">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -979,7 +982,7 @@ export default function WasteInventoryTable({
                   </SelectContent>
                 </Select>
                 <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
-                  <SelectTrigger className="h-7 text-xs w-28 rounded-md">
+                  <SelectTrigger className="h-7 text-xs w-full sm:w-24 rounded-md">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

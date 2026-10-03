@@ -274,7 +274,7 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
 
       {/* Members Directory */}
       <Card className="border-border/80 shadow-xs">
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-3.5 sm:p-4 space-y-2.5 sm:space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
@@ -285,14 +285,15 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
             <Button
               variant="default"
               size="sm"
-              className="h-7 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-1 px-2.5 rounded-lg shadow-2xs"
+              className="h-7 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-1 px-2 sm:px-2.5 rounded-lg shadow-2xs"
               onClick={() => {
                 setShowCreateUser(!showCreateUser);
                 if (!password) setPassword(generateRandomPassword());
               }}
             >
               <UserPlus className="h-3.5 w-3.5" />
-              <span>{showCreateUser ? "Cancel" : "Add User Account"}</span>
+              <span className="sm:hidden">{showCreateUser ? "Cancel" : "Add User"}</span>
+              <span className="hidden sm:inline">{showCreateUser ? "Cancel" : "Add User Account"}</span>
             </Button>
           </div>
 

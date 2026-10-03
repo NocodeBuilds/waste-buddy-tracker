@@ -162,13 +162,13 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
   const initial = user?.email?.charAt(0).toUpperCase() ?? "U";
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto">
+    <div className="space-y-3 sm:space-y-4 max-w-4xl mx-auto">
       {/* ── User Profile & Facility Header Banner ── */}
       <Card className="border-border/80 shadow-xs overflow-hidden">
-        <CardContent className="p-4 sm:p-5">
+        <CardContent className="p-3.5 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-2xl bg-primary/10 text-primary font-bold text-lg flex items-center justify-center shrink-0 border border-primary/20">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="h-9.5 w-9.5 sm:h-11 sm:w-11 rounded-xl sm:rounded-2xl bg-primary/10 text-primary font-bold text-base sm:text-lg flex items-center justify-center shrink-0 border border-primary/20">
                 {initial}
               </div>
               <div className="min-w-0">
@@ -207,10 +207,10 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
       {/* ── Admin Portal Access Card (Mobile & Desktop) ── */}
       {isAdmin && onNavigateToAdmin && (
         <Card className="border-primary/40 bg-primary/5 shadow-xs overflow-hidden">
-          <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-xs">
-                <ShieldCheck className="h-5 w-5" />
+          <CardContent className="p-3.5 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-xs">
+                <ShieldCheck className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
@@ -240,7 +240,7 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
 
       {/* ── Grouped Section 1: Facility Sites & Workspaces ── */}
       <Card className="border-border/80 shadow-xs">
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-3.5 sm:p-4 space-y-2.5 sm:space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Building2 className="h-4 w-4 text-primary" />
@@ -269,7 +269,7 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
                 <div
                   key={s.id}
                   className={cn(
-                    "p-3 flex items-center justify-between gap-2 transition-colors cursor-pointer",
+                    "p-2.5 sm:p-3 flex items-center justify-between gap-2 transition-colors cursor-pointer",
                     isActive ? "bg-primary/5" : "hover:bg-muted/40"
                   )}
                   onClick={() => setCurrentSite({ id: s.id, name: s.name, location: s.location })}
@@ -350,7 +350,7 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
       {/* ── Grouped Section 2: Facility Team Roster ── */}
       {currentSite && (
         <Card className="border-border/80 shadow-xs">
-          <CardContent className="p-4 space-y-3">
+          <CardContent className="p-3.5 sm:p-4 space-y-2.5 sm:space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-primary" />
@@ -403,7 +403,7 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
 
       {/* ── Grouped Section 3: Data Management ── */}
       <Card className="border-border/80 shadow-xs">
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-3.5 sm:p-4 space-y-2.5 sm:space-y-3">
           <div className="flex items-center gap-2">
             <Download className="h-4 w-4 text-primary" />
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -432,7 +432,7 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
 
       {/* ── Grouped Section 4: Regulatory Standard & App Info ── */}
       <Card className="border-border/80 shadow-xs">
-        <CardContent className="p-4 space-y-2">
+        <CardContent className="p-3.5 sm:p-4 space-y-2">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-emerald-600" />
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

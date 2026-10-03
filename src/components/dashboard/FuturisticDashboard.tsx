@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { WasteEntry, fmtNum, WASTE_TYPES, formatDateDDMMYYYY } from "@/lib/wasteTypes";
+import { WasteEntry, fmtNum, WASTE_TYPES, formatDateDDMMYYYY, getMeasureUnit } from "@/lib/wasteTypes";
 import DashboardStats from "./DashboardStats";
 import { format } from "date-fns";
 import { Clock, Inbox, ShieldAlert, Leaf, Droplets, Trash2, Battery, Recycle } from "lucide-react";
@@ -50,7 +50,7 @@ export default function FuturisticDashboard({ entries, onLogWaste }: Props) {
       <Card className="border-border/90 shadow-xs overflow-hidden">
         <CardContent className="p-0">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border/80 bg-muted/20">
+          <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 border-b border-border/80 bg-muted/20">
             <div className="flex items-center gap-2">
               <div className="p-1 rounded-md bg-primary/10 text-primary">
                 <Clock className="h-4 w-4" />
@@ -84,7 +84,7 @@ export default function FuturisticDashboard({ entries, onLogWaste }: Props) {
                   <tbody className="divide-y divide-border/50 text-xs">
                     {recentEntries.map((entry) => {
                       const cat = getCategoryDetails(entry.waste_category);
-                      const isLiquid = ["any-liquid","waste-oil","waste-chemical","waste-water","waste-gas","liquid-chemical"].includes(entry.waste_type_id);
+                      const isLiquid = getMeasureUnit(entry.waste_type_id) === "litres";
                       return (
                         <tr key={entry.id} className="hover:bg-muted/30 transition-colors">
                           <td className="py-2 px-3 font-mono text-muted-foreground text-[11px]">
@@ -120,7 +120,7 @@ export default function FuturisticDashboard({ entries, onLogWaste }: Props) {
               <div className="sm:hidden divide-y divide-border/50 max-h-[340px] overflow-y-auto">
                 {recentEntries.map((entry) => {
                   const cat = getCategoryDetails(entry.waste_category);
-                  const isLiquid = ["any-liquid","waste-oil","waste-chemical","waste-water","waste-gas","liquid-chemical"].includes(entry.waste_type_id);
+                  const isLiquid = getMeasureUnit(entry.waste_type_id) === "litres";
                   return (
                     <div key={entry.id} className="p-3 space-y-1 hover:bg-muted/20 transition-colors">
                       <div className="flex items-center justify-between">

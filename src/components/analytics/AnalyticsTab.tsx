@@ -78,6 +78,7 @@ interface Props {
 
 export default function AnalyticsTab({ entries, batches, onNavigateToInventory }: Props) {
   const [activeSegment, setActiveSegment] = useState<"overview" | "aging" | "trends" | "disposals">("overview");
+  const [trendGranularity, setTrendGranularity] = useState<"weekly" | "daily">("weekly");
 
   // ── Period state ──────────────────────────────────────────────
   const [periodKind, setPeriodKind] = useState<PeriodKind>("all");
@@ -261,6 +262,88 @@ export default function AnalyticsTab({ entries, batches, onNavigateToInventory }
     };
   }, [entries]);
 
+  // ── 30-day daily generation trend (strictly based on actual physical generated_date) ──────
+  const { dailyTrendData, dailyRetroactiveStats } = useMemo(() => {
+    const days: {
+      day: string;
+      fullDate: string;
+      fullRange: string;
+      kg: number;
+      litres: number;
+      eventCount: number;
+      retroactiveCount: number;
+      topTypes: string[];
+      isToday: boolean;
+      isCurrentWeek: boolean;
+    }[] = [];
+
+    const now = new Date();
+    let totalRetroactiveIn30Days = 0;
+    let totalEntriesIn30Days = 0;
+
+    for (let i = 29; i >= 0; i--) {
+      const targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i, 0, 0, 0, 0);
+      const targetEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i, 23, 59, 59, 999);
+      const isToday = i === 0;
+
+      const inRange = entries.filter((e) => {
+        if (!e.generated_date) return false;
+        const genDate = parseLocalDate(e.generated_date);
+        return genDate >= targetDate && genDate <= targetEnd;
+      });
+
+      let retroactiveInDay = 0;
+      for (const e of inRange) {
+        totalEntriesIn30Days++;
+        if (e.created_at) {
+          const createdDateStr = e.created_at.slice(0, 10);
+          const genDateStr = (e.generated_date || "").slice(0, 10);
+          if (createdDateStr > genDateStr) {
+            retroactiveInDay++;
+            totalRetroactiveIn30Days++;
+          }
+        }
+      }
+
+      const t = sumByUnit(inRange);
+
+      const typeFreq = new Map<string, number>();
+      for (const e of inRange) {
+        typeFreq.set(e.waste_type_id, (typeFreq.get(e.waste_type_id) || 0) + Number(e.weight_kg ?? 0));
+      }
+      const topTypes = Array.from(typeFreq.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 2)
+        .map(([id]) => WASTE_TYPES.find((w) => w.id === id)?.name || id);
+
+      const dDay = String(targetDate.getDate()).padStart(2, "0");
+      const dMonth = String(targetDate.getMonth() + 1).padStart(2, "0");
+      const dayLabel = `${dDay}-${dMonth}`;
+      const fullDate = formatDateDDMMYYYY(targetDate);
+
+      days.push({
+        day: dayLabel,
+        fullDate,
+        fullRange: fullDate,
+        kg: +t.kg.toFixed(2),
+        litres: +t.litres.toFixed(2),
+        eventCount: inRange.length,
+        retroactiveCount: retroactiveInDay,
+        topTypes,
+        isToday,
+        isCurrentWeek: false,
+      });
+    }
+
+    return {
+      dailyTrendData: days,
+      dailyRetroactiveStats: {
+        totalEntries: totalEntriesIn30Days,
+        retroactiveCount: totalRetroactiveIn30Days,
+      },
+    };
+  }, [entries]);
+
   // ── Top Locations ────────────────────────────────────────────
   const locMap = new Map<string, { kg: number; litres: number }>();
   periodEntries.forEach((e) => {
@@ -300,6 +383,11 @@ export default function AnalyticsTab({ entries, batches, onNavigateToInventory }
           {data.isCurrentWeek && (
             <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 font-normal">
               Current Week
+            </Badge>
+          )}
+          {data.isToday && (
+            <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 font-normal">
+              Today
             </Badge>
           )}
         </div>
@@ -351,63 +439,67 @@ export default function AnalyticsTab({ entries, batches, onNavigateToInventory }
             type="button"
             onClick={() => setActiveSegment("overview")}
             className={cn(
-              "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              "px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
               activeSegment === "overview"
                 ? "bg-card text-foreground shadow-xs font-bold"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <PieChartIcon className="h-3.5 w-3.5 text-primary" />
-            <span>Overview & KPIs</span>
+            <PieChartIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+            <span className="sm:hidden">Overview</span>
+            <span className="hidden sm:inline">Overview & KPIs</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveSegment("aging")}
             className={cn(
-              "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              "px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
               activeSegment === "aging"
                 ? "bg-card text-foreground shadow-xs font-bold"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Clock className="h-3.5 w-3.5 text-amber-500" />
-            <span>Aging & Compliance</span>
+            <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+            <span className="sm:hidden">Aging</span>
+            <span className="hidden sm:inline">Aging & Compliance</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveSegment("trends")}
             className={cn(
-              "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              "px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
               activeSegment === "trends"
                 ? "bg-card text-foreground shadow-xs font-bold"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <TrendingUp className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
-            <span>Generation Trends</span>
+            <TrendingUp className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+            <span className="sm:hidden">Trends</span>
+            <span className="hidden sm:inline">Generation Trends</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveSegment("disposals")}
             className={cn(
-              "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              "px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
               activeSegment === "disposals"
                 ? "bg-card text-foreground shadow-xs font-bold"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <History className="h-3.5 w-3.5 text-emerald-600" />
-            <span>Disposal Log</span>
+            <History className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+            <span className="sm:hidden">Disposals</span>
+            <span className="hidden sm:inline">Disposal Log</span>
           </button>
         </div>
 
         {/* Period Selector */}
-        <div className="flex items-center gap-1.5 self-end sm:self-auto">
+        <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
           <Select value={periodKind} onValueChange={(v) => setPeriodKind(v as PeriodKind)}>
-            <SelectTrigger className="h-8 text-xs w-[120px] rounded-lg">
+            <SelectTrigger className="h-8 text-xs w-[110px] sm:w-[120px] rounded-lg">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -421,7 +513,7 @@ export default function AnalyticsTab({ entries, batches, onNavigateToInventory }
           {periodKind === "month" && (
             <div className="flex items-center gap-1">
               <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
-                <SelectTrigger className="h-8 text-xs w-20 rounded-md">
+                <SelectTrigger className="h-8 text-xs w-[74px] sm:w-20 rounded-md">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -433,7 +525,7 @@ export default function AnalyticsTab({ entries, batches, onNavigateToInventory }
                 </SelectContent>
               </Select>
               <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
-                <SelectTrigger className="h-8 text-xs w-24 rounded-md">
+                <SelectTrigger className="h-8 text-xs w-[88px] sm:w-24 rounded-md">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -512,19 +604,18 @@ export default function AnalyticsTab({ entries, batches, onNavigateToInventory }
         </div>
       </div>
 
-      {periodEntries.length === 0 ? (
-        <Card className="border-border/80 border-dashed p-8 text-center text-muted-foreground">
-          <AlertTriangle className="h-7 w-7 mx-auto mb-2 opacity-40 text-amber-500" />
-          <p className="text-sm font-semibold text-foreground">No waste records in selected period</p>
-          <p className="text-xs text-muted-foreground/70 mt-1">
-            Try adjusting the period filter or log waste entries to view detailed analytics.
-          </p>
-        </Card>
-      ) : (
-        <>
-          {/* ────────────────────────── SEGMENT 1: OVERVIEW & KPIS ────────────────────────── */}
-          {activeSegment === "overview" && (
-            <div className="space-y-3">
+      {/* ────────────────────────── SEGMENT 1: OVERVIEW & KPIS ────────────────────────── */}
+      {activeSegment === "overview" && (
+        periodEntries.length === 0 ? (
+          <Card className="border-border/80 border-dashed p-8 text-center text-muted-foreground">
+            <AlertTriangle className="h-7 w-7 mx-auto mb-2 opacity-40 text-amber-500" />
+            <p className="text-sm font-semibold text-foreground">No waste records in selected period ({period.label})</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">
+              Try adjusting the period filter or switch to Generation Trends to view rolling 12-week trends and predictive forecasts.
+            </p>
+          </Card>
+        ) : (
+          <div className="space-y-3">
               {/* Compact 4-Card KPI Strip */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <Card className="border-border/80 shadow-xs">
@@ -660,7 +751,8 @@ export default function AnalyticsTab({ entries, batches, onNavigateToInventory }
                 </Card>
               </div>
             </div>
-          )}
+          )
+        )}
 
           {/* ────────────────────────── SEGMENT 2: AGING & COMPLIANCE ────────────────────────── */}
           {activeSegment === "aging" && (
@@ -728,14 +820,47 @@ export default function AnalyticsTab({ entries, batches, onNavigateToInventory }
           {/* ────────────────────────── SEGMENT 3: GENERATION TRENDS ────────────────────────── */}
           {activeSegment === "trends" && (
             <div className="space-y-3">
-              {/* 12-Week Generation Trend Line Chart */}
+              {/* Generation Trend Line / Bar Chart (Weekly or Daily Toggle) */}
               <Card className="border-border/80 shadow-xs">
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <CardContent className="p-3.5 sm:p-4 space-y-2.5 sm:space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
                     <div>
-                      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                        <TrendingUp className="h-3.5 w-3.5 text-primary" /> 12-Week Generation Trend
-                      </h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                          <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                          {trendGranularity === "weekly" ? "12-Week Generation Trend" : "30-Day Daily Generation Pattern"}
+                        </h3>
+
+                        {/* Granularity Segmented Switch */}
+                        <div className="inline-flex p-0.5 bg-muted/80 rounded-lg gap-0.5 border border-border/60">
+                          <button
+                            type="button"
+                            onClick={() => setTrendGranularity("weekly")}
+                            className={cn(
+                              "px-2 py-0.5 text-[11px] font-semibold rounded-md transition-all",
+                              trendGranularity === "weekly"
+                                ? "bg-card text-foreground shadow-2xs font-bold"
+                                : "text-muted-foreground hover:text-foreground"
+                            )}
+                          >
+                            <span className="sm:hidden">Weekly</span>
+                            <span className="hidden sm:inline">Weekly (12W)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setTrendGranularity("daily")}
+                            className={cn(
+                              "px-2 py-0.5 text-[11px] font-semibold rounded-md transition-all",
+                              trendGranularity === "daily"
+                                ? "bg-card text-foreground shadow-2xs font-bold"
+                                : "text-muted-foreground hover:text-foreground"
+                            )}
+                          >
+                            <span className="sm:hidden">Daily</span>
+                            <span className="hidden sm:inline">Daily (30D)</span>
+                          </button>
+                        </div>
+                      </div>
                       <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
                         <CalendarCheck className="h-3 w-3 text-emerald-600 shrink-0" />
                         <span>Sourced strictly from physical <strong>generation date</strong> (<code>generated_date</code>)</span>
@@ -743,18 +868,18 @@ export default function AnalyticsTab({ entries, batches, onNavigateToInventory }
                     </div>
 
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {retroactiveStats.retroactiveCount > 0 ? (
+                      {(trendGranularity === "weekly" ? retroactiveStats : dailyRetroactiveStats).retroactiveCount > 0 ? (
                         <Badge
                           variant="outline"
                           className="text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 gap-1 font-normal"
                           title="Entries where the user logged the waste on a later date than the actual maintenance generation date"
                         >
                           <Info className="h-3 w-3" />
-                          {retroactiveStats.retroactiveCount} delayed {retroactiveStats.retroactiveCount === 1 ? "log" : "logs"} placed on generation date
+                          {(trendGranularity === "weekly" ? retroactiveStats : dailyRetroactiveStats).retroactiveCount} delayed {(trendGranularity === "weekly" ? retroactiveStats : dailyRetroactiveStats).retroactiveCount === 1 ? "log" : "logs"} placed on generation date
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="text-[10px] text-muted-foreground border-border/80 font-normal">
-                          Rolling 12 Calendar Weeks (Mon–Sun)
+                          {trendGranularity === "weekly" ? "Rolling 12 Calendar Weeks (Mon–Sun)" : "Rolling 30 Calendar Days (Daily Spikes)"}
                         </Badge>
                       )}
                     </div>
@@ -764,44 +889,76 @@ export default function AnalyticsTab({ entries, batches, onNavigateToInventory }
                   <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted/40 border border-border/60 text-[11px] text-muted-foreground">
                     <CalendarCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
                     <span>
-                      Each entry is placed in the week when waste was physically produced on-site. Entries logged on subsequent days are accurately mapped back to their original maintenance date.
+                      {trendGranularity === "weekly"
+                        ? "Each entry is placed in the week when waste was physically produced on-site. Entries logged on subsequent days are accurately mapped back to their original maintenance date."
+                        : "Daily view highlights exact maintenance activity days, overhaul spikes, and zero-generation baselines over the past 30 days."}
                     </span>
                   </div>
 
                   <div className="h-[210px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={trendData} margin={{ top: 10, right: 15, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.6)" />
-                        <XAxis
-                          dataKey="week"
-                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                          axisLine={{ stroke: "hsl(var(--border))" }}
-                        />
-                        <YAxis
-                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                          axisLine={{ stroke: "hsl(var(--border))" }}
-                        />
-                        <Tooltip content={<TrendTooltip />} />
-                        <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
-                        <Line
-                          type="monotone"
-                          dataKey="kg"
-                          name="Solids (kg)"
-                          stroke="#059669"
-                          strokeWidth={2.5}
-                          dot={{ r: 3, fill: "#059669" }}
-                          activeDot={{ r: 5 }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="litres"
-                          name="Liquids (L)"
-                          stroke="#0284c7"
-                          strokeWidth={2.5}
-                          dot={{ r: 3, fill: "#0284c7" }}
-                          activeDot={{ r: 5 }}
-                        />
-                      </LineChart>
+                      {trendGranularity === "weekly" ? (
+                        <LineChart data={trendData} margin={{ top: 10, right: 15, left: -20, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.6)" />
+                          <XAxis
+                            dataKey="week"
+                            tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                            axisLine={{ stroke: "hsl(var(--border))" }}
+                          />
+                          <YAxis
+                            tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                            axisLine={{ stroke: "hsl(var(--border))" }}
+                          />
+                          <Tooltip content={<TrendTooltip />} />
+                          <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
+                          <Line
+                            type="monotone"
+                            dataKey="kg"
+                            name="Solids (kg)"
+                            stroke="#059669"
+                            strokeWidth={2.5}
+                            dot={{ r: 3, fill: "#059669" }}
+                            activeDot={{ r: 5 }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="litres"
+                            name="Liquids (L)"
+                            stroke="#0284c7"
+                            strokeWidth={2.5}
+                            dot={{ r: 3, fill: "#0284c7" }}
+                            activeDot={{ r: 5 }}
+                          />
+                        </LineChart>
+                      ) : (
+                        <BarChart data={dailyTrendData} margin={{ top: 10, right: 15, left: -20, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.6)" />
+                          <XAxis
+                            dataKey="day"
+                            tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                            interval={3}
+                            axisLine={{ stroke: "hsl(var(--border))" }}
+                          />
+                          <YAxis
+                            tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                            axisLine={{ stroke: "hsl(var(--border))" }}
+                          />
+                          <Tooltip content={<TrendTooltip />} />
+                          <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
+                          <Bar
+                            dataKey="kg"
+                            name="Solids (kg)"
+                            fill="#059669"
+                            radius={[2, 2, 0, 0]}
+                          />
+                          <Bar
+                            dataKey="litres"
+                            name="Liquids (L)"
+                            fill="#0284c7"
+                            radius={[2, 2, 0, 0]}
+                          />
+                        </BarChart>
+                      )}
                     </ResponsiveContainer>
                   </div>
                 </CardContent>
@@ -919,8 +1076,6 @@ export default function AnalyticsTab({ entries, batches, onNavigateToInventory }
               </CardContent>
             </Card>
           )}
-        </>
-      )}
     </div>
   );
 }

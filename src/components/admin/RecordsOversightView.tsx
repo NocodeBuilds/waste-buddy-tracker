@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { WASTE_TYPES, formatDateDDMMYYYY } from "@/lib/wasteTypes";
+import { WASTE_TYPES, formatDateDDMMYYYY, getMeasureUnit, unitLabel } from "@/lib/wasteTypes";
 import EmptyState from "@/components/ui/empty-state";
 
 interface Props {
@@ -63,7 +63,7 @@ export default function RecordsOversightView({ siteId }: Props) {
   return (
     <>
       <Card className="border-border/80 shadow-xs">
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-3.5 sm:p-4 space-y-2.5 sm:space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
               <FileText className="h-4 w-4 text-primary" /> Records Oversight (100 Max)
@@ -105,7 +105,7 @@ export default function RecordsOversightView({ siteId }: Props) {
                         {wt?.name ?? r.waste_type_id}
                       </p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {formatDateDDMMYYYY(r.generated_date)} · {r.weight_kg ?? r.quantity ?? "—"} kg · {r.activity_type}
+                        {formatDateDDMMYYYY(r.generated_date)} · {r.weight_kg ?? r.quantity ?? "—"} {unitLabel(getMeasureUnit(r.waste_type_id))} · {r.activity_type}
                         {r.disposal_batch_id ? " · (Disposed)" : ""}
                       </p>
                     </div>
