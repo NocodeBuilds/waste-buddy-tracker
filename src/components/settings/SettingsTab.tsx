@@ -1,22 +1,17 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Settings,
   Download,
   LogOut,
-  UserPlus,
   Building2,
-  Loader2,
   Shield,
   FileSpreadsheet,
   CheckCircle2,
   Info,
   User,
   Users,
-  Plus,
   ChevronRight,
   ShieldCheck,
 } from "lucide-react";
@@ -38,7 +33,7 @@ import EmptyState from "@/components/ui/empty-state";
 
 interface Props {
   entries: WasteEntry[];
-  onNavigateToAdmin?: () => void;
+  onNavigateToAdmin?: (subTab?: "users" | "sites" | "records" | "audit") => void;
 }
 
 interface SiteMember {
@@ -50,12 +45,8 @@ interface SiteMember {
 
 export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
   const { user, signOut } = useAuth();
-  const { currentSite, isAdmin, sites, refresh, setCurrentSite } = useSite();
+  const { currentSite, isAdmin, sites, setCurrentSite } = useSite();
   const [members, setMembers] = useState<SiteMember[]>([]);
-  const [newSiteName, setNewSiteName] = useState("");
-  const [newSiteLocation, setNewSiteLocation] = useState("");
-  const [creatingSite, setCreatingSite] = useState(false);
-  const [showAddSite, setShowAddSite] = useState(false);
 
   const loadMembers = async () => {
     if (!currentSite?.id) return;
@@ -132,33 +123,6 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
     toast.success("CSV dataset exported successfully");
   };
 
-  const handleCreateSite = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const name = newSiteName.trim();
-    if (!name) return toast.error("Site name is required");
-    if (name.length > 80) return toast.error("Site name too long (max 80 chars)");
-    setCreatingSite(true);
-    const { data, error } = await supabase
-      .from("sites")
-      .insert({ name, location: newSiteLocation.trim() || null })
-      .select()
-      .single();
-    setCreatingSite(false);
-    if (error) {
-      const detail = [error.message, (error as any).details, (error as any).hint]
-        .filter(Boolean)
-        .join(" — ");
-      toast.error(detail || "Could not create site");
-      return;
-    }
-    toast.success(`Site "${data.name}" created — you are administrator`);
-    setNewSiteName("");
-    setNewSiteLocation("");
-    setShowAddSite(false);
-    await refresh();
-    if (data) setCurrentSite({ id: data.id, name: data.name, location: data.location });
-  };
-
   const initial = user?.email?.charAt(0).toUpperCase() ?? "U";
 
   return (
@@ -226,7 +190,7 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
             </div>
 
             <Button
-              onClick={onNavigateToAdmin}
+              onClick={() => onNavigateToAdmin()}
               size="sm"
               className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs rounded-lg shrink-0 self-stretch sm:self-auto"
             >
@@ -248,15 +212,15 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
                 Authorized Facilities ({sites.length})
               </h3>
             </div>
-            {isAdmin && (
+            {isAdmin && onNavigateToAdmin && (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="h-7 text-xs text-primary hover:text-primary/90 gap-1 px-2"
-                onClick={() => setShowAddSite(!showAddSite)}
+                className="h-7 text-xs gap-1.5 px-2.5 rounded-lg shadow-2xs font-medium text-foreground hover:bg-muted"
+                onClick={() => onNavigateToAdmin("sites")}
               >
-                <Plus className="h-3.5 w-3.5" />
-                <span>{showAddSite ? "Cancel" : "Add Facility"}</span>
+                <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                <span>Manage Facilities in Admin</span>
               </Button>
             )}
           </div>
@@ -299,51 +263,6 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
               );
             })}
           </div>
-
-          {/* Add Site Inline Drawer */}
-          {showAddSite && isAdmin && (
-            <form onSubmit={handleCreateSite} className="p-3.5 rounded-lg border border-border bg-muted/20 space-y-3 pt-3">
-              <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <Plus className="h-3.5 w-3.5 text-primary" /> Register New Facility Site
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div className="space-y-1">
-                  <Label htmlFor="new-site-name" className="text-[11px] font-semibold">
-                    Facility Name
-                  </Label>
-                  <Input
-                    id="new-site-name"
-                    value={newSiteName}
-                    onChange={(e) => setNewSiteName(e.target.value)}
-                    placeholder="e.g. Kayathar Wind Farm - Phase 1"
-                    className="h-8 text-xs rounded-lg"
-                    required
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="new-site-loc" className="text-[11px] font-semibold">
-                    Geographic Region
-                  </Label>
-                  <Input
-                    id="new-site-loc"
-                    value={newSiteLocation}
-                    onChange={(e) => setNewSiteLocation(e.target.value)}
-                    placeholder="e.g. Tamil Nadu, IN"
-                    className="h-8 text-xs rounded-lg"
-                  />
-                </div>
-              </div>
-              <Button
-                type="submit"
-                size="sm"
-                className="w-full h-8 text-xs gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg"
-                disabled={creatingSite}
-              >
-                {creatingSite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Building2 className="h-3.5 w-3.5" />}
-                Confirm & Create Facility
-              </Button>
-            </form>
-          )}
         </CardContent>
       </Card>
 
@@ -363,10 +282,10 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs gap-1.5 px-2.5 rounded-lg shadow-2xs font-medium text-foreground hover:bg-muted"
-                  onClick={onNavigateToAdmin}
+                  onClick={() => onNavigateToAdmin("users")}
                 >
                   <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-                  <span>Manage in Admin</span>
+                  <span>Manage Users in Admin</span>
                 </Button>
               )}
             </div>

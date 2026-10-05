@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Shield,
@@ -16,10 +16,20 @@ import FacilitiesManagementView from "./FacilitiesManagementView";
 import RecordsOversightView from "./RecordsOversightView";
 import AuditTrailView from "./AuditTrailView";
 
-export default function AdminTab() {
+interface AdminTabProps {
+  initialSubTab?: "users" | "sites" | "records" | "audit";
+}
+
+export default function AdminTab({ initialSubTab = "users" }: AdminTabProps) {
   const { currentSite, sites, isAdmin, refresh } = useSite();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<"users" | "sites" | "records" | "audit">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "sites" | "records" | "audit">(initialSubTab);
+
+  useEffect(() => {
+    if (initialSubTab) {
+      setActiveTab(initialSubTab);
+    }
+  }, [initialSubTab]);
 
   if (!isAdmin || !currentSite) {
     return (

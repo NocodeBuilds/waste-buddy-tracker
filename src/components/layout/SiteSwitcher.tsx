@@ -75,7 +75,7 @@ export default function SiteSwitcher() {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex items-center gap-1.5 text-xs text-foreground font-medium bg-card hover:bg-muted/70 border border-border/80 rounded-lg px-2.5 py-1.5 transition-all shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20">
+        <DropdownMenuTrigger className="flex items-center gap-1.5 text-xs text-foreground font-medium bg-card hover:bg-muted/70 border border-border/80 rounded-lg h-9 px-2.5 transition-all shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20">
           <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
           <span className="font-semibold truncate max-w-[130px]">{currentSite?.name ?? "Select site"}</span>
           <ChevronDown className="h-3 w-3 text-muted-foreground ml-0.5 shrink-0" />
