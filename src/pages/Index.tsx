@@ -56,6 +56,7 @@ const Index = () => {
   const { currentSite, sites, loading: siteLoading, isAdmin, refresh } = useSite();
   const { entries, batches, isLoading, addEntry, updateEntry, deleteEntry, createDisposalBatch, approveDisposalBatch } = useWasteEntries();
   const [activeTab, setActiveTab] = useState<TabId>("home");
+  const [adminSubTab, setAdminSubTab] = useState<"users" | "sites" | "records" | "audit">("users");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<WasteEntry | null>(null);
 
@@ -218,9 +219,15 @@ const Index = () => {
                 />
               )}
               {activeTab === "settings" && (
-                <SettingsTab entries={entries} onNavigateToAdmin={() => setActiveTab("admin")} />
+                <SettingsTab
+                  entries={entries}
+                  onNavigateToAdmin={(subTab) => {
+                    if (subTab) setAdminSubTab(subTab);
+                    setActiveTab("admin");
+                  }}
+                />
               )}
-              {activeTab === "admin" && <AdminTab />}
+              {activeTab === "admin" && <AdminTab initialSubTab={adminSubTab} />}
             </>
           )}
         </main>
