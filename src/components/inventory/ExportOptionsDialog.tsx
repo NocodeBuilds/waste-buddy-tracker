@@ -49,6 +49,7 @@ interface Props {
     chosenBatch: DisposalBatch | null;
     periodLabel: string;
     selectedFy: number;
+    form8Mode?: "summary" | "per_entry";
   }) => void;
 }
 
@@ -73,6 +74,7 @@ export default function ExportOptionsDialog({
   const [batchId, setBatchId] = useState<string>("");
   const [categories, setCategories] = useState<string[]>([]);
   const [wasteTypeIds, setWasteTypeIds] = useState<string[]>([]);
+  const [form8Mode, setForm8Mode] = useState<"summary" | "per_entry">("summary");
 
   // Calendar popover open states
   const [rangeStartOpen, setRangeStartOpen] = useState(false);
@@ -89,6 +91,7 @@ export default function ExportOptionsDialog({
       setBatchId("");
       setRangeStartOpen(false);
       setRangeEndOpen(false);
+      setForm8Mode("summary");
     }
   }, [open, initialFormat]);
 
@@ -209,7 +212,7 @@ export default function ExportOptionsDialog({
   const approvedBatches = batches.filter((b) => (b as any).status === "approved" || !(b as any).status);
 
   const handleExport = () => {
-    onExport({ format: formatType, filteredEntries, chosenBatch, periodLabel, selectedFy });
+    onExport({ format: formatType, filteredEntries, chosenBatch, periodLabel, selectedFy, form8Mode });
     onOpenChange(false);
   };
 
@@ -290,6 +293,44 @@ export default function ExportOptionsDialog({
               </button>
             </div>
           </div>
+
+          {/* ── Form 8 Label Mode ── */}
+          {formatType === "form8" && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Label Mode</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setForm8Mode("summary")}
+                  className={`p-2.5 rounded-lg border text-left transition-all ${
+                    form8Mode === "summary"
+                      ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary/20"
+                      : "border-border hover:bg-muted/70 text-muted-foreground"
+                  }`}
+                >
+                  <div className="font-semibold text-foreground text-xs">Summary by Waste Type</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    One label per waste type with total quantity
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setForm8Mode("per_entry")}
+                  className={`p-2.5 rounded-lg border text-left transition-all ${
+                    form8Mode === "per_entry"
+                      ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary/20"
+                      : "border-border hover:bg-muted/70 text-muted-foreground"
+                  }`}
+                >
+                  <div className="font-semibold text-foreground text-xs">Per Entry (Individual)</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    One label per drum / log entry
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* ── Period ── */}
           <div className="space-y-1.5">
@@ -468,6 +509,14 @@ export default function ExportOptionsDialog({
               <span className="text-muted-foreground">Matching Records:</span>
               <span className="font-mono font-semibold text-foreground">{totals.count} entries</span>
             </div>
+            {formatType === "form8" && form8Mode === "summary" && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Waste Types:</span>
+                <span className="font-mono font-semibold text-foreground">
+                  {new Set(filteredEntries.map((e) => e.waste_type_id)).size} unique labels
+                </span>
+              </div>
+            )}
             {totals.kg > 0 && (
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Total Weight:</span>
