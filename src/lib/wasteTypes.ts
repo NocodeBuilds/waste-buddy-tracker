@@ -120,7 +120,8 @@ export function isEntryWarning(entry: WasteEntry): boolean {
   if (isDisposed(entry)) return false;
   const days = getDaysStored(entry.generated_date);
   const limit = getStorageLimitDays(entry.waste_category, entry.waste_type_id);
-  const warnThreshold = limit === 180 ? 150 : 70;
+  // Warn 30 days prior to breach (60 days for 90-day limit, 150 days for 180-day limit)
+  const warnThreshold = limit - 30;
   return days >= warnThreshold && days < limit;
 }
 
