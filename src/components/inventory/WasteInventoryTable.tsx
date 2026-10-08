@@ -71,6 +71,7 @@ import {
   exportForm3Pdf,
   exportDisposalBatchPdf,
   exportForm8ContainerLabelsPdf,
+  exportForm8SummaryLabelsPdf,
   exportForm4AnnualReturnPdf,
 } from "@/lib/wasteExports";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -209,7 +210,7 @@ export default function WasteInventoryTable({
   onRejectDisposal,
 }: Props) {
   const { isManagerOrAdmin, currentSite } = useSite();
-  const [activeView, setActiveView] = useState<"records" | "summary" | "disposals">("records");
+  const [activeView, setActiveView] = useState<"records" | "summary" | "disposals">("summary");
   const [filter, setFilter] = useState<"all" | "active" | "overdue" | "disposed">("active");
   const [searchQuery, setSearchQuery] = useState("");
   const [periodKind, setPeriodKind] = useState<PeriodKind>("all");
@@ -554,8 +555,14 @@ export default function WasteInventoryTable({
         return;
       }
       try {
-        exportForm8ContainerLabelsPdf(opts.filteredEntries, currentSite?.name ?? "Site");
-        toast.success(`Form 8 Labels exported (${opts.filteredEntries.length} items)`);
+        if (opts.form8Mode === "per_entry") {
+          exportForm8ContainerLabelsPdf(opts.filteredEntries, currentSite?.name ?? "Site");
+          toast.success(`Form 8 Labels exported (${opts.filteredEntries.length} items)`);
+        } else {
+          exportForm8SummaryLabelsPdf(opts.filteredEntries, currentSite?.name ?? "Site");
+          const uniqueTypesCount = new Set(opts.filteredEntries.map((e: any) => e.waste_type_id)).size;
+          toast.success(`Form 8 Summary Labels exported (${uniqueTypesCount} waste types)`);
+        }
       } catch (err: any) {
         toast.error(err.message ?? "Export failed");
       }
@@ -577,6 +584,21 @@ export default function WasteInventoryTable({
         <div className="grid grid-cols-3 sm:flex p-1 bg-muted/70 rounded-xl gap-1 w-full sm:w-auto">
           <button
             type="button"
+            onClick={() => setActiveView("summary")}
+            className={cn(
+              "px-2 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 text-center truncate",
+              activeView === "summary"
+                ? "bg-card text-foreground shadow-xs font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Scale className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+            <span className="sm:hidden">Breakdown</span>
+            <span className="hidden sm:inline">Storage Breakdown</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveView("records")}
             className={cn(
               "px-2 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 text-center truncate",
@@ -590,21 +612,6 @@ export default function WasteInventoryTable({
             <span className="font-mono text-[10px] bg-muted px-1.5 py-0.2 rounded-full">
               {filtered.length}
             </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveView("summary")}
-            className={cn(
-              "px-2 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 text-center truncate",
-              activeView === "summary"
-                ? "bg-card text-foreground shadow-xs font-bold"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Scale className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
-            <span className="sm:hidden">Breakdown</span>
-            <span className="hidden sm:inline">Storage Breakdown</span>
           </button>
 
           <button

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -169,11 +168,7 @@ export default function StorageBreakdownView({
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 sm:gap-2.5">
           {/* Period selector dropdown */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-            <div className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-foreground">
-              <CalendarIcon className="h-4 w-4 text-primary" />
-              <span>Storage Period Filter:</span>
-            </div>
-            <CalendarIcon className="h-3.5 w-3.5 text-primary sm:hidden shrink-0" />
+            <CalendarIcon className="h-3.5 w-3.5 text-primary shrink-0" />
             <Select value={periodKind} onValueChange={(v) => onPeriodKindChange(v as PeriodKind)}>
               <SelectTrigger className="h-7 sm:h-8 text-xs w-[115px] sm:w-[130px] rounded-lg bg-background">
                 <SelectValue />
@@ -185,14 +180,6 @@ export default function StorageBreakdownView({
                 <SelectItem value="fy">Financial Year</SelectItem>
               </SelectContent>
             </Select>
-
-            {/* Active Period Label Badge */}
-            <Badge
-              variant="outline"
-              className="text-[11px] sm:text-xs font-mono font-medium px-1.5 sm:px-2 py-0.5 bg-muted/60 border-border/80 text-foreground truncate max-w-[130px] sm:max-w-none"
-            >
-              {period.label}
-            </Badge>
 
             {periodKind !== "all" && (
               <Button

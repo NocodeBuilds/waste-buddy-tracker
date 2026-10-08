@@ -425,6 +425,136 @@ export function exportForm8ContainerLabelsPdf(
 }
 
 /**
+ * Export consolidated Form 8 Labels grouped by waste type (Rule 17, HOWM Rules 2016).
+ * One label per waste type showing aggregated total quantity and container count.
+ */
+export function exportForm8SummaryLabelsPdf(
+  entries: WasteEntry[],
+  siteName: string,
+) {
+  if (entries.length === 0) return;
+
+  // Group entries by waste_type_id
+  const grouped = new Map<string, WasteEntry[]>();
+  for (const e of entries) {
+    const list = grouped.get(e.waste_type_id) ?? [];
+    list.push(e);
+    grouped.set(e.waste_type_id, list);
+  }
+
+  const groups = Array.from(grouped.entries()).map(([typeId, items]) => {
+    const wt = WASTE_TYPES.find((w) => w.id === typeId);
+    const totalQty = items.reduce((s, e) => s + Number(e.weight_kg ?? 0), 0);
+    const dates = items.map((e) => e.generated_date).sort();
+    const earliest = dates[0];
+    const latest = dates[dates.length - 1];
+    return { typeId, wt, items, totalQty, earliest, latest };
+  }).sort((a, b) => b.totalQty - a.totalQty);
+
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+
+  // 2 labels per A4 page (top and bottom)
+  const labelW = 150;
+  const labelH = 120;
+  const leftMargin = (pageW - labelW) / 2;
+
+  groups.forEach((group, idx) => {
+    const isSecondOnPage = idx % 2 === 1;
+    if (idx > 0 && idx % 2 === 0) {
+      doc.addPage();
+    }
+
+    const topMargin = isSecondOnPage ? 150 : 20;
+
+    // Yellow background
+    doc.setFillColor(254, 240, 138); // Yellow-200
+    doc.rect(leftMargin, topMargin, labelW, labelH, "F");
+
+    // Red thick border
+    doc.setDrawColor(220, 38, 38); // Red-600
+    doc.setLineWidth(1.8);
+    doc.rect(leftMargin, topMargin, labelW, labelH, "D");
+
+    // Inner thin border
+    doc.setLineWidth(0.4);
+    doc.rect(leftMargin + 2, topMargin + 2, labelW - 4, labelH - 4, "D");
+
+    // Label Header
+    doc.setFillColor(220, 38, 38);
+    doc.rect(leftMargin + 2, topMargin + 2, labelW - 4, 14, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold").setFontSize(13);
+    doc.text("HAZARDOUS WASTE", pageW / 2, topMargin + 9, { align: "center" });
+    doc.setFontSize(7).setFont("helvetica", "normal");
+    doc.text("FORM 8 — [See Rule 17(1) of HOWM Rules 2016]", pageW / 2, topMargin + 13.5, { align: "center" });
+
+    // Label Details
+    doc.setTextColor(20, 20, 20);
+    const wName = group.wt?.name ?? group.typeId;
+    const cat = group.items[0]?.waste_category === "hazardous" ? "Hazardous Waste" : "Regulated Waste";
+    const physicalForm = group.wt?.category ?? "Solid / Liquid";
+    const statCode = (group.wt as any)?.statutoryCode || "Schedule I - HOWM";
+    const unit = unitLabel(getMeasureUnit(group.typeId));
+    const qty = `${fmtNum(group.totalQty)} ${unit}`;
+    const dateRange = group.earliest === group.latest
+      ? formatDateDDMMYYYY(group.earliest)
+      : `${formatDateDDMMYYYY(group.earliest)} — ${formatDateDDMMYYYY(group.latest)}`;
+
+    let y = topMargin + 22;
+    const addRow = (label: string, val: string) => {
+      doc.setFont("helvetica", "bold").setFontSize(8.5);
+      doc.text(label, leftMargin + 6, y);
+      doc.setFont("helvetica", "normal").setFontSize(8.5);
+      doc.text(val, leftMargin + 48, y);
+      y += 7.5;
+    };
+
+    addRow("Waste Description:", wName);
+    addRow("Regulatory Stream:", `${cat} (${statCode})`);
+    addRow("Physical State:", physicalForm);
+    addRow("Total Quantity / Net:", qty);
+    addRow("No. of Containers:", `${group.items.length} ${group.items.length === 1 ? "drum/bag" : "drums/bags"}`);
+    addRow("Date Range:", dateRange);
+    addRow("Occupier / Facility:", siteName);
+    addRow("In Emergency Contact:", "Plant EHS / Site In-charge");
+
+    // Danger warning footer
+    doc.setDrawColor(220, 38, 38);
+    doc.setLineWidth(0.5);
+    doc.line(leftMargin + 4, topMargin + 94, leftMargin + labelW - 4, topMargin + 94);
+
+    doc.setTextColor(185, 28, 28);
+    doc.setFont("helvetica", "bold").setFontSize(7.5);
+    doc.text(
+      "HANDLE WITH CARE · DO NOT INHALE OR INGEST · KEEP AWAY FROM HEAT",
+      pageW / 2,
+      topMargin + 100,
+      { align: "center" },
+    );
+    doc.setFont("helvetica", "normal").setFontSize(6.5).setTextColor(80, 80, 80);
+    doc.text(
+      "In case of spillage, contain with dry sand/earth. Consult Material Safety Data Sheet (MSDS).",
+      pageW / 2,
+      topMargin + 104,
+      { align: "center" },
+    );
+
+    // Waste type summary identifier
+    doc.setFont("courier", "bold").setFontSize(7).setTextColor(40, 40, 40);
+    doc.text(
+      `${group.items.length} entries · Generated ${formatDateDDMMYYYY(new Date().toISOString().split("T")[0])}`,
+      pageW / 2,
+      topMargin + 112,
+      { align: "center" },
+    );
+  });
+
+  const date = new Date().toISOString().split("T")[0];
+  doc.save(`Form8_Summary_Labels_${safeName(siteName)}_${date}.pdf`);
+}
+
+/**
  * Export official Form 4 Annual Return for Hazardous and Other Wastes.
  * Mandated under Rule 20(2) of HOWM Rules 2016 for submission to SPCB by June 30.
  */
