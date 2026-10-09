@@ -1,10 +1,10 @@
 project_id = "oakjtbkxjhxoeyaapibo"
 
 [functions.invite-user]
-verify_jwt = false
+verify_jwt = true
 
 [functions.admin-manage-user]
-verify_jwt = false
+verify_jwt = true
 
 [functions.bootstrap-admin]
-verify_jwt = false
+verify_jwt = true

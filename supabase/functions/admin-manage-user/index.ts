@@ -91,8 +91,17 @@ Deno.serve(async (req) => {
       const email = body.email.trim().toLowerCase();
       const password = (body.password ?? "").trim();
       if (!email.includes("@")) return json({ error: "Invalid email" }, 400, cors);
-      if (!password || password.length < 6) {
-        return json({ error: "Password must be at least 6 characters" }, 400, cors);
+      if (!password || password.length < 12) {
+        return json({ error: "Password must be at least 12 characters" }, 400, cors);
+      }
+      if (!/[A-Z]/.test(password)) {
+        return json({ error: "Password must include at least one uppercase letter" }, 400, cors);
+      }
+      if (!/[a-z]/.test(password)) {
+        return json({ error: "Password must include at least one lowercase letter" }, 400, cors);
+      }
+      if (!/[0-9]/.test(password)) {
+        return json({ error: "Password must include at least one number" }, 400, cors);
       }
 
       let targetId: string | null = null;

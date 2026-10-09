@@ -42,11 +42,9 @@ interface Props {
 
 function generateRandomPassword() {
   const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#$%";
-  let pass = "";
-  for (let i = 0; i < 10; i++) {
-    pass += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return pass;
+  const bytes = new Uint8Array(10);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((b) => chars[b % chars.length]).join("");
 }
 
 export default function UserManagementView({ siteId, siteName, callerId }: Props) {
@@ -145,8 +143,20 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters long");
+    if (password.length < 12) {
+      toast.error("Password must be at least 12 characters long");
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      toast.error("Password must include at least one uppercase letter");
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      toast.error("Password must include at least one lowercase letter");
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      toast.error("Password must include at least one number");
       return;
     }
 

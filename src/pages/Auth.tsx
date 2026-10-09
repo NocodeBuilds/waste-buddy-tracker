@@ -12,13 +12,20 @@ import { toast } from "sonner";
 
 const loginSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(12, "Password must be at least 12 characters")
+    .regex(/[A-Z]/, "Include at least one uppercase letter")
+    .regex(/[a-z]/, "Include at least one lowercase letter")
+    .regex(/[0-9]/, "Include at least one number"),
 });
 
 const signupSchema = z.object({
   full_name: z.string().trim().min(2, "Full name is required").max(100),
   email: z.string().trim().email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters").max(72),
+  password: z.string().min(12, "Password must be at least 12 characters")
+    .regex(/[A-Z]/, "Include at least one uppercase letter")
+    .regex(/[a-z]/, "Include at least one lowercase letter")
+    .regex(/[0-9]/, "Include at least one number")
+    .max(72, "Password must be at most 72 characters"),
 });
 
 type Mode = "login" | "reset";

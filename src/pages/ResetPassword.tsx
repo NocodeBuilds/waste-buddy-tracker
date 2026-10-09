@@ -22,17 +22,15 @@ export default function ResetPassword() {
       setReady(evt === "PASSWORD_RECOVERY");
     });
 
-    // Fallback: if the URL hash contains a recovery token, allow access
-    if (window.location.hash.includes("type=recovery")) {
-      setReady(true);
-    }
-
     return () => sub.subscription.unsubscribe();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) return toast.error("Password must be at least 6 characters");
+    if (password.length < 12) return toast.error("Password must be at least 12 characters");
+    if (!/[A-Z]/.test(password)) return toast.error("Include at least one uppercase letter");
+    if (!/[a-z]/.test(password)) return toast.error("Include at least one lowercase letter");
+    if (!/[0-9]/.test(password)) return toast.error("Include at least one number");
     if (password !== confirm) return toast.error("Passwords do not match");
     setSubmitting(true);
     const { error } = await supabase.auth.updateUser({ password });
