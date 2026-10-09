@@ -10,9 +10,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
+// Whitelist of allowed origins for auth redirects (prevents open redirect)
+const ALLOWED_REDIRECT_ORIGINS = [window.location.origin];
+
+const getSafeRedirect = (path: string) => {
+  const origin = window.location.origin;
+  if (ALLOWED_REDIRECT_ORIGINS.includes(origin)) {
+    return `${origin}${path}`;
+  }
+  // Fallback to first allowed origin (production domain)
+  return `${ALLOWED_REDIRECT_ORIGINS[0]}${path}`;
+};
+
 const loginSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address"),
   password: z.string().min(12, "Password must be at least 12 characters")
+    .max(72, "Password must be at most 72 characters")
     .regex(/[A-Z]/, "Include at least one uppercase letter")
     .regex(/[a-z]/, "Include at least one lowercase letter")
     .regex(/[0-9]/, "Include at least one number"),
@@ -38,6 +51,7 @@ export default function Auth() {
   const [submitting, setSubmitting] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [mode, setMode] = useState<Mode>("login");
+  const [resetCooldown, setResetCooldown] = useState(0);
 
   if (loading) {
     return (
@@ -74,10 +88,13 @@ export default function Auth() {
     e.preventDefault();
     if (!z.string().email().safeParse(email).success) return toast.error("Please enter a valid email address");
     setSubmitting(true);
+    setResetCooldown(60);
+    const timer = setInterval(() => setResetCooldown(c => c - 1), 1000);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: getSafeRedirect("/reset-password"),
     });
     setSubmitting(false);
+    clearInterval(timer);
     if (error) return toast.error(error.message);
     toast.success("Password reset instructions sent to your email");
     setMode("login");

@@ -7,7 +7,10 @@
     <meta name="description" content="Track and manage waste generation, activities, and disposal operations across your facilities." />
     <meta name="keywords" content="waste, tracking, compliance, disposal, PWA, hazardous waste" />
     <meta name="author" content="Waste Buddy" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https: data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com data:; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' https: data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com data:; worker-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests" />
+
+    <!-- CSP frame-ancestors must be an HTTP response header (meta-tag delivery is ignored by browsers).
+         See public/_headers for the header-based enforcement on Netlify / Cloudflare Pages. -->
     <title>WasteBuddy</title>
     <link rel="canonical" href="/" />
 
@@ -61,13 +64,5 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      window.addEventListener('error', function(e) {
-        document.getElementById('root').innerHTML = '<pre style="padding:20px;color:red;font-size:14px;">' + e.message + '</pre>';
-      });
-      window.addEventListener('unhandledrejection', function(e) {
-        document.getElementById('root').innerHTML = '<pre style="padding:20px;color:red;font-size:14px;">' + (e.reason?.message || e.reason) + '</pre>';
-      });
-    </script>
   </body>
 </html>

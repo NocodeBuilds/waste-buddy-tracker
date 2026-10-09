@@ -6,6 +6,7 @@ import FuturisticDashboard from "@/components/dashboard/FuturisticDashboard";
 import WasteInventoryTable from "@/components/inventory/WasteInventoryTable";
 import AlertsPanel from "@/components/common/AlertsPanel";
 import AnalyticsTab from "@/components/analytics/AnalyticsTab";
+import { useAuth } from "@/contexts/AuthContext";
 import SettingsTab from "@/components/settings/SettingsTab";
 import AdminTab from "@/components/admin/AdminTab";
 import RequestSiteAccess from "@/components/auth/RequestSiteAccess";
@@ -16,7 +17,7 @@ import OfflineBanner from "@/components/layout/OfflineBanner";
 import { WasteEntry, isEntryOverdue, isEntryWarning } from "@/lib/wasteTypes";
 
 import SiteSwitcher from "@/components/layout/SiteSwitcher";
-import { Bell, Home, List, BarChart3, Settings, Shield, Plus } from "lucide-react";
+import { Bell, Home, List, BarChart3, Settings, Shield } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -54,6 +55,7 @@ const TAB_CONFIG: Record<TabId, { title: string; subtitle: string; icon: typeof 
 
 const Index = () => {
   const { currentSite, sites, loading: siteLoading, isAdmin, refresh } = useSite();
+  const { isAdmin: isAuthAdmin } = useAuth();
   const { entries, batches, isLoading, addEntry, updateEntry, deleteEntry, createDisposalBatch, approveDisposalBatch } = useWasteEntries();
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [adminSubTab, setAdminSubTab] = useState<"users" | "sites" | "records" | "audit">("users");
@@ -227,7 +229,7 @@ const Index = () => {
                   }}
                 />
               )}
-              {activeTab === "admin" && <AdminTab initialSubTab={adminSubTab} />}
+              {(activeTab === "admin" && isAuthAdmin) && <AdminTab initialSubTab={adminSubTab} />}
             </>
           )}
         </main>

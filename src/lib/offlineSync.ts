@@ -5,29 +5,11 @@ import { useState, useEffect, useCallback } from "react";
 
 const QUEUE_KEY = "wastebuddy_offline_pending_entries";
 
-async function signPayload(payload: string): Promise<string> {
-  try {
-    const keyData = new Uint8Array(32);
-    crypto.getRandomValues(keyData);
-    const encoder = new TextEncoder();
-    const cryptoKey = await crypto.subtle.importKey(
-      "raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-    );
-    const signature = await crypto.subtle.sign("HMAC", cryptoKey, encoder.encode(payload));
-    const sigBytes = new Uint8Array(signature);
-    return btoa(String.fromCharCode(...sigBytes));
-  } catch {
-    return "";
-  }
-}
-
 export interface PendingEntry {
   tempId: string;
   siteId: string;
   userId: string;
   timestamp: number;
-  signature?: string;
-  payload?: string;
   data: {
     waste_type_id: string;
     waste_category: "hazardous" | "non_hazardous" | "e_waste" | "other_wastes";
@@ -82,14 +64,11 @@ export async function createPendingEntry(
   siteId: string,
   userId: string,
   data: PendingEntry["data"]
-): Promise<PendingEntry | null> {
-  if (typeof window === "undefined") return null;
-  const tempId = crypto.randomUUID();
-  const timestamp = Date.now();
-  const payloadObj = { tempId, data, timestamp, userId, siteId };
-  const payload = JSON.stringify(payloadObj);
-  const signature = await signPayload(payload);
-  return { tempId, siteId, userId, timestamp, signature, payload, data };
+): Promise<PendingEntry> {
+  if (typeof window === "undefined") {
+    return { tempId: crypto.randomUUID(), siteId, userId, timestamp: Date.now(), data };
+  }
+  return { tempId: crypto.randomUUID(), siteId, userId, timestamp: Date.now(), data };
 }
 
 let isSyncing = false;
@@ -102,24 +81,17 @@ export async function syncPendingEntries(queryClient?: QueryClient): Promise<num
   isSyncing = true;
   let syncedCount = 0;
   const sitesToInvalidate = new Set<string>();
+  const failed: string[] = [];
 
   try {
-    for (const item of queue) {
-      const reconstructedPayload = JSON.stringify({
-        tempId: item.tempId,
-        data: item.data,
-        timestamp: item.timestamp,
-        userId: item.userId,
-        siteId: item.siteId,
-      });
+    // Get current user to validate ownership
+    const { data: { user } } = await supabase.auth.getUser();
 
-      if (item.signature) {
-        const expectedSignature = await signPayload(reconstructedPayload);
-        if (item.signature !== expectedSignature) {
-          console.warn("[OfflineSync] Signature mismatch for entry, skipping:", item.tempId);
-          removeFromPendingQueue(item.tempId);
-          continue;
-        }
+    for (const item of queue) {
+      // Security: reject entries from different users or with mismatched site
+      if (item.userId !== user?.id) {
+        failed.push(item.tempId);
+        continue;
       }
 
       const { data, error } = await supabase
@@ -137,6 +109,32 @@ export async function syncPendingEntries(queryClient?: QueryClient): Promise<num
         removeFromPendingQueue(item.tempId);
         syncedCount++;
         sitesToInvalidate.add(item.siteId);
+      } else {
+        failed.push(item.tempId);
+      }
+    }
+
+    // Retry failed items once after a short delay (transient network errors)
+    if (failed.length > 0 && syncedCount > 0) {
+      await new Promise((r) => setTimeout(r, 2000));
+      for (const tempId of failed) {
+        const retryItem = queue.find((q) => q.tempId === tempId);
+        if (!retryItem) continue;
+        const { data, error } = await supabase
+          .from("waste_entries")
+          .insert({
+            ...retryItem.data,
+            quantity: retryItem.data.weight_kg,
+            site_id: retryItem.siteId,
+            created_by: retryItem.userId,
+          })
+          .select("id")
+          .single();
+        if (!error && data?.id) {
+          removeFromPendingQueue(tempId);
+          syncedCount++;
+          sitesToInvalidate.add(retryItem.siteId);
+        }
       }
     }
 

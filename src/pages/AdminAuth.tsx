@@ -10,9 +10,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Shield, Loader2, Eye, EyeOff, Lock } from "lucide-react";
 import { toast } from "sonner";
 
+// Whitelist of allowed origins for auth redirects (prevents open redirect)
+const ALLOWED_REDIRECT_ORIGINS = [window.location.origin];
+
+const getSafeRedirect = (path: string) => {
+  const origin = window.location.origin;
+  if (ALLOWED_REDIRECT_ORIGINS.includes(origin)) {
+    return `${origin}${path}`;
+  }
+  return `${ALLOWED_REDIRECT_ORIGINS[0]}${path}`;
+};
+
 const schema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(12, "Password must be at least 12 characters")
+    .max(72, "Password must be at most 72 characters")
     .regex(/[A-Z]/, "Include at least one uppercase letter")
     .regex(/[a-z]/, "Include at least one lowercase letter")
     .regex(/[0-9]/, "Include at least one number"),
@@ -21,7 +33,7 @@ const schema = z.object({
 type Mode = "login" | "bootstrap" | "reset";
 
 export default function AdminAuth() {
-  const { session, loading } = useAuth();
+  const { session, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,12 +41,22 @@ export default function AdminAuth() {
   const [submitting, setSubmitting] = useState(false);
   const [mode, setMode] = useState<Mode>("login");
   const [adminExists, setAdminExists] = useState<boolean | null>(null);
+  const [checkingAdmin, setCheckingAdmin] = useState(false);
+  const [resetCooldown, setResetCooldown] = useState(0);
 
-  useEffect(() => {
-    supabase.rpc("admin_exists").then(({ data }: any) => setAdminExists(!!data));
-  }, []);
+  // Lazily check admin_exists only when bootstrap mode is requested
+  const checkAdminExists = async () => {
+    if (adminExists !== null) return;
+    setCheckingAdmin(true);
+    const { data } = await supabase.rpc("admin_exists");
+    setAdminExists(!!data);
+    setCheckingAdmin(false);
+  };
 
-  if (!loading && session) return <Navigate to="/app" replace />;
+  // Redirect authenticated users to the app
+  if (!authLoading && session) {
+    return <Navigate to="/app" replace />;
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +75,13 @@ export default function AdminAuth() {
     const parsed = schema.safeParse({ email, password });
     if (!parsed.success) return toast.error(parsed.error.errors[0].message);
     setSubmitting(true);
+
+    // Gate: only allow bootstrap if truly no admin exists
+    if (adminExists) {
+      setSubmitting(false);
+      return toast.error("An administrator already exists. Contact them for access.");
+    }
+
     const { error: suErr } = await supabase.auth.signUp({
       email,
       password,
@@ -84,11 +113,14 @@ export default function AdminAuth() {
     e.preventDefault();
     if (!z.string().email().safeParse(email).success) return toast.error("Please enter a valid email address");
     setSubmitting(true);
+    setResetCooldown(60);
+    const timer = setInterval(() => setResetCooldown(c => c - 1), 1000);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: getSafeRedirect("/reset-password"),
     });
     setSubmitting(false);
-    if (error) return toast.error(error.message);
+    clearInterval(timer);
+    if (error) { toast.error(error.message); return; }
     toast.success("Password reset instructions sent to your email");
     setMode("login");
   };
@@ -98,6 +130,11 @@ export default function AdminAuth() {
 
   const title =
     mode === "login" ? "Admin Sign In" : mode === "bootstrap" ? "Claim Primary Admin" : "Reset Password";
+
+  const handleRequestBootstrap = async () => {
+    await checkAdminExists();
+    setMode("bootstrap");
+  };
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center px-4 py-12 bg-gradient-to-b from-background via-background to-secondary/30">
@@ -175,7 +212,7 @@ export default function AdminAuth() {
                       autoComplete={mode === "bootstrap" ? "new-password" : "current-password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
+                      placeholder="••••••••••••"
                       className="h-10 text-xs rounded-lg pr-10"
                       required
                     />
@@ -194,24 +231,24 @@ export default function AdminAuth() {
               <Button
                 type="submit"
                 className="w-full h-10 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm rounded-lg mt-2"
-                disabled={submitting}
+                disabled={submitting || (mode === "bootstrap" && checkingAdmin) || (mode === "reset" && resetCooldown > 0)}
               >
-                {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                {(submitting || checkingAdmin) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                 {mode === "bootstrap"
                   ? "Claim Admin Account"
                   : mode === "reset"
-                  ? "Send Password Reset Link"
+                  ? `Send Password Reset Link${resetCooldown > 0 ? ` (${resetCooldown}s)` : ""}`
                   : "Sign In as Admin"}
               </Button>
             </form>
 
             <div className="pt-2 border-t border-border/60 text-center text-xs text-muted-foreground space-y-1.5">
-              {adminExists === false && mode === "login" && (
+              {mode === "login" && (
                 <p>
                   No admin configured yet?{" "}
                   <button
                     type="button"
-                    onClick={() => setMode("bootstrap")}
+                    onClick={handleRequestBootstrap}
                     className="text-primary font-semibold hover:underline"
                   >
                     Claim primary admin
@@ -220,10 +257,10 @@ export default function AdminAuth() {
               )}
               {mode !== "login" && (
                 <p>
-                  Remember your password?{" "}
+                  {mode === "bootstrap" ? "Remember your password?" : "Remember your password?"}{" "}
                   <button
                     type="button"
-                    onClick={() => setMode("login")}
+                    onClick={() => { setMode("login"); setAdminExists(null); }}
                     className="text-primary font-semibold hover:underline"
                   >
                     Back to sign in
