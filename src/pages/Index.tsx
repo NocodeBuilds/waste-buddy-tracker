@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useWasteEntries } from "@/hooks/useWasteEntries";
 import { useSite } from "@/contexts/SiteContext";
 import WasteEntryForm from "@/components/inventory/WasteEntryForm";
@@ -54,13 +55,39 @@ const TAB_CONFIG: Record<TabId, { title: string; subtitle: string; icon: typeof 
 };
 
 const Index = () => {
-  const { currentSite, sites, loading: siteLoading, isAdmin, refresh } = useSite();
+  const { currentSite, sites, loading: siteLoading, isAdmin: siteIsAdmin, refresh } = useSite();
   const { isAdmin: isAuthAdmin } = useAuth();
+  const isAdmin = siteIsAdmin || isAuthAdmin;
   const { entries, batches, isLoading, addEntry, updateEntry, deleteEntry, createDisposalBatch, approveDisposalBatch } = useWasteEntries();
-  const [activeTab, setActiveTab] = useState<TabId>("home");
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlTab = searchParams.get("tab") as TabId | null;
+  const [activeTab, setActiveTab] = useState<TabId>(() => {
+    if (urlTab && ["home", "inventory", "analytics", "settings", "admin"].includes(urlTab)) {
+      return urlTab;
+    }
+    return "home";
+  });
+
   const [adminSubTab, setAdminSubTab] = useState<"users" | "sites" | "records" | "audit">("users");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<WasteEntry | null>(null);
+
+  useEffect(() => {
+    if (urlTab && ["home", "inventory", "analytics", "settings", "admin"].includes(urlTab)) {
+      setActiveTab(urlTab);
+    }
+  }, [urlTab]);
+
+  const handleTabChange = (tab: TabId) => {
+    setActiveTab(tab);
+    if (tab === "home") {
+      searchParams.delete("tab");
+      setSearchParams(searchParams, { replace: true });
+    } else {
+      setSearchParams({ ...Object.fromEntries(searchParams.entries()), tab }, { replace: true });
+    }
+  };
 
   const overdueCount = useMemo(
     () => entries.filter((e) => isEntryOverdue(e)).length,
@@ -87,7 +114,7 @@ const Index = () => {
       {/* ── Left Sidebar (Desktop Only: lg and above) ── */}
       <DesktopSidebar
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         onLogWaste={() => setDrawerOpen(true)}
         isAdmin={isAdmin}
         overdueCount={overdueCount}
@@ -225,11 +252,11 @@ const Index = () => {
                   entries={entries}
                   onNavigateToAdmin={(subTab) => {
                     if (subTab) setAdminSubTab(subTab);
-                    setActiveTab("admin");
+                    handleTabChange("admin");
                   }}
                 />
               )}
-              {(activeTab === "admin" && isAuthAdmin) && <AdminTab initialSubTab={adminSubTab} />}
+              {activeTab === "admin" && <AdminTab initialSubTab={adminSubTab} />}
             </>
           )}
         </main>
@@ -239,7 +266,7 @@ const Index = () => {
       <div className="lg:hidden">
         <BottomNav
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={handleTabChange}
           onAddClick={() => setDrawerOpen(true)}
           isAdmin={isAdmin}
           overdueCount={overdueCount}

@@ -23,10 +23,11 @@ interface AdminTabProps {
 
 export default function AdminTab({ initialSubTab = "users" }: AdminTabProps) {
   const { currentSite, sites, isAdmin: siteIsAdmin, refresh } = useSite();
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin: isAuthAdmin, loading: authLoading } = useAuth();
+  const isAdmin = siteIsAdmin || isAuthAdmin;
 
   // Wait for auth session to load before deciding — isAdmin is derived from
-  // session metadata which is null until the listener fires
+  // session metadata or site membership which is loading
   if (authLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground space-y-2">

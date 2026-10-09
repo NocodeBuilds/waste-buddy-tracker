@@ -55,7 +55,7 @@ export default function AdminAuth() {
 
   // Redirect authenticated users to the app
   if (!authLoading && session) {
-    return <Navigate to="/app" replace />;
+    return <Navigate to="/app?tab=admin" replace />;
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -67,7 +67,7 @@ export default function AdminAuth() {
     setSubmitting(false);
     if (error) return toast.error(error.message);
     toast.success("Welcome back, Administrator");
-    navigate("/app");
+    navigate("/app?tab=admin");
   };
 
   const handleBootstrap = async (e: React.FormEvent) => {
@@ -106,7 +106,7 @@ export default function AdminAuth() {
       return toast.error((data as any)?.error ?? bErr?.message ?? "Bootstrap failed — admin already exists.");
     }
     toast.success("Primary Administrator configured successfully!");
-    navigate("/app");
+    navigate("/app?tab=admin");
   };
 
   const handleReset = async (e: React.FormEvent) => {
