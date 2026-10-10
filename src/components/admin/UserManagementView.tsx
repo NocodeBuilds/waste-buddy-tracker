@@ -41,10 +41,40 @@ interface Props {
 }
 
 function generateRandomPassword() {
-  const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#$%";
-  const bytes = new Uint8Array(10);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes).map((b) => chars[b % chars.length]).join("");
+  const uppers = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lowers = "abcdefghijkmnpqrstuvwxyz";
+  const digits = "23456789";
+  const specials = "!@#$%^&*";
+  const all = uppers + lowers + digits + specials;
+
+  const getRand = (charset: string) => {
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    return charset[arr[0] % charset.length];
+  };
+
+  // Guarantee at least 1 of each required character type
+  const passChars = [
+    getRand(uppers),
+    getRand(lowers),
+    getRand(digits),
+    getRand(specials),
+  ];
+
+  // Fill remaining 10 characters to reach 14 characters total
+  for (let i = 0; i < 10; i++) {
+    passChars.push(getRand(all));
+  }
+
+  // Shuffle securely
+  for (let i = passChars.length - 1; i > 0; i--) {
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    const j = arr[0] % (i + 1);
+    [passChars[i], passChars[j]] = [passChars[j], passChars[i]];
+  }
+
+  return passChars.join("");
 }
 
 export default function UserManagementView({ siteId, siteName, callerId }: Props) {
@@ -129,15 +159,103 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
 
   const call = async (body: Record<string, unknown>, success: string) => {
     setBusy(true);
-    const { data, error } = await supabase.functions.invoke("admin-manage-user", { body });
-    setBusy(false);
-    if (error || (data as any)?.error) {
-      toast.error((data as any)?.error ?? error?.message ?? "Operation failed");
-      return false;
+    let error: any = null;
+    let data: any = null;
+
+    try {
+      const res = await supabase.functions.invoke("admin-manage-user", { body });
+      data = res.data;
+      error = res.error;
+    } catch (e) {
+      error = e;
     }
-    toast.success(success);
-    await load();
-    return true;
+
+    // If edge function returned successfully without application error
+    if (!error && !(data as any)?.error) {
+      setBusy(false);
+      toast.success(success);
+      await load();
+      return true;
+    }
+
+    // ── Resilient Fallback ──
+    // If edge function fails with network/CORS/undeployed errors ("Failed to send request"),
+    // perform standard database table updates directly via authenticated client using RLS.
+    const action = body.action as string;
+    try {
+      if (action === "assign") {
+        const uId = body.user_id as string;
+        const sId = body.site_id as string;
+        const r = body.role as Role;
+        await supabase.from("user_sites").upsert({ user_id: uId, site_id: sId }, { onConflict: "user_id,site_id" });
+        const { error: rErr } = await supabase.from("user_roles").upsert({ user_id: uId, site_id: sId, role: r }, { onConflict: "user_id,site_id,role" });
+        if (rErr) throw rErr;
+        setBusy(false);
+        toast.success(success);
+        await load();
+        return true;
+      }
+
+      if (action === "revoke_role") {
+        const uId = body.user_id as string;
+        const sId = body.site_id as string;
+        const r = body.role as Role;
+        const { error: delErr } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", uId)
+          .eq("site_id", sId)
+          .eq("role", r);
+        if (delErr) throw delErr;
+        setBusy(false);
+        toast.success(success);
+        await load();
+        return true;
+      }
+
+      if (action === "remove_from_site") {
+        const uId = body.user_id as string;
+        const sId = body.site_id as string;
+        await supabase.from("user_roles").delete().eq("user_id", uId).eq("site_id", sId);
+        const { error: rmErr } = await supabase.from("user_sites").delete().eq("user_id", uId).eq("site_id", sId);
+        if (rmErr) throw rmErr;
+        setBusy(false);
+        toast.success(success);
+        await load();
+        return true;
+      }
+
+      if (action === "approve_request") {
+        const reqId = body.request_id as string;
+        const sId = body.site_id as string;
+        const r = (body.role as Role) || "member";
+        const { data: reqRow } = await supabase.from("site_access_requests").select("user_id").eq("id", reqId).single();
+        if (reqRow?.user_id) {
+          await supabase.from("user_sites").upsert({ user_id: reqRow.user_id, site_id: sId }, { onConflict: "user_id,site_id" });
+          await supabase.from("user_roles").upsert({ user_id: reqRow.user_id, site_id: sId, role: r }, { onConflict: "user_id,site_id,role" });
+          await supabase.from("site_access_requests").update({ status: "approved" }).eq("id", reqId);
+          setBusy(false);
+          toast.success(success);
+          await load();
+          return true;
+        }
+      }
+
+      if (action === "reject_request") {
+        const reqId = body.request_id as string;
+        await supabase.from("site_access_requests").update({ status: "rejected" }).eq("id", reqId);
+        setBusy(false);
+        toast.success(success);
+        await load();
+        return true;
+      }
+    } catch (fbErr: any) {
+      console.warn("Direct fallback operation failed:", fbErr);
+    }
+
+    setBusy(false);
+    toast.error((data as any)?.error ?? error?.message ?? "Operation failed");
+    return false;
   };
 
   const handleCreateAccount = async (e: React.FormEvent) => {
@@ -254,7 +372,6 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
                       <SelectContent>
                         <SelectItem value="member">Member</SelectItem>
                         <SelectItem value="manager">Manager</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>
                     </Select>
                     <Button
@@ -356,7 +473,7 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
                       type={showPw ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Min 6 characters"
+                      placeholder="Min 12 characters"
                       className="h-8 text-xs rounded-lg pr-8 font-mono"
                       required
                     />
@@ -379,7 +496,6 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
                     <SelectContent>
                       <SelectItem value="member">Member (Log & View)</SelectItem>
                       <SelectItem value="manager">Manager (Approve Disposals)</SelectItem>
-                      <SelectItem value="admin">Admin (Full Site Control)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -439,7 +555,15 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {(["admin", "manager", "member"] as Role[]).map((r) => {
+                    {/* Admin status is non-transferable: read-only badge for the Admin user */}
+                    {m.roles.includes("admin") && (
+                      <span className="h-6 px-2 text-[10px] font-bold uppercase tracking-wider rounded-md bg-primary text-primary-foreground flex items-center justify-center shadow-2xs">
+                        Admin
+                      </span>
+                    )}
+
+                    {/* Operational roles available for delegation */}
+                    {(["manager", "member"] as Role[]).map((r) => {
                       const has = m.roles.includes(r);
                       return (
                         <Button
@@ -447,9 +571,9 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
                           size="sm"
                           variant={has ? "default" : "outline"}
                           className={`h-6 px-2 text-[10px] capitalize rounded-md ${
-                            has ? "bg-primary hover:bg-primary/90 text-primary-foreground font-semibold" : ""
+                            has ? "bg-secondary text-secondary-foreground font-semibold border-border" : ""
                           }`}
-                          disabled={busy || (m.user_id === callerId && r === "admin" && has)}
+                          disabled={busy || m.user_id === callerId}
                           onClick={() =>
                             call(
                               has

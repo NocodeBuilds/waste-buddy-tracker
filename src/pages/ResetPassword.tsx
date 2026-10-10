@@ -17,9 +17,18 @@ export default function ResetPassword() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Only allow access if this is a genuine password recovery flow
-    const { data: sub } = supabase.auth.onAuthStateChange((evt: string) => {
-      setReady(evt === "PASSWORD_RECOVERY");
+    // Check if recovery session is already established or delivered via URL hash
+    supabase.auth.getSession().then(({ data }: any) => {
+      if (data?.session) {
+        setReady(true);
+      }
+    });
+
+    // Also listen for PASSWORD_RECOVERY or SIGNED_IN event from magic link
+    const { data: sub } = supabase.auth.onAuthStateChange((evt: string, session: any) => {
+      if (evt === "PASSWORD_RECOVERY" || (evt === "SIGNED_IN" && session)) {
+        setReady(true);
+      }
     });
 
     return () => sub.subscription.unsubscribe();

@@ -21,8 +21,13 @@ const getSafeRedirect = (path: string) => {
   return `${ALLOWED_REDIRECT_ORIGINS[0]}${path}`;
 };
 
-const schema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+const loginSchema = z.object({
+  email: z.string().trim().email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+const bootstrapSchema = z.object({
+  email: z.string().trim().email("Please enter a valid email address"),
   password: z.string().min(12, "Password must be at least 12 characters")
     .max(72, "Password must be at most 72 characters")
     .regex(/[A-Z]/, "Include at least one uppercase letter")
@@ -60,7 +65,7 @@ export default function AdminAuth() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = schema.safeParse({ email, password });
+    const parsed = loginSchema.safeParse({ email, password });
     if (!parsed.success) return toast.error(parsed.error.errors[0].message);
     setSubmitting(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -72,7 +77,7 @@ export default function AdminAuth() {
 
   const handleBootstrap = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = schema.safeParse({ email, password });
+    const parsed = bootstrapSchema.safeParse({ email, password });
     if (!parsed.success) return toast.error(parsed.error.errors[0].message);
     setSubmitting(true);
 

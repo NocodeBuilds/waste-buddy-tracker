@@ -226,18 +226,32 @@ const Index = () => {
               {activeTab === "home" && (
                 <FuturisticDashboard
                   entries={entries}
+                  batches={batches}
                   onLogWaste={() => setDrawerOpen(true)}
+                  onNavigateToInventory={() => handleTabChange("inventory")}
                 />
               )}
               {activeTab === "inventory" && (
                 <WasteInventoryTable
                   entries={entries}
                   batches={batches}
-                  onDelete={(id) => deleteEntry.mutateAsync({ id, siteId: currentSite?.id ?? "" })}
+                  onDelete={(id) => {
+                    const entry = entries.find((e) => e.id === id);
+                    const sId = entry?.site_id || currentSite?.id || "";
+                    return deleteEntry.mutateAsync({ id, siteId: sId });
+                  }}
                   onEdit={(e) => setEditEntry(e)}
-                  onCreateDisposal={(p) => createDisposalBatch.mutateAsync({ ...p, siteId: currentSite?.id ?? "" })}
-                  onApproveDisposal={(id) => approveDisposalBatch.mutateAsync({ batchId: id, action: "approve", siteId: currentSite?.id ?? "" })}
-                  onRejectDisposal={(id, reason) => approveDisposalBatch.mutateAsync({ batchId: id, action: "reject", reason, siteId: currentSite?.id ?? "" })}
+                  onCreateDisposal={(p) => createDisposalBatch.mutateAsync({ ...p, siteId: (p as any).siteId || currentSite?.id || "" })}
+                  onApproveDisposal={(id) => {
+                    const batch = batches.find((b) => b.id === id);
+                    const sId = batch?.site_id || currentSite?.id || "";
+                    return approveDisposalBatch.mutateAsync({ batchId: id, action: "approve", siteId: sId });
+                  }}
+                  onRejectDisposal={(id, reason) => {
+                    const batch = batches.find((b) => b.id === id);
+                    const sId = batch?.site_id || currentSite?.id || "";
+                    return approveDisposalBatch.mutateAsync({ batchId: id, action: "reject", reason, siteId: sId });
+                  }}
                 />
               )}
               {activeTab === "analytics" && (

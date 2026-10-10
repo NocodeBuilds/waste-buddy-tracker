@@ -65,6 +65,7 @@ import {
   Wrench,
   Camera,
   SlidersHorizontal,
+  Building2,
 } from "lucide-react";
 import {
   exportInventoryToExcel,
@@ -209,7 +210,9 @@ export default function WasteInventoryTable({
   onApproveDisposal,
   onRejectDisposal,
 }: Props) {
-  const { isManagerOrAdmin, currentSite } = useSite();
+  const { isManagerOrAdmin, currentSite, sites, isAllSitesMode } = useSite();
+  const [selectedFacilityId, setSelectedFacilityId] = useState<string>("all");
+  const siteMap = useMemo(() => new Map(sites.map((s) => [s.id, s])), [sites]);
   const [activeView, setActiveView] = useState<"records" | "summary" | "disposals">("summary");
   const [filter, setFilter] = useState<"all" | "active" | "overdue" | "disposed">("active");
   const [searchQuery, setSearchQuery] = useState("");
@@ -252,8 +255,22 @@ export default function WasteInventoryTable({
 
   const periodFiltered = useMemo(() => filterByPeriod(entries, period), [entries, period]);
 
-  const allActiveEntries = entries.filter((e) => !isDisposed(e));
-  const activeEntries = periodFiltered.filter((e) => !isDisposed(e));
+  const allActiveEntries = useMemo(() => {
+    let list = entries.filter((e) => !isDisposed(e));
+    if (isAllSitesMode && selectedFacilityId !== "all") {
+      list = list.filter((e) => e.site_id === selectedFacilityId);
+    }
+    return list;
+  }, [entries, isAllSitesMode, selectedFacilityId]);
+
+  const activeEntries = useMemo(() => {
+    let list = periodFiltered.filter((e) => !isDisposed(e));
+    if (isAllSitesMode && selectedFacilityId !== "all") {
+      list = list.filter((e) => e.site_id === selectedFacilityId);
+    }
+    return list;
+  }, [periodFiltered, isAllSitesMode, selectedFacilityId]);
+
   const { data: photoCounts = {} } = useEntryPhotoCounts(entries.map((e) => e.id));
 
   const getWasteName = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.name || id;
@@ -261,6 +278,9 @@ export default function WasteInventoryTable({
   const filtered = useMemo(() => {
     return periodFiltered
       .filter((e) => {
+        if (isAllSitesMode && selectedFacilityId !== "all" && e.site_id !== selectedFacilityId) {
+          return false;
+        }
         if (filter === "active" && isDisposed(e)) return false;
         if (filter === "disposed" && !isDisposed(e)) return false;
         if (filter === "overdue" && !isEntryOverdue(e)) {
@@ -315,7 +335,7 @@ export default function WasteInventoryTable({
             return dir * (new Date(a.generated_date).getTime() - new Date(b.generated_date).getTime());
         }
       });
-  }, [periodFiltered, filter, searchQuery, sortColumn, sortDir]);
+  }, [periodFiltered, filter, searchQuery, sortColumn, sortDir, isAllSitesMode, selectedFacilityId]);
 
   const handleSort = (col: string) => {
     if (sortColumn === col) {
@@ -919,6 +939,24 @@ export default function WasteInventoryTable({
 
             {/* Quick Status Chips */}
             <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
+              {isAllSitesMode && (
+                <div className="flex items-center gap-1 py-0.5 px-2 bg-card border border-border/80 rounded-full text-xs shadow-2xs shrink-0 mr-1">
+                  <Building2 className="h-3 w-3 text-primary shrink-0" />
+                  <Select value={selectedFacilityId} onValueChange={setSelectedFacilityId}>
+                    <SelectTrigger className="h-6 text-[11px] border-none bg-transparent shadow-none p-0 pr-1 font-semibold focus:ring-0">
+                      <SelectValue placeholder="Facility" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Facilities ({sites.length})</SelectItem>
+                      {sites.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => setFilter("active")}
@@ -1104,6 +1142,11 @@ export default function WasteInventoryTable({
             >
               <TableHeader className="sticky top-0 z-20 bg-card border-b border-border/80 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
                   <TableRow className="hover:bg-transparent border-none">
+                    {isAllSitesMode && (
+                      <TableHead className="w-[125px] min-w-[115px] h-10 px-3 text-left">
+                        <HeaderStaticCell label="Facility" align="left" />
+                      </TableHead>
+                    )}
                     <TableHead className="w-[110px] min-w-[100px] h-10 px-3 text-center">
                       <HeaderSortButton
                         col="location"
@@ -1203,7 +1246,7 @@ export default function WasteInventoryTable({
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={isManagerOrAdmin ? 10 : 9} className="text-center py-10">
+                      <TableCell colSpan={(isManagerOrAdmin ? 10 : 9) + (isAllSitesMode ? 1 : 0)} className="text-center py-10">
                         <EmptyState
                           icon={Package}
                           title="No Waste Entries Found"
@@ -1225,6 +1268,15 @@ export default function WasteInventoryTable({
                             status === "overdue" && !isDisp && "bg-rose-500/[0.04] dark:bg-rose-500/[0.08]"
                           )}
                         >
+                          {/* Facility column for multi-site coordinator view */}
+                          {isAllSitesMode && (
+                            <TableCell className="px-3 py-2.5 sm:py-3 whitespace-nowrap">
+                              <Badge variant="outline" className="text-[10px] font-medium bg-card max-w-[120px] truncate block">
+                                {siteMap.get(entry.site_id)?.name ?? "Facility"}
+                              </Badge>
+                            </TableCell>
+                          )}
+
                           {/* Location - Centered */}
                           <TableCell className="text-center font-mono font-bold text-xs px-3 py-2.5 sm:py-3 text-foreground whitespace-nowrap">
                             {entry.location ?? "—"}

@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Building2, ChevronDown, Plus, Loader2, Check } from "lucide-react";
+import { Building2, ChevronDown, Plus, Loader2, Check, Globe } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ALL_SITES_OBJECT } from "@/contexts/SiteContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +26,7 @@ import { cn } from "@/lib/utils";
 interface AllSite { id: string; name: string; location: string | null }
 
 export default function SiteSwitcher() {
-  const { sites, currentSite, setCurrentSite } = useSite();
+  const { sites, currentSite, setCurrentSite, isAllSitesMode } = useSite();
   const { user } = useAuth();
   const [reqOpen, setReqOpen] = useState(false);
   const [allSites, setAllSites] = useState<AllSite[]>([]);
@@ -75,19 +77,55 @@ export default function SiteSwitcher() {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex items-center gap-1.5 text-xs text-foreground font-medium bg-card hover:bg-muted/70 border border-border/80 rounded-lg h-9 px-2.5 transition-all shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20">
-          <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
-          <span className="font-semibold truncate max-w-[130px]">{currentSite?.name ?? "Select site"}</span>
+        <DropdownMenuTrigger className={cn(
+          "flex items-center gap-1.5 text-xs font-medium border rounded-lg h-9 px-2.5 transition-all shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20",
+          isAllSitesMode
+            ? "bg-primary/10 border-primary/40 text-primary font-semibold hover:bg-primary/15"
+            : "bg-card hover:bg-muted/70 border-border/80 text-foreground"
+        )}>
+          {isAllSitesMode ? (
+            <Globe className="h-3.5 w-3.5 text-primary shrink-0 animate-pulse" />
+          ) : (
+            <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
+          )}
+          <span className="font-semibold truncate max-w-[135px]">
+            {isAllSitesMode ? "All Facilities (Regional)" : (currentSite?.name ?? "Select site")}
+          </span>
           <ChevronDown className="h-3 w-3 text-muted-foreground ml-0.5 shrink-0" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-60 rounded-xl p-1 shadow-lg border-border/80">
+        <DropdownMenuContent align="end" className="w-64 rounded-xl p-1 shadow-lg border-border/80">
+          {sites.length > 1 && (
+            <>
+              <DropdownMenuLabel className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1.5 flex items-center justify-between">
+                <span>Regional Oversight</span>
+                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 font-mono">
+                  {sites.length} sites
+                </Badge>
+              </DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => setCurrentSite(ALL_SITES_OBJECT)}
+                className={cn(
+                  "flex items-center gap-2 px-2.5 py-2 cursor-pointer rounded-lg text-xs transition-colors mb-1",
+                  isAllSitesMode ? "bg-primary/10 text-primary font-semibold" : "text-foreground hover:bg-muted/60"
+                )}
+              >
+                <Globe className={cn("h-4 w-4 shrink-0", isAllSitesMode ? "text-primary" : "text-muted-foreground")} />
+                <div className="flex-1 min-w-0">
+                  <p className="truncate font-semibold">All Facilities (Cumulative)</p>
+                  <p className="text-[10px] text-muted-foreground truncate">Consolidated regional dashboard</p>
+                </div>
+                {isAllSitesMode && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
+
           <DropdownMenuLabel className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1.5">
-            Your Facilities
+            Individual Facilities
           </DropdownMenuLabel>
-          <DropdownMenuSeparator />
           <div className="space-y-0.5">
             {sites.map((s) => {
-              const isSelected = currentSite?.id === s.id;
+              const isSelected = !isAllSitesMode && currentSite?.id === s.id;
               return (
                 <DropdownMenuItem
                   key={s.id}

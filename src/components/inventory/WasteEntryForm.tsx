@@ -22,11 +22,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
-import { Plus, Loader2, Camera, X, Calendar as CalendarIcon, Trash2, CheckCircle2 } from "lucide-react";
+import { Plus, Loader2, Camera, X, Calendar as CalendarIcon, Trash2, CheckCircle2, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { WASTE_TYPES, WasteCategory, ActivityType, unitLabel, getLocalDate, formatDateDDMMYYYY } from "@/lib/wasteTypes";
 import { useSiteLocations } from "@/hooks/useSiteLocations";
+import { useSite } from "@/contexts/SiteContext";
 import { Badge } from "@/components/ui/badge";
 
 // ── Types ────────────────────────────────────────────────────
@@ -47,6 +48,7 @@ interface NewEntry {
   location?: string;
   notes?: string;
   photos?: File[];
+  siteId?: string;
 }
 
 interface Props {
@@ -184,6 +186,12 @@ function LineRow({ data, onChange, onRemove, canRemove }: LineRowProps) {
 
 // ── Main Form ────────────────────────────────────────────────
 export default function WasteEntryForm({ onAdd, onClose }: Props) {
+  const { sites, currentSite, isAllSitesMode } = useSite();
+  const [targetSiteId, setTargetSiteId] = useState<string>(() => {
+    if (currentSite && currentSite.id !== "ALL_SITES") return currentSite.id;
+    return sites[0]?.id || "";
+  });
+
   const { data: locations = [], isLoading: locLoading } = useSiteLocations();
 
   const [generatedDate, setGeneratedDate] = useState(getLocalDate());
@@ -236,6 +244,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
   }, []);
 
   const validationError = useMemo(() => {
+    if (isAllSitesMode && !targetSiteId) return "Please choose a facility to log waste";
     if (!effectiveLocation) return "Please select or enter a location";
     for (const line of lines) {
       if (!line.waste_type_id) return "Select a waste type for each line";
@@ -243,7 +252,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
       if (!line.weight_kg || w <= 0) return "Enter a valid weight for each line";
     }
     return null;
-  }, [effectiveLocation, lines]);
+  }, [isAllSitesMode, targetSiteId, effectiveLocation, lines]);
 
   // Build entries and show confirmation dialog
   const handleReview = (e: React.FormEvent) => {
@@ -266,6 +275,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
         location: effectiveLocation,
         notes: notes || undefined,
         photos: photos.length > 0 ? [...photos] : undefined,
+        siteId: isAllSitesMode ? targetSiteId : currentSite?.id,
       };
     });
 
@@ -330,6 +340,30 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
 
   return (
     <form onSubmit={handleReview} className="waste-form space-y-3">
+      {isAllSitesMode && (
+        <div className="space-y-1.5 p-2.5 bg-muted/40 border border-border/80 rounded-xl">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
+              <Building2 className="h-3.5 w-3.5 text-primary" />
+              <span>Target Facility / Site</span>
+            </Label>
+            <span className="text-[10px] text-muted-foreground font-mono">Select target site</span>
+          </div>
+          <Select value={targetSiteId} onValueChange={setTargetSiteId}>
+            <SelectTrigger className="h-9 text-xs bg-card rounded-lg">
+              <SelectValue placeholder="Choose facility..." />
+            </SelectTrigger>
+            <SelectContent>
+              {sites.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name} {s.location ? `— ${s.location}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {/* ── Shared row: Date | Location | Activity ── */}
       <div className="grid grid-cols-3 gap-2">
         <div className="space-y-1">

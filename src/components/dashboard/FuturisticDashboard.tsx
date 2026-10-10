@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { WasteEntry, fmtNum, WASTE_TYPES, formatDateDDMMYYYY, getMeasureUnit } from "@/lib/wasteTypes";
+import { WasteEntry, DisposalBatch, fmtNum, WASTE_TYPES, formatDateDDMMYYYY, getMeasureUnit } from "@/lib/wasteTypes";
 import DashboardStats from "./DashboardStats";
+import RegionalCoordinatorDashboard from "./RegionalCoordinatorDashboard";
+import { useSite } from "@/contexts/SiteContext";
 import { format } from "date-fns";
 import { Clock, Inbox, ShieldAlert, Leaf, Droplets, Trash2, Battery, Recycle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -9,10 +11,29 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   entries: WasteEntry[];
+  batches?: DisposalBatch[];
   onLogWaste?: () => void;
+  onNavigateToInventory?: () => void;
 }
 
-export default function FuturisticDashboard({ entries, onLogWaste }: Props) {
+export default function FuturisticDashboard({
+  entries,
+  batches = [],
+  onLogWaste,
+  onNavigateToInventory,
+}: Props) {
+  const { isAllSitesMode } = useSite();
+
+  if (isAllSitesMode) {
+    return (
+      <RegionalCoordinatorDashboard
+        entries={entries}
+        batches={batches}
+        onLogWaste={onLogWaste}
+        onNavigateToInventory={onNavigateToInventory}
+      />
+    );
+  }
   // Latest 5 entries irrespective of date/week, sorted newest first
   const recentEntries = useMemo(() => {
     return [...entries]

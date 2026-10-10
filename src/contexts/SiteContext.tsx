@@ -3,11 +3,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
 import { Site, Role } from "@/types";
 
+export const ALL_SITES_ID = "ALL_SITES";
+export const ALL_SITES_OBJECT: Site = {
+  id: ALL_SITES_ID,
+  name: "All Facilities (Regional)",
+  location: "Multi-Site Regional View",
+};
+
 interface SiteContextValue {
   sites: Site[];
   currentSite: Site | null;
   setCurrentSite: (site: Site) => void;
-  roles: Role[]; // roles for the current site
+  isAllSitesMode: boolean;
+  roles: Role[]; // roles for the current site or across all sites
   isAdmin: boolean;
   isManagerOrAdmin: boolean;
   loading: boolean;
@@ -23,6 +31,8 @@ export function SiteProvider({ children }: { children: ReactNode }) {
   const [currentSite, setCurrentSiteState] = useState<Site | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const isAllSitesMode = currentSite?.id === ALL_SITES_ID;
 
   const loadSites = useCallback(async () => {
     if (!user) {
@@ -43,7 +53,12 @@ export function SiteProvider({ children }: { children: ReactNode }) {
 
     // Restore preferred site
     const stored = localStorage.getItem(STORAGE_KEY);
-    const restored = siteList.find((s) => s.id === stored) ?? siteList[0] ?? null;
+    let restored: Site | null = null;
+    if (stored === ALL_SITES_ID && siteList.length > 1) {
+      restored = ALL_SITES_OBJECT;
+    } else {
+      restored = siteList.find((s) => s.id === stored) ?? siteList[0] ?? null;
+    }
     setCurrentSiteState(restored);
     setLoading(false);
   }, [user]);
@@ -52,21 +67,51 @@ export function SiteProvider({ children }: { children: ReactNode }) {
     loadSites();
   }, [loadSites]);
 
-  // Load roles for the current site
+  // Load roles for the current site (or all sites if in multi-site mode)
   useEffect(() => {
-    if (!user || !currentSite) {
+    if (!user) {
       setRoles([]);
       return;
     }
-    supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("site_id", currentSite.id)
-      .then(({ data }: any) => {
-        setRoles((data ?? []).map((r: any) => r.role as Role));
-      });
-  }, [user, currentSite]);
+
+    // Try reading cached roles first to provide instant responsiveness
+    const cacheKey = `wb_roles_${user.id}_${isAllSitesMode ? "all" : currentSite?.id ?? ""}`;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        setRoles(JSON.parse(cached));
+      }
+    } catch {}
+
+    if (isAllSitesMode) {
+      const siteIds = sites.map((s) => s.id);
+      if (siteIds.length === 0) {
+        setRoles([]);
+        return;
+      }
+      supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .in("site_id", siteIds)
+        .then(({ data }: any) => {
+          const loadedRoles = (data ?? []).map((r: any) => r.role as Role);
+          setRoles(loadedRoles);
+          try { sessionStorage.setItem(cacheKey, JSON.stringify(loadedRoles)); } catch {}
+        });
+    } else if (currentSite) {
+      supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("site_id", currentSite.id)
+        .then(({ data }: any) => {
+          const loadedRoles = (data ?? []).map((r: any) => r.role as Role);
+          setRoles(loadedRoles);
+          try { sessionStorage.setItem(cacheKey, JSON.stringify(loadedRoles)); } catch {}
+        });
+    }
+  }, [user, currentSite, isAllSitesMode, sites]);
 
   const setCurrentSite = (site: Site) => {
     setCurrentSiteState(site);
@@ -82,6 +127,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
         sites,
         currentSite,
         setCurrentSite,
+        isAllSitesMode,
         roles,
         isAdmin,
         isManagerOrAdmin,
