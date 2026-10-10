@@ -43,6 +43,8 @@ export function useEntryPhotoCounts(entryIds: string[]) {
   return useQuery({
     queryKey: ["waste_entry_photo_counts", entryIds],
     enabled: entryIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     queryFn: async (): Promise<Record<string, number>> => {
       const { data, error } = await supabase
         .from("waste_entry_photos")

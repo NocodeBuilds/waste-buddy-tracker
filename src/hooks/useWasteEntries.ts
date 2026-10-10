@@ -1,8 +1,8 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { WasteEntry, DisposalBatch } from "@/lib/wasteTypes";
-import { useSite } from "@/contexts/SiteContext";
+import { useSite, ALL_SITES_ID } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { compressImages } from "@/lib/imageCompress";
 import { toast } from "sonner";
@@ -27,6 +27,7 @@ type NewEntryInput = {
   location?: string | null;
   notes?: string | null;
   photos?: File[];
+  siteId?: string;
 };
 
 type UpdateEntryInput = {
@@ -40,10 +41,15 @@ type CreateDisposalInput = { disposed_date: string; notes?: string; siteId: stri
 type ApproveDisposalInput = { batchId: string; siteId: string; action: "approve" | "reject"; reason?: string };
 
 export function useWasteEntries() {
-  const { currentSite } = useSite();
+  const { currentSite, sites, isAllSitesMode } = useSite();
   const { user } = useAuth();
   const qc = useQueryClient();
   const siteId = currentSite?.id;
+
+  const siteIds = useMemo(
+    () => (isAllSitesMode ? sites.map((s) => s.id) : siteId && siteId !== ALL_SITES_ID ? [siteId] : []),
+    [isAllSitesMode, sites, siteId]
+  );
 
   // Refs for current site/user so mutations always see the latest values
   const siteIdRef = useRef(siteId);
@@ -61,9 +67,30 @@ export function useWasteEntries() {
   }, [qc]);
 
   const entriesQuery = useQuery({
-    queryKey: ["waste_entries", siteId],
-    enabled: !!siteId,
+    queryKey: isAllSitesMode ? ["waste_entries", "all", siteIds.slice().sort().join(",")] : ["waste_entries", siteId],
+    enabled: isAllSitesMode ? siteIds.length > 0 : !!siteId,
+    placeholderData: (prev) => prev,
+    staleTime: 60 * 1000, // 1 min freshness window
+    initialData: () => {
+      if (typeof window === "undefined" || isAllSitesMode || !siteId) return undefined;
+      const cached = localStorage.getItem(`wastebuddy_entries_${siteId}`);
+      if (cached) {
+        try { return JSON.parse(cached) as WasteEntry[]; } catch {}
+      }
+      return undefined;
+    },
     queryFn: async (): Promise<WasteEntry[]> => {
+      if (isAllSitesMode) {
+        if (siteIds.length === 0) return [];
+        const { data, error } = await supabase
+          .from("waste_entries")
+          .select("*")
+          .in("site_id", siteIds)
+          .order("generated_date", { ascending: false });
+        if (error) throw new Error(error.message);
+        return (data ?? []) as WasteEntry[];
+      }
+
       const cacheKey = `wastebuddy_entries_${siteId}`;
       try {
         const { data, error } = await supabase
@@ -130,9 +157,30 @@ export function useWasteEntries() {
   });
 
   const batchesQuery = useQuery({
-    queryKey: ["disposal_batches", siteId],
-    enabled: !!siteId,
+    queryKey: isAllSitesMode ? ["disposal_batches", "all", siteIds.slice().sort().join(",")] : ["disposal_batches", siteId],
+    enabled: isAllSitesMode ? siteIds.length > 0 : !!siteId,
+    placeholderData: (prev) => prev,
+    staleTime: 60 * 1000,
+    initialData: () => {
+      if (typeof window === "undefined" || isAllSitesMode || !siteId) return undefined;
+      const cached = localStorage.getItem(`wastebuddy_batches_${siteId}`);
+      if (cached) {
+        try { return JSON.parse(cached) as DisposalBatchWithStatus[]; } catch {}
+      }
+      return undefined;
+    },
     queryFn: async (): Promise<DisposalBatchWithStatus[]> => {
+      if (isAllSitesMode) {
+        if (siteIds.length === 0) return [];
+        const { data, error } = await supabase
+          .from("disposal_batches")
+          .select("*")
+          .in("site_id", siteIds)
+          .order("disposed_date", { ascending: false });
+        if (error) throw new Error(error.message);
+        return (data ?? []) as DisposalBatchWithStatus[];
+      }
+
       const cacheKey = `wastebuddy_batches_${siteId}`;
       try {
         const { data, error } = await supabase
@@ -162,10 +210,10 @@ export function useWasteEntries() {
     },
   });
 
-  // Helper: invalidate caches for a specific site (uses passed siteId, not closure)
-  const invalidateSite = (targetSiteId: string) => {
-    qc.invalidateQueries({ queryKey: ["waste_entries", targetSiteId] });
-    qc.invalidateQueries({ queryKey: ["disposal_batches", targetSiteId] });
+  // Helper: invalidate caches for a specific site or all sites
+  const invalidateSite = (_targetSiteId?: string) => {
+    qc.invalidateQueries({ queryKey: ["waste_entries"] });
+    qc.invalidateQueries({ queryKey: ["disposal_batches"] });
     qc.invalidateQueries({ queryKey: ["waste_entry_photos"] });
     qc.invalidateQueries({ queryKey: ["waste_entry_photo_counts"] });
   };
@@ -182,9 +230,10 @@ export function useWasteEntries() {
       // C1 fix: read siteId/user from refs (latest values)
       const currentSiteId = siteIdRef.current;
       const currentUser = userRef.current;
-      if (!currentSiteId || !currentUser) throw new Error("No site/user");
+      const targetSiteId = entry.siteId || (currentSiteId && currentSiteId !== ALL_SITES_ID ? currentSiteId : undefined);
+      if (!targetSiteId || !currentUser) throw new Error("Please select a specific facility to log waste.");
 
-      const { photos, ...entryFields } = entry;
+      const { photos, siteId: _optSiteId, ...entryFields } = entry;
       const uploadedPaths: string[] = [];
 
       // Offline check: store in local offline queue
@@ -199,15 +248,15 @@ export function useWasteEntries() {
           location: entryFields.location,
           notes: entryFields.notes,
         };
-        const pending = await createPendingEntry(currentSiteId, currentUser.id, entryData);
+        const pending = await createPendingEntry(targetSiteId, currentUser.id, entryData);
         if (pending) {
           saveToPendingQueue(pending);
         }
         const tempId = pending?.tempId ?? `offline_${Date.now()}`;
-        qc.setQueryData<WasteEntry[]>(["waste_entries", currentSiteId], (prev = []) => [
+        qc.setQueryData<WasteEntry[]>(["waste_entries", targetSiteId], (prev = []) => [
           {
             id: tempId,
-            site_id: currentSiteId,
+            site_id: targetSiteId,
             waste_type_id: entryFields.waste_type_id,
             waste_category: entryFields.waste_category,
             weight_kg: entryFields.weight_kg,
@@ -232,7 +281,7 @@ export function useWasteEntries() {
           .insert({
             ...entryFields,
             quantity: entryFields.weight_kg,
-            site_id: currentSiteId,
+            site_id: targetSiteId,
             created_by: currentUser.id,
           })
           .select("id")
@@ -256,7 +305,7 @@ export function useWasteEntries() {
             const id = (typeof crypto !== "undefined" && crypto.randomUUID)
               ? crypto.randomUUID()
               : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-            const path = `${currentSiteId}/${entryId}/${id}.${ext}`;
+            const path = `${targetSiteId}/${entryId}/${id}.${ext}`;
             uploadedPaths.push(path);
             const { error: upErr } = await supabase.storage
               .from("waste-photos")
@@ -264,7 +313,7 @@ export function useWasteEntries() {
             if (upErr) throw new Error(upErr.message);
             const { error: rowErr } = await supabase.from("waste_entry_photos").insert({
               waste_entry_id: entryId,
-              site_id: currentSiteId,
+              site_id: targetSiteId,
               storage_path: path,
               uploaded_by: currentUser.id,
             });
@@ -285,15 +334,15 @@ export function useWasteEntries() {
             location: entryFields.location,
             notes: entryFields.notes,
           };
-          const pending = await createPendingEntry(currentSiteId, currentUser.id, entryData);
+          const pending = await createPendingEntry(targetSiteId, currentUser.id, entryData);
           if (pending) {
             saveToPendingQueue(pending);
           }
           const tempId = pending?.tempId ?? `offline_${Date.now()}`;
-          qc.setQueryData<WasteEntry[]>(["waste_entries", currentSiteId], (prev = []) => [
+          qc.setQueryData<WasteEntry[]>(["waste_entries", targetSiteId], (prev = []) => [
             {
               id: tempId,
-              site_id: currentSiteId,
+              site_id: targetSiteId,
               waste_type_id: entryFields.waste_type_id,
               waste_category: entryFields.waste_category,
               weight_kg: entryFields.weight_kg,
