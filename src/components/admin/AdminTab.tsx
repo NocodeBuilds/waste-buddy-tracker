@@ -7,6 +7,7 @@ import {
   FileText,
   History,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,8 +22,31 @@ interface AdminTabProps {
 }
 
 export default function AdminTab({ initialSubTab = "users" }: AdminTabProps) {
-  const { currentSite, sites, isAdmin, refresh } = useSite();
-  const { user } = useAuth();
+  const { currentSite, sites, isAdmin: siteIsAdmin, refresh } = useSite();
+  const { user, isAdmin: isAuthAdmin, loading: authLoading } = useAuth();
+  const isAdmin = siteIsAdmin || isAuthAdmin;
+
+  // Wait for auth session to load before deciding — isAdmin is derived from
+  // session metadata or site membership which is loading
+  if (authLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground space-y-2">
+        <Loader2 className="h-8 w-8 animate-spin opacity-50" />
+        <p className="text-sm">Verifying administrator access…</p>
+      </div>
+    );
+  }
+
+  // Defense-in-depth: deny non-admins even if parent render guard is bypassed
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground space-y-2">
+        <Shield className="h-10 w-10 opacity-40" />
+        <p className="text-sm font-medium">Unauthorized</p>
+        <p className="text-xs">You need admin privileges to access this area.</p>
+      </div>
+    );
+  }
   const [activeTab, setActiveTab] = useState<"users" | "sites" | "records" | "audit">(initialSubTab);
 
   useEffect(() => {

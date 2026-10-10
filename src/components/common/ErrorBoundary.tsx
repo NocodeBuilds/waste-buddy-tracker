@@ -34,14 +34,15 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
+      const isDev = typeof process !== "undefined" && process.env?.NODE_ENV !== "production";
       return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 text-center gap-3">
           <h1 className="text-2xl font-bold">Something went wrong</h1>
           <p className="text-sm text-muted-foreground max-w-md">
             The app hit an unexpected error. Try reloading — if it persists, let your admin know.
           </p>
-          {this.state.error && (
-            <pre className="text-xs text-muted-foreground bg-muted rounded-md p-3 max-w-md overflow-auto text-left">
+          {isDev && this.state.error && (
+            <pre className="text-xs text-red-400 bg-muted rounded-md p-3 max-w-md overflow-auto text-left">
               {this.state.error.message}
             </pre>
           )}

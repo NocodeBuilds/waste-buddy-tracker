@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { QueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useCallback } from "react";
 
+const QUEUE_KEY = "wastebuddy_offline_pending_entries";
+
 export interface PendingEntry {
   tempId: string;
   siteId: string;
@@ -19,8 +21,6 @@ export interface PendingEntry {
     notes?: string | null;
   };
 }
-
-const QUEUE_KEY = "wastebuddy_offline_pending_entries";
 
 export function getPendingQueue(): PendingEntry[] {
   if (typeof window === "undefined") return [];
@@ -60,6 +60,17 @@ export function clearPendingQueue() {
   } catch {}
 }
 
+export async function createPendingEntry(
+  siteId: string,
+  userId: string,
+  data: PendingEntry["data"]
+): Promise<PendingEntry> {
+  if (typeof window === "undefined") {
+    return { tempId: crypto.randomUUID(), siteId, userId, timestamp: Date.now(), data };
+  }
+  return { tempId: crypto.randomUUID(), siteId, userId, timestamp: Date.now(), data };
+}
+
 let isSyncing = false;
 
 export async function syncPendingEntries(queryClient?: QueryClient): Promise<number> {
@@ -70,9 +81,19 @@ export async function syncPendingEntries(queryClient?: QueryClient): Promise<num
   isSyncing = true;
   let syncedCount = 0;
   const sitesToInvalidate = new Set<string>();
+  const failed: string[] = [];
 
   try {
+    // Get current user to validate ownership
+    const { data: { user } } = await supabase.auth.getUser();
+
     for (const item of queue) {
+      // Security: reject entries from different users or with mismatched site
+      if (item.userId !== user?.id) {
+        failed.push(item.tempId);
+        continue;
+      }
+
       const { data, error } = await supabase
         .from("waste_entries")
         .insert({
@@ -88,6 +109,32 @@ export async function syncPendingEntries(queryClient?: QueryClient): Promise<num
         removeFromPendingQueue(item.tempId);
         syncedCount++;
         sitesToInvalidate.add(item.siteId);
+      } else {
+        failed.push(item.tempId);
+      }
+    }
+
+    // Retry failed items once after a short delay (transient network errors)
+    if (failed.length > 0 && syncedCount > 0) {
+      await new Promise((r) => setTimeout(r, 2000));
+      for (const tempId of failed) {
+        const retryItem = queue.find((q) => q.tempId === tempId);
+        if (!retryItem) continue;
+        const { data, error } = await supabase
+          .from("waste_entries")
+          .insert({
+            ...retryItem.data,
+            quantity: retryItem.data.weight_kg,
+            site_id: retryItem.siteId,
+            created_by: retryItem.userId,
+          })
+          .select("id")
+          .single();
+        if (!error && data?.id) {
+          removeFromPendingQueue(tempId);
+          syncedCount++;
+          sitesToInvalidate.add(retryItem.siteId);
+        }
       }
     }
 
@@ -130,7 +177,6 @@ export function useOnlineStatus() {
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
-    // Initial check and periodic refresh
     const interval = setInterval(refreshPending, 5000);
 
     return () => {

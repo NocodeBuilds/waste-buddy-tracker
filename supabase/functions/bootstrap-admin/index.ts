@@ -5,15 +5,20 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 const DEFAULT_REDIRECT = ALLOWED_ORIGINS[0] ?? "";
 
+if (ALLOWED_ORIGINS.length === 0) {
+  console.error("ALLOWED_ORIGINS env var is required. Set it to a comma-separated list of allowed origins.");
+}
+
 function buildCorsHeaders(reqOrigin: string | null): Record<string, string> {
   const headers: Record<string, string> = {
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
   };
-  if (ALLOWED_ORIGINS.length === 0 || (reqOrigin && ALLOWED_ORIGINS.includes(reqOrigin))) {
-    headers["Access-Control-Allow-Origin"] = reqOrigin ?? "*";
-    headers["Access-Control-Allow-Credentials"] = "true";
+  if (!reqOrigin || !ALLOWED_ORIGINS.includes(reqOrigin)) {
+    return headers;
   }
+  headers["Access-Control-Allow-Origin"] = reqOrigin;
+  headers["Access-Control-Allow-Credentials"] = "true";
   return headers;
 }
 
@@ -21,6 +26,22 @@ Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
   const cors = buildCorsHeaders(origin);
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+
+  // Reject requests when ALLOWED_ORIGINS is not configured
+  if (ALLOWED_ORIGINS.length === 0) {
+    return new Response(JSON.stringify({ error: "Server misconfigured: ALLOWED_ORIGINS not set" }), {
+      status: 500,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
+
+  // CORS preflight guard: block requests without a valid origin
+  if (!origin || !ALLOWED_ORIGINS.includes(origin)) {
+    return new Response(JSON.stringify({ error: "Origin not allowed" }), {
+      status: 403,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;

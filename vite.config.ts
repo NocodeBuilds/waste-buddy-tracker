@@ -9,7 +9,7 @@ export default defineConfig(() => ({
     port: 4173,
   },
   server: {
-    host: "::",
+    host: "localhost",
     port: 8080,
     hmr: {
       overlay: false,
@@ -51,10 +51,13 @@ export default defineConfig(() => ({
           },
           {
             urlPattern: ({ url }) => /supabase\.co\/storage\/v1\/object\/sign\//.test(url.href),
-            handler: "CacheFirst",
+            handler: "NetworkFirst",
             options: {
               cacheName: "signed-photos-v4",
               expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 7 },
+              // Never serve cached signed URLs after the network is back —
+              // stale tokens may still work but cache-first leaks credentials offline
+              networkTimeoutSeconds: 5,
             },
           },
         ],

@@ -6,6 +6,7 @@ import {
   getDaysStored, isDisposed, DisposalBatch,
   filterByPeriod, AnalyticsPeriod, formatDateDDMMYYYY,
 } from "./wasteTypes";
+import { stripFormulaPrefix } from "@/lib/utils";
 
 const wasteName = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.name ?? id;
 const wasteCat = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.category ?? "";
@@ -32,8 +33,8 @@ export function exportInventoryToExcel(
   const detail = inStorage.map((e, i) => ({
     "Sl. No.": i + 1,
     "Date Generated": formatDateDDMMYYYY(e.generated_date),
-    "Location": e.location ?? "—",
-    "Waste Description": wasteName(e.waste_type_id),
+    "Location": stripFormulaPrefix(e.location ?? "—"),
+    "Waste Description": stripFormulaPrefix(wasteName(e.waste_type_id)),
     "Physical Form": wasteCat(e.waste_type_id),
     "Category": e.waste_category === "hazardous" ? "Hazardous"
       : e.waste_category === "non_hazardous" ? "Non-Hazardous"
@@ -41,13 +42,14 @@ export function exportInventoryToExcel(
     "Weight": Number(e.weight_kg ?? 0),
     "Unit": wasteUnitLabel(e.waste_type_id),
     "Count (pcs)": e.piece_count ?? "",
-    "Source / Activity":
+    "Source / Activity": stripFormulaPrefix(
       e.activity_type === "preventive" ? "Preventive Maintenance"
       : e.activity_type === "breakdown" ? "Breakdown Maintenance"
       : e.activity_type === "5s" ? "5S Activity"
-      : "Others",
+      : "Others"
+    ),
     "Days in Storage": getDaysStored(e.generated_date),
-    "Notes": e.notes ?? "",
+    "Notes": stripFormulaPrefix(e.notes ?? ""),
   }));
 
   // By waste type (weight only)

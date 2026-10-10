@@ -6,7 +6,7 @@ import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { compressImages } from "@/lib/imageCompress";
 import { toast } from "sonner";
-import { saveToPendingQueue, getPendingQueue, syncPendingEntries } from "@/lib/offlineSync";
+import { saveToPendingQueue, getPendingQueue, syncPendingEntries, createPendingEntry } from "@/lib/offlineSync";
 
 // Extend DisposalBatch with status fields from DB
 interface DisposalBatchWithStatus extends DisposalBatch {
@@ -189,23 +189,21 @@ export function useWasteEntries() {
 
       // Offline check: store in local offline queue
       if (typeof navigator !== "undefined" && !navigator.onLine) {
-        const tempId = `offline_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-        saveToPendingQueue({
-          tempId,
-          siteId: currentSiteId,
-          userId: currentUser.id,
-          timestamp: Date.now(),
-          data: {
-            waste_type_id: entryFields.waste_type_id,
-            waste_category: entryFields.waste_category,
-            weight_kg: entryFields.weight_kg,
-            piece_count: entryFields.piece_count,
-            generated_date: entryFields.generated_date,
-            activity_type: entryFields.activity_type,
-            location: entryFields.location,
-            notes: entryFields.notes,
-          },
-        });
+        const entryData = {
+          waste_type_id: entryFields.waste_type_id,
+          waste_category: entryFields.waste_category,
+          weight_kg: entryFields.weight_kg,
+          piece_count: entryFields.piece_count,
+          generated_date: entryFields.generated_date,
+          activity_type: entryFields.activity_type,
+          location: entryFields.location,
+          notes: entryFields.notes,
+        };
+        const pending = await createPendingEntry(currentSiteId, currentUser.id, entryData);
+        if (pending) {
+          saveToPendingQueue(pending);
+        }
+        const tempId = pending?.tempId ?? `offline_${Date.now()}`;
         qc.setQueryData<WasteEntry[]>(["waste_entries", currentSiteId], (prev = []) => [
           {
             id: tempId,
@@ -277,23 +275,21 @@ export function useWasteEntries() {
       } catch (err) {
         // Fallback to offline queue if network fails
         if (typeof navigator !== "undefined" && !navigator.onLine) {
-          const tempId = `offline_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-          saveToPendingQueue({
-            tempId,
-            siteId: currentSiteId,
-            userId: currentUser.id,
-            timestamp: Date.now(),
-            data: {
-              waste_type_id: entryFields.waste_type_id,
-              waste_category: entryFields.waste_category,
-              weight_kg: entryFields.weight_kg,
-              piece_count: entryFields.piece_count,
-              generated_date: entryFields.generated_date,
-              activity_type: entryFields.activity_type,
-              location: entryFields.location,
-              notes: entryFields.notes,
-            },
-          });
+          const entryData = {
+            waste_type_id: entryFields.waste_type_id,
+            waste_category: entryFields.waste_category,
+            weight_kg: entryFields.weight_kg,
+            piece_count: entryFields.piece_count,
+            generated_date: entryFields.generated_date,
+            activity_type: entryFields.activity_type,
+            location: entryFields.location,
+            notes: entryFields.notes,
+          };
+          const pending = await createPendingEntry(currentSiteId, currentUser.id, entryData);
+          if (pending) {
+            saveToPendingQueue(pending);
+          }
+          const tempId = pending?.tempId ?? `offline_${Date.now()}`;
           qc.setQueryData<WasteEntry[]>(["waste_entries", currentSiteId], (prev = []) => [
             {
               id: tempId,

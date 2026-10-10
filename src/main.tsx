@@ -22,6 +22,29 @@ if (typeof window !== "undefined") {
   };
 }
 
+// Global error handlers — capture unhandled exceptions and promise rejections
+// for forensic debugging without leaking sensitive data to external services.
+if (typeof window !== "undefined") {
+  const logSecurityEvent = (type: string, detail: unknown) => {
+    console.error(`[${type}]`, detail);
+  };
+
+  window.addEventListener("error", (evt) => {
+    logSecurityEvent("GlobalError", {
+      message: evt.message,
+      source: evt.filename,
+      lineno: evt.lineno,
+      colno: evt.colno,
+    });
+  });
+
+  window.addEventListener("unhandledrejection", (evt) => {
+    const reason = evt.reason instanceof Error ? evt.reason.message : String(evt.reason);
+    logSecurityEvent("UnhandledRejection", { reason });
+    evt.preventDefault();
+  });
+}
+
 createRoot(document.getElementById("root")!).render(<App />);
 
 registerAppServiceWorker();

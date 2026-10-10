@@ -15,6 +15,7 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
       signInWithPassword: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
       signUp: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
       signOut: () => Promise.resolve({ error: null }),
+      resetPasswordForEmail: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
     },
     from: () => ({
@@ -23,13 +24,20 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
       update: () => ({ data: null, error: new Error('Supabase not configured') }),
       delete: () => ({ data: null, error: new Error('Supabase not configured') }),
       eq: () => ({ data: null, error: new Error('Supabase not configured') }),
+      or: () => ({ data: null, error: new Error('Supabase not configured') }),
       single: () => ({ data: null, error: new Error('Supabase not configured') }),
+      in: () => ({ data: null, error: new Error('Supabase not configured') }),
+      order: () => ({ data: null, error: new Error('Supabase not configured') }),
     }),
     storage: {
       from: () => ({
         upload: () => ({ data: null, error: new Error('Supabase not configured') }),
         list: () => ({ data: [], error: new Error('Supabase not configured') }),
+        remove: () => ({ data: null, error: new Error('Supabase not configured') }),
       }),
+    },
+    functions: {
+      invoke: () => ({ data: null, error: new Error('Supabase not configured') }),
     },
   } as any;
 } else {
@@ -43,6 +51,9 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
       autoRefreshToken: true,
     }
   });
+
+  // Augment with rpc() and other chain methods used across the codebase
+  (supabase as any).rpc = () => ({ data: null, error: new Error('Supabase not configured') });
 }
 
 export { supabase };
