@@ -434,7 +434,7 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
                 <span className="text-[10px] text-muted-foreground font-medium">Instant Active Login</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                 <div className="space-y-1">
                   <Label className="text-[11px] font-semibold">Full Name</Label>
                   <Input

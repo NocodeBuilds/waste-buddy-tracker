@@ -265,27 +265,66 @@ export default function RegionalCoordinatorDashboard({
   const atRiskSitesCount = siteStats.filter((s) => s.isAtRisk).length;
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
+    <div className="w-full space-y-4 lg:space-y-5">
       {/* ── Regional Coordinator Banner ── */}
       <div className="bg-gradient-to-r from-card via-card/90 to-primary/5 border border-border/80 rounded-2xl p-4 sm:p-5 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3">
             <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-primary shrink-0">
               <Globe className="h-5 w-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-base sm:text-lg font-bold text-foreground tracking-tight">
                   Regional Coordinator Dashboard
                 </h2>
                 <Badge variant="secondary" className="text-[10px] font-mono font-semibold">
                   {sites.length} Facilities Active
                 </Badge>
+                {atRiskSitesCount > 0 ? (
+                  <Badge variant="destructive" className="text-[10px] font-mono font-semibold">
+                    {atRiskSitesCount} At Risk
+                  </Badge>
+                ) : (
+                  <Badge variant="success" className="text-[10px] font-mono font-semibold">
+                    All Compliant
+                  </Badge>
+                )}
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Consolidated statutory compliance radar, inventory volume, and cross-site telemetry.
               </p>
             </div>
+          </div>
+
+          {/* Quick Telemetry & Actions on Desktop / Large Monitors */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 self-start lg:self-auto text-xs">
+            <div className="px-3 py-1.5 rounded-lg bg-background/80 border border-border/60 flex items-center gap-2 shadow-2xs">
+              <span className="text-[11px] text-muted-foreground uppercase font-semibold">Active Lots</span>
+              <span className="font-mono font-bold text-foreground">{activeEntries.length}</span>
+            </div>
+            <div className="px-3 py-1.5 rounded-lg bg-background/80 border border-border/60 flex items-center gap-2 shadow-2xs">
+              <span className="text-[11px] text-muted-foreground uppercase font-semibold">Pending Batches</span>
+              <span
+                className={cn(
+                  "font-mono font-bold",
+                  pendingBatchesCount > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
+                )}
+              >
+                {pendingBatchesCount}
+              </span>
+            </div>
+            {onNavigateToInventory && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onNavigateToInventory}
+                className="h-8 text-xs font-medium rounded-lg gap-1.5 bg-background/80 hover:bg-accent"
+              >
+                <span>Consolidated Inventory</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -574,13 +613,15 @@ export default function RegionalCoordinatorDashboard({
 
         {/* Scorecard Table View */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-left border-collapse text-xs min-w-[700px] lg:min-w-full">
             <thead className="bg-muted/40 text-[10px] uppercase font-semibold text-muted-foreground tracking-wider border-b border-border/60">
               <tr>
                 <th className="py-2.5 px-3.5">Facility Name</th>
                 <th className="py-2.5 px-3">Location</th>
                 <th className="py-2.5 px-3 text-right">Haz Solids</th>
+                <th className="hidden xl:table-cell py-2.5 px-3 text-right">Non-Haz Solids</th>
                 <th className="py-2.5 px-3 text-right">Liquids (Oil)</th>
+                <th className="hidden 2xl:table-cell py-2.5 px-3 text-center">Active Lots</th>
                 <th className="py-2.5 px-3 text-center">Oldest Lot</th>
                 <th className="py-2.5 px-3 text-center">Compliance Status</th>
                 <th className="py-2.5 px-3.5 text-right">Action</th>
@@ -602,20 +643,29 @@ export default function RegionalCoordinatorDashboard({
                         <span className={cn("h-2 w-2 rounded-full shrink-0", status.dot)} />
                         <span>{item.site.name}</span>
                       </div>
-                      <span className="text-[10px] text-muted-foreground pl-4">
+                      <span className="text-[10px] text-muted-foreground pl-4 2xl:hidden">
                         {item.activeCount} active lots on-site
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-muted-foreground max-w-[150px] truncate">
+                    <td className="py-3 px-3 text-muted-foreground max-w-[150px] lg:max-w-[200px] 2xl:max-w-xs truncate">
                       {item.site.location || "—"}
                     </td>
                     <td className="py-3 px-3 text-right font-mono font-semibold text-foreground">
                       {fmtNum(item.hazKg)}{" "}
                       <span className="text-[10px] font-normal text-muted-foreground">kg</span>
                     </td>
+                    <td className="hidden xl:table-cell py-3 px-3 text-right font-mono font-semibold text-muted-foreground">
+                      {fmtNum(item.nonHazKg)}{" "}
+                      <span className="text-[10px] font-normal">kg</span>
+                    </td>
                     <td className="py-3 px-3 text-right font-mono font-semibold text-foreground">
                       {fmtNum(item.liquidsL)}{" "}
                       <span className="text-[10px] font-normal text-muted-foreground">L</span>
+                    </td>
+                    <td className="hidden 2xl:table-cell py-3 px-3 text-center font-mono font-semibold text-foreground">
+                      <span className="bg-secondary/70 px-2 py-0.5 rounded text-[11px]">
+                        {item.activeCount} lots
+                      </span>
                     </td>
                     <td className="py-3 px-3 text-center">
                       {item.maxDays > 0 ? (
@@ -656,7 +706,7 @@ export default function RegionalCoordinatorDashboard({
               })}
               {filteredSites.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground">
+                  <td colSpan={9} className="py-8 text-center text-xs text-muted-foreground">
                     No facilities matched the current filter.
                   </td>
                 </tr>
@@ -687,51 +737,151 @@ export default function RegionalCoordinatorDashboard({
           )}
         </div>
 
-        <div className="divide-y divide-border/50 text-xs">
-          {recentEntries.map((e) => {
-            const siteName = siteMap.get(e.site_id)?.name ?? "Facility";
-            const wasteName = WASTE_TYPES.find((w) => w.id === e.waste_type_id)?.name || e.waste_type_id;
-            const isLiquid = getMeasureUnit(e.waste_type_id) === "litres";
-            const days = getDaysStored(e.generated_date);
+        {recentEntries.length > 0 ? (
+          <div>
+            {/* Desktop Table View - Adaptable to wide monitors */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead className="bg-muted/40 text-[10px] uppercase font-semibold text-muted-foreground tracking-wider border-b border-border/60">
+                  <tr>
+                    <th className="py-2.5 px-3.5">Date</th>
+                    <th className="py-2.5 px-3">Facility</th>
+                    <th className="py-2.5 px-3">Location / Area</th>
+                    <th className="py-2.5 px-3">Waste Type</th>
+                    <th className="py-2.5 px-3">Category</th>
+                    <th className="py-2.5 px-3 text-right">Quantity</th>
+                    <th className="py-2.5 px-3 text-center">Storage Age</th>
+                    <th className="py-2.5 px-3.5 text-center">Activity</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {recentEntries.map((e) => {
+                    const siteName = siteMap.get(e.site_id)?.name ?? "Facility";
+                    const wasteName = WASTE_TYPES.find((w) => w.id === e.waste_type_id)?.name || e.waste_type_id;
+                    const isLiquid = getMeasureUnit(e.waste_type_id) === "litres";
+                    const days = getDaysStored(e.generated_date);
+                    const catVariant =
+                      e.waste_category === "hazardous"
+                        ? ("destructive" as const)
+                        : e.waste_category === "non_hazardous"
+                        ? ("success" as const)
+                        : e.waste_category === "e_waste"
+                        ? ("info" as const)
+                        : ("warning" as const);
+                    const catLabel =
+                      e.waste_category === "hazardous"
+                        ? "Hazardous"
+                        : e.waste_category === "non_hazardous"
+                        ? "Non-Haz"
+                        : e.waste_category === "e_waste"
+                        ? "E-Waste"
+                        : "Other";
 
-            return (
-              <div
-                key={e.id}
-                className="p-3 sm:px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-muted/20 transition-colors"
-              >
-                <div className="flex items-start sm:items-center gap-2.5 min-w-0">
-                  <Badge variant="outline" className="text-[10px] font-medium shrink-0 bg-card">
-                    {siteName}
-                  </Badge>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-foreground truncate">{wasteName}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      {e.location || "Standard Area"} • Generated on {formatDateDDMMYYYY(e.generated_date)}
-                    </p>
-                  </div>
-                </div>
+                    return (
+                      <tr key={e.id} className="hover:bg-muted/20 transition-colors">
+                        <td className="py-2.5 px-3.5 font-mono text-muted-foreground text-[11px]">
+                          {formatDateDDMMYYYY(e.generated_date)}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <Badge variant="outline" className="text-[10px] font-medium bg-card">
+                            {siteName}
+                          </Badge>
+                        </td>
+                        <td className="py-2.5 px-3 text-muted-foreground max-w-[150px] lg:max-w-[200px] truncate">
+                          {e.location || "Standard Area"}
+                        </td>
+                        <td className="py-2.5 px-3 font-semibold text-foreground max-w-[220px] truncate">
+                          {wasteName}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <Badge variant={catVariant} className="text-[10px] px-1.5 py-0">
+                            {catLabel}
+                          </Badge>
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono font-bold text-foreground">
+                          {fmtNum(Number(e.weight_kg ?? 0))}{" "}
+                          <span className="text-[10px] text-muted-foreground font-normal">
+                            {isLiquid ? "L" : "kg"}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <span
+                            className={cn(
+                              "text-[10px] px-1.5 py-0.5 rounded font-semibold font-mono",
+                              days >= 90
+                                ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                                : days >= 75
+                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                : "bg-muted text-muted-foreground"
+                            )}
+                          >
+                            {days}d
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3.5 text-center">
+                          <span className="text-[10px] font-mono text-muted-foreground uppercase bg-secondary/80 px-1.5 py-0.5 rounded">
+                            {e.activity_type === "preventive" ? "PM" : e.activity_type === "breakdown" ? "BM" : e.activity_type === "5s" ? "5S" : "OTH"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
 
-                <div className="flex items-center gap-3 self-end sm:self-auto shrink-0 font-mono">
-                  <span className="font-bold text-foreground">
-                    {fmtNum(Number(e.weight_kg ?? 0))} {isLiquid ? "L" : "kg"}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-[10px] px-1.5 py-0.5 rounded font-semibold",
-                      days >= 90
-                        ? "bg-rose-500/10 text-rose-600"
-                        : days >= 75
-                        ? "bg-amber-500/10 text-amber-600"
-                        : "bg-muted text-muted-foreground"
-                    )}
+            {/* Mobile Card List View */}
+            <div className="sm:hidden divide-y divide-border/50 text-xs">
+              {recentEntries.map((e) => {
+                const siteName = siteMap.get(e.site_id)?.name ?? "Facility";
+                const wasteName = WASTE_TYPES.find((w) => w.id === e.waste_type_id)?.name || e.waste_type_id;
+                const isLiquid = getMeasureUnit(e.waste_type_id) === "litres";
+                const days = getDaysStored(e.generated_date);
+
+                return (
+                  <div
+                    key={e.id}
+                    className="p-3 flex flex-col justify-between gap-2 hover:bg-muted/20 transition-colors"
                   >
-                    {days}d age
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <Badge variant="outline" className="text-[10px] font-medium shrink-0 bg-card">
+                        {siteName}
+                      </Badge>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-foreground truncate">{wasteName}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {e.location || "Standard Area"} • {formatDateDDMMYYYY(e.generated_date)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between font-mono pt-1 border-t border-border/40">
+                      <span className="font-bold text-foreground">
+                        {fmtNum(Number(e.weight_kg ?? 0))} {isLiquid ? "L" : "kg"}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-[10px] px-1.5 py-0.5 rounded font-semibold",
+                          days >= 90
+                            ? "bg-rose-500/10 text-rose-600"
+                            : days >= 75
+                            ? "bg-amber-500/10 text-amber-600"
+                            : "bg-muted text-muted-foreground"
+                        )}
+                      >
+                        {days}d age
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="py-8 text-center text-xs text-muted-foreground">
+            No waste logs recorded yet.
+          </div>
+        )}
       </Card>
     </div>
   );

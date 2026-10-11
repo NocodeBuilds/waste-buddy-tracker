@@ -137,9 +137,9 @@ export default function FacilitiesManagementView({ sites, onChanged }: Props) {
           )}
 
           {/* Sites list with Location Tag Manager */}
-          <div className="space-y-2.5">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
             {sites.map((s) => (
-              <div key={s.id} className="p-3 rounded-lg border border-border/70 bg-background space-y-2">
+              <div key={s.id} className="p-3 rounded-lg border border-border/70 bg-background space-y-2 flex flex-col justify-between">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-foreground truncate">{s.name}</p>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Shield,
   Users,
@@ -70,7 +71,7 @@ export default function AdminTab({ initialSubTab = "users" }: AdminTabProps) {
   }
 
   return (
-    <div className="space-y-3.5 max-w-4xl mx-auto">
+    <div className="w-full space-y-3.5 sm:space-y-4 lg:space-y-5">
       {/* ── Sub-Navigation Pill Segment Switcher (eliminates vertical scroll overload) ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/60 pb-2">
         <div className="grid grid-cols-4 sm:flex p-1 bg-muted/70 rounded-xl gap-1 w-full sm:w-auto">
@@ -135,9 +136,14 @@ export default function AdminTab({ initialSubTab = "users" }: AdminTabProps) {
           </button>
         </div>
 
-        <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
-          <Shield className="h-3.5 w-3.5 text-primary" />
-          <span className="font-semibold text-foreground">{currentSite.name}</span>
+        <div className="hidden sm:flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-card border border-border/70 text-foreground font-semibold shadow-2xs">
+            <Building2 className="h-3.5 w-3.5 text-primary" />
+            <span>{currentSite.name}</span>
+          </div>
+          <Badge variant="outline" className="text-[10px] font-mono text-muted-foreground bg-muted/30">
+            Admin Governance
+          </Badge>
         </div>
       </div>
 
