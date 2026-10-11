@@ -1137,7 +1137,7 @@ export default function WasteInventoryTable({
             </div>
 
             <Table
-              containerClassName="flex-1 min-h-0 w-full overflow-auto touch-pan-x scrollbar-thin"
+              containerClassName="flex-1 min-h-0 w-full overflow-auto touch-auto overscroll-contain scrollbar-thin"
               className="min-w-[960px] w-full text-xs"
             >
               <TableHeader className="sticky top-0 z-20 bg-card border-b border-border/80 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
