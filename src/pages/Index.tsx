@@ -4,6 +4,7 @@ import { useWasteEntries } from "@/hooks/useWasteEntries";
 import { useSite } from "@/contexts/SiteContext";
 import WasteEntryForm from "@/components/inventory/WasteEntryForm";
 import FuturisticDashboard from "@/components/dashboard/FuturisticDashboard";
+import RegionalCoordinatorDashboard from "@/components/dashboard/RegionalCoordinatorDashboard";
 import WasteInventoryTable from "@/components/inventory/WasteInventoryTable";
 import AlertsPanel from "@/components/common/AlertsPanel";
 const AnalyticsTab = lazy(() => import("@/components/analytics/AnalyticsTab"));
@@ -15,6 +16,7 @@ import BottomNav, { TabId } from "@/components/layout/BottomNav";
 import DesktopSidebar from "@/components/layout/DesktopSidebar";
 import EditWasteDialog from "@/components/inventory/EditWasteDialog";
 import OfflineBanner from "@/components/layout/OfflineBanner";
+import InstallPrompt from "@/components/layout/InstallPrompt";
 import { WasteEntry, isEntryOverdue, isEntryWarning } from "@/lib/wasteTypes";
 
 import SiteSwitcher from "@/components/layout/SiteSwitcher";
@@ -55,7 +57,7 @@ const TAB_CONFIG: Record<TabId, { title: string; subtitle: string; icon: typeof 
 };
 
 const Index = () => {
-  const { currentSite, sites, loading: siteLoading, isAdmin: siteIsAdmin, refresh, error: siteError } = useSite();
+  const { currentSite, sites, loading: siteLoading, isAdmin: siteIsAdmin, refresh, error: siteError, isAllSitesMode } = useSite();
   const { isAdmin: isAuthAdmin } = useAuth();
   const isAdmin = siteIsAdmin || isAuthAdmin;
   const { entries, batches, error: dataError, isLoading, addEntry, updateEntry, deleteEntry, createDisposalBatch, approveDisposalBatch } = useWasteEntries();
@@ -187,6 +189,7 @@ const Index = () => {
 
         {/* Offline Status & Sync Banner */}
         <OfflineBanner />
+        <InstallPrompt />
 
         {dataError && <div role="alert" className="p-3 text-destructive">Records could not be loaded: {dataError.message}</div>}
         {/* Main content */}
@@ -233,12 +236,21 @@ const Index = () => {
           ) : (
             <>
               {activeTab === "home" && (
-                <FuturisticDashboard
-                  entries={entries}
-                  batches={batches}
-                  onLogWaste={() => setDrawerOpen(true)}
-                  onNavigateToInventory={() => handleTabChange("inventory")}
-                />
+                isAllSitesMode ? (
+                  <RegionalCoordinatorDashboard
+                    entries={entries}
+                    batches={batches}
+                    onLogWaste={() => setDrawerOpen(true)}
+                    onNavigateToInventory={() => handleTabChange("inventory")}
+                  />
+                ) : (
+                  <FuturisticDashboard
+                    entries={entries}
+                    batches={batches}
+                    onLogWaste={() => setDrawerOpen(true)}
+                    onNavigateToInventory={() => handleTabChange("inventory")}
+                  />
+                )
               )}
               {activeTab === "inventory" && (
                 <WasteInventoryTable

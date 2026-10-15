@@ -22,24 +22,30 @@ export default defineConfig(() => ({
       injectRegister: null,
       filename: "sw.js",
       devOptions: { enabled: false },
-      includeAssets: ["icon-192.png", "icon-512.png", "apple-touch-icon.png"],
+      includeAssets: ["robots.txt", "placeholder.svg"],
       manifest: false, // we ship our own manifest.webmanifest
       workbox: {
         clientsClaim: true,
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//],
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//, /^\/~ping-/],
         globPatterns: ["**/*.{js,css,html,svg,png,ico,webp,woff2}"],
-        // Bump cache version to force fresh install for all users
-        additionalManifestEntries: [{ url: "/", revision: "v5" }],
         runtimeCaching: [
           {
-            urlPattern: ({ request }) => request.mode === "navigate",
-            handler: "NetworkFirst",
+            urlPattern: ({ url }) => url.origin === "https://fonts.googleapis.com",
+            handler: "StaleWhileRevalidate",
             options: {
-              cacheName: "html-navigations-v4",
-              networkTimeoutSeconds: 4,
-              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 7 },
+              cacheName: "google-fonts-stylesheets",
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+          {
+            urlPattern: ({ url }) => url.origin === "https://fonts.gstatic.com",
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts-webfonts",
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
             },
           },
           {
@@ -50,7 +56,6 @@ export default defineConfig(() => ({
               expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
           },
-
         ],
       },
     }),

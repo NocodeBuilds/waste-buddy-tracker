@@ -5,7 +5,7 @@ import { mkdirSync } from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, '../playwright/.auth/visual-ux-audit');
-try { mkdirSync(OUT, { recursive: true }); } catch {}
+try { mkdirSync(OUT, { recursive: true }); } catch { /* directory already exists */ }
 
 const VIEWPORTS = [
   { label: '375x812', w: 375, h: 812 },

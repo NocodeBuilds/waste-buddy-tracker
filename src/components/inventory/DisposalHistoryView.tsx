@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { History, CheckCircle, X, Download, Search, Filter } from "lucide-react";
+import { History, CheckCircle, X, Download, Search, Filter, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { DisposalBatch, WasteEntry, formatDateDDMMYYYY } from "@/lib/wasteTypes";
 
@@ -32,7 +32,7 @@ export default function DisposalHistoryView({
   onRejectDisposal,
 }: Props) {
   const { user } = useAuth();
-  const { sites, rolesBySite } = useSite();
+  const { sites, rolesBySite, isAdmin, isRegionalCoordinator } = useSite();
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "approved" | "pending" | "rejected">("all");
@@ -114,7 +114,8 @@ export default function DisposalHistoryView({
         <div className="space-y-2.5">
           {filteredBatches.map((b) => {
             const batchSiteName = sites.find(s => s.id === b.site_id)?.name ?? currentSiteName;
-            const mayDecide = (rolesBySite[b.site_id] ?? []).some(role => role === "admin" || role === "manager") && b.disposed_by !== user?.id;
+            const isAuthorized = isAdmin || isRegionalCoordinator || (rolesBySite[b.site_id] ?? []).some(role => role === "admin" || role === "manager");
+            const mayDecide = isAuthorized && b.disposed_by !== user?.id;
             const inBatch = entries.filter((e) => e.disposal_batch_id === b.id);
             const status = b.status ?? "approved";
             const isPending = status === "pending";
@@ -135,6 +136,12 @@ export default function DisposalHistoryView({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-semibold text-foreground">{formatDateDDMMYYYY(b.disposed_date)}</p>
+                        {batchSiteName && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded border border-border/60">
+                            <Building2 className="h-3 w-3 text-primary" />
+                            <span>{batchSiteName}</span>
+                          </span>
+                        )}
                         {isPending && <Badge variant="warning">Pending Approval</Badge>}
                         {isRejected && <Badge variant="destructive">Rejected</Badge>}
                         {!isPending && !isRejected && <Badge variant="success">Approved</Badge>}
@@ -152,6 +159,13 @@ export default function DisposalHistoryView({
                       {isRejected && b.rejection_reason && (
                         <p className="text-xs text-destructive mt-1.5 font-medium break-words">
                           Reason: {b.rejection_reason}
+                        </p>
+                      )}
+                      {isPending && !mayDecide && (
+                        <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-2 italic flex items-center gap-1 font-medium bg-amber-500/10 px-2 py-1 rounded">
+                          {b.disposed_by === user?.id
+                            ? "Awaiting approval by another Facility Manager or Regional Coordinator (Segregation of Duties: Submitter cannot self-approve)."
+                            : "Awaiting approval from an authorized Facility Manager or Regional Coordinator."}
                         </p>
                       )}
                       {isPending && mayDecide && onApproveDisposal && (

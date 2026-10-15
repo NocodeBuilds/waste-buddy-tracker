@@ -24,7 +24,7 @@ async function setup(context:BrowserContext,role:'admin'|'manager'|'member'){
   const table=url.pathname.split('/').pop();
   const tables:Record<string,unknown[]>={sites:[site],profiles:[profile],user_sites:[{id:'membership',user_id:userId,site_id:siteId,sites:site}],
    user_roles:[{id:'role',user_id:userId,site_id:siteId,role}],site_locations:[{id:'location',site_id:siteId,code:'SHED',is_common:false,sort_order:1}],
-   waste_entries:[],disposal_batches:[],waste_entry_photos:[],site_access_requests:[],audit_log:[]};
+   waste_entries:[],disposal_batches:[],waste_entry_photos:[],site_access_requests:[],audit_log:[],regions:[]};
   if(!table || !(table in tables)) throw new Error('Unexpected synthetic backend request: '+url.pathname);
   let rows=tables[table];
   if(table==='user_roles'&&url.searchParams.get('role')==='eq.admin'&&role!=='admin')rows=[];

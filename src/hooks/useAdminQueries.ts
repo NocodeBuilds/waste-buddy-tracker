@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { errorMessage } from "@/lib/validation";
 export function useSites(){
  const {user}=useAuth();
- return useQuery({queryKey:["sites",user?.id],enabled:!!user,queryFn:()=>readAll((from,to)=>supabase.from("sites").select("id,name,location").is("archived_at",null).order("name").order("id").range(from,to))});
+ return useQuery({queryKey:["sites",user?.id],enabled:!!user,queryFn:()=>readAll((from,to)=>supabase.from("sites").select("id,name,location").order("name").order("id").range(from,to))});
 }
 export function useMembers(siteId:string){
  const {user}=useAuth();

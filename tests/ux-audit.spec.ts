@@ -6,7 +6,7 @@ import { mkdirSync } from 'fs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.join(__dirname, '../playwright/.auth/ux-audit');
 
-try { mkdirSync(OUT_DIR, { recursive: true }); } catch {}
+try { mkdirSync(OUT_DIR, { recursive: true }); } catch { /* directory already exists */ }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const snap = async (page: Page, name: string) => {

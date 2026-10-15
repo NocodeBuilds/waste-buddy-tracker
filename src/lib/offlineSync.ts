@@ -133,15 +133,43 @@ export function useOnlineStatus(){
   if(!user){setPendingCount(0);setPendingError(null);return;}
   try{const items=await getPendingQueue(user.id);setPendingCount(items.length);setPendingError(items.find(i=>i.error)?.error ?? null);}
   catch(error){setPendingError(errorMessage(error));}
- },[user?.id]);
+ },[user]);
  useEffect(()=>{
-  const online=()=>{setIsOnline(true);void syncPendingEntries(qc).then(refreshPending).catch(error=>setPendingError(errorMessage(error)));};
+  const probeConnectivity = async () => {
+   if (!navigator.onLine) {
+    setIsOnline(false);
+    return;
+   }
+   try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 1500);
+    await fetch("/~ping-" + Date.now(), { method: "HEAD", signal: controller.signal });
+    clearTimeout(timer);
+    setIsOnline(true);
+   } catch {
+    setIsOnline(false);
+   }
+  };
+  const online=()=>{
+   void probeConnectivity().then(()=>{
+    void syncPendingEntries(qc).then(refreshPending).catch(error=>setPendingError(errorMessage(error)));
+   });
+  };
   const offline=()=>setIsOnline(false);
   const changed=()=>{void refreshPending();};
-  window.addEventListener("online",online);window.addEventListener("offline",offline);window.addEventListener(EVENT,changed);
+  window.addEventListener("online",online);
+  window.addEventListener("offline",offline);
+  window.addEventListener(EVENT,changed);
+  window.addEventListener("wastebuddy:network-offline",offline);
   void refreshPending();
+  void probeConnectivity();
   if(user && navigator.onLine) online();
-  return ()=>{window.removeEventListener("online",online);window.removeEventListener("offline",offline);window.removeEventListener(EVENT,changed);};
- },[user?.id,qc,refreshPending]);
+  return ()=>{
+   window.removeEventListener("online",online);
+   window.removeEventListener("offline",offline);
+   window.removeEventListener(EVENT,changed);
+   window.removeEventListener("wastebuddy:network-offline",offline);
+  };
+ },[user,qc,refreshPending]);
  return {isOnline,pendingCount,pendingError,syncNow:async()=>{await syncPendingEntries(qc);await refreshPending();}};
 }

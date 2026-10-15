@@ -36,7 +36,6 @@ const App = () => !isSupabaseConfigured ? <main role="alert" className="p-8">App
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <InstallPrompt />
       <ErrorBoundary>
         <BrowserRouter>
           <AuthProvider>

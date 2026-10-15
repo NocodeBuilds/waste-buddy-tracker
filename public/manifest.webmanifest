@@ -1,27 +1,69 @@
 {
-  "name": "WasteBuddy",
+  "id": "/?source=pwa",
+  "name": "WasteBuddy — Hazardous Waste Tracker",
   "short_name": "WasteBuddy",
-  "description": "Track and manage waste generation, activities, and disposal operations across your facilities.",
-  "start_url": "/",
+  "description": "Track and manage waste generation, activities, and statutory 90-day disposal compliance across your facilities.",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#10b981",
   "categories": ["productivity", "utilities", "business"],
+  "dir": "ltr",
+  "lang": "en",
+  "prefer_related_applications": false,
   "icons": [
-    { "src": "/icons/icon-72x72.png", "sizes": "72x72", "type": "image/png" },
-    { "src": "/icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" },
-    { "src": "/icons/icon-128x128.png", "sizes": "128x128", "type": "image/png" },
-    { "src": "/icons/icon-144x144.png", "sizes": "144x144", "type": "image/png" },
-    { "src": "/icons/icon-152x152.png", "sizes": "152x152", "type": "image/png" },
-    { "src": "/icons/icon-180x180.png", "sizes": "180x180", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icons/icon-384x384.png", "sizes": "384x384", "type": "image/png" },
-    { "src": "/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/icons/icon-72x72.png", "sizes": "72x72", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-96x96.png", "sizes": "96x96", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-128x128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-144x144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-152x152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-180x180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-384x384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-192x192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-512x512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Add New Record", "short_name": "New Entry", "url": "/app?action=new", "description": "Log a new waste record" }
+    {
+      "name": "Log Waste Entry",
+      "short_name": "New Entry",
+      "url": "/app?action=new",
+      "description": "Log a new waste generation entry",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Waste Inventory",
+      "short_name": "Inventory",
+      "url": "/app?tab=inventory",
+      "description": "View active waste inventory and storage logs",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Compliance Analytics",
+      "short_name": "Analytics",
+      "url": "/app?tab=analytics",
+      "description": "View generation trends and 90-day compliance curves",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" }]
+    }
   ],
-  "screenshots": []
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "WasteBuddy Compliance Dashboard Overview"
+    },
+    {
+      "src": "/screenshots/mobile-dashboard.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "WasteBuddy Mobile Inventory & Fast Logging"
+    }
+  ]
 }

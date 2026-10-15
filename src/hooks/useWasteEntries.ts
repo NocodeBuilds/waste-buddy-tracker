@@ -18,14 +18,28 @@ type UpdateEntryInput={id:string;siteId:string;updates:Partial<Pick<WasteEntry,"
 type CreateDisposalInput={operationId?:string;disposed_date:string;notes?:string;siteId:string;entry_ids?:string[]};
 
 async function snapshot<T>(key:string,fetch:()=>Promise<T>):Promise<T>{
- if(!navigator.onLine){
-  const raw=localStorage.getItem(key);
-  if(!raw) throw new Error("No offline snapshot for this facility. Connect to load its records.");
+ const readSnapshot = () => {
+  const raw = localStorage.getItem(key);
+  if (!raw) throw new Error("No offline snapshot for this facility. Connect to load its records.");
   return JSON.parse(raw) as T;
+ };
+ if (!navigator.onLine) {
+  return readSnapshot();
  }
- const data=await fetch();
- try{localStorage.setItem(key,JSON.stringify(data));}catch{/* Read snapshots may be omitted when storage is full. */}
- return data;
+ try {
+  const data = await fetch();
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch { /* Read snapshots may be omitted when storage is full. */ }
+  return data;
+ } catch (error) {
+  if (typeof window !== "undefined") {
+   window.dispatchEvent(new Event("wastebuddy:network-offline"));
+  }
+  try {
+   return readSnapshot();
+  } catch {
+   throw error;
+  }
+ }
 }
 export function useWasteEntries(){
  const {currentSite,sites,isAllSitesMode}=useSite();
