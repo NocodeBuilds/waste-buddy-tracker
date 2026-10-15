@@ -1,3 +1,5 @@
+import { useAuth } from "@/contexts/AuthContext";
+import { readAll } from "@/lib/pagination";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -9,11 +11,14 @@ export interface EntryPhoto {
 }
 
 export function useEntryPhotos(entryId: string | undefined, enabled = true) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["waste_entry_photos", entryId],
+    queryKey: ["waste_entry_photos", user?.id, entryId],
     enabled: !!entryId && enabled,
     // H3 fix: refetch before signed URLs expire (3600s → set staleTime to 55 min)
-    staleTime: 55 * 60_000,
+    staleTime: 50 * 60_000,
+    refetchInterval: 50 * 60_000,
+    refetchOnWindowFocus: true,
     queryFn: async (): Promise<EntryPhoto[]> => {
       const { data, error } = await supabase
         .from("waste_entry_photos")
@@ -23,13 +28,13 @@ export function useEntryPhotos(entryId: string | undefined, enabled = true) {
       if (error) throw new Error(error.message);
       if (!data || data.length === 0) return [];
 
-      const paths = (data as any[]).map((r: any) => r.storage_path);
+      const paths = data.map((r) => r.storage_path);
       const { data: signed, error: sErr } = await supabase.storage
         .from("waste-photos")
         .createSignedUrls(paths, 3600);
       if (sErr) throw new Error(sErr.message);
 
-      return (data as any[]).map((r: any, i: number) => ({
+      return data.map((r, i) => ({
         id: r.id,
         storage_path: r.storage_path,
         created_at: r.created_at,
@@ -40,17 +45,18 @@ export function useEntryPhotos(entryId: string | undefined, enabled = true) {
 }
 
 export function useEntryPhotoCounts(entryIds: string[]) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["waste_entry_photo_counts", entryIds],
+    queryKey: ["waste_entry_photo_counts", user?.id, entryIds],
     enabled: entryIds.length > 0,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     queryFn: async (): Promise<Record<string, number>> => {
-      const { data, error } = await supabase
-        .from("waste_entry_photos")
-        .select("waste_entry_id")
-        .in("waste_entry_id", entryIds);
-      if (error) throw new Error(error.message);
+      const data: { waste_entry_id: string }[] = [];
+      for (let offset = 0; offset < entryIds.length; offset += 100) {
+        data.push(...await readAll((from, to) => supabase.from("waste_entry_photos").select("waste_entry_id")
+          .in("waste_entry_id", entryIds.slice(offset, offset + 100)).order("id").range(from, to)));
+      }
       const counts: Record<string, number> = {};
       // L1 fix: cast to the proper type instead of `any`
       const rows = (data ?? []) as { waste_entry_id: string }[];
@@ -66,9 +72,7 @@ export function useDeletePhoto() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (photo: { id: string; storage_path: string }) => {
-      const { error: sErr } = await supabase.storage.from("waste-photos").remove([photo.storage_path]);
-      if (sErr) throw new Error(sErr.message);
-      const { error } = await supabase.from("waste_entry_photos").delete().eq("id", photo.id);
+      const { error } = await supabase.from("waste_entry_photos").delete().eq("id", photo.id).select("id").single();
       if (error) throw new Error(error.message);
     },
     // H2 fix: invalidate BOTH photo list and photo counts queries

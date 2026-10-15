@@ -18,11 +18,12 @@ export default function LocationMasterView({ siteId }: Props) {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("site_locations")
       .select("id, code, sort_order")
       .eq("site_id", siteId)
       .order("sort_order");
+    if (error) { setLoading(false); toast.error(error.message); return; }
     setRows(data ?? []);
     setLoading(false);
   };
@@ -49,7 +50,7 @@ export default function LocationMasterView({ siteId }: Props) {
 
   const del = async (id: string, code: string) => {
     if (!confirm(`Delete location "${code}"?`)) return;
-    const { error } = await supabase.from("site_locations").delete().eq("id", id);
+    const { error } = await supabase.from("site_locations").delete().eq("id", id).eq("site_id", siteId).select("id").single();
     if (error) return toast.error(error.message);
     toast.success("Location deleted");
     load();

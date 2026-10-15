@@ -51,11 +51,24 @@ export type Role = Database["public"]["Enums"]["app_role"];
 export type ActivityType = Database["public"]["Enums"]["activity_type"];
 export type WasteCategory = Database["public"]["Enums"]["waste_category"];
 
+// ── Region ─────────────────────────────────────────────────────────
+export interface Region {
+  id: string;
+  name: string;
+  state: string;
+  code?: string | null;
+  created_at?: string;
+}
+
 // ── Site ───────────────────────────────────────────────────────────
 export interface Site {
   id: string;
   name: string;
   location: string | null;
+  region_id?: string | null;
+  state?: string | null;
+  region?: Region | null;
+  archived_at?: string | null;
 }
 
 // ── Member (user + site + role join) ───────────────────────────────
@@ -64,6 +77,8 @@ export interface Member {
   email: string | null;
   full_name: string | null;
   roles: Role[];
+  is_regional_coordinator?: boolean;
+  site_count?: number;
 }
 
 // ── Access request (DB column is `note`) ───────────────────────────

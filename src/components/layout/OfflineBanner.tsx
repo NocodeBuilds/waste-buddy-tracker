@@ -3,12 +3,13 @@ import { WifiOff, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function OfflineBanner() {
-  const { isOnline, pendingCount, syncNow } = useOnlineStatus();
+  const { isOnline, pendingCount, pendingError, syncNow } = useOnlineStatus();
 
-  if (isOnline && pendingCount === 0) return null;
+  if (isOnline && pendingCount === 0 && !pendingError) return null;
 
   return (
     <aside aria-label="Network status" className="w-full bg-amber-500/10 dark:bg-amber-950/40 border-b border-amber-500/30 text-amber-800 dark:text-amber-300 px-3 py-1.5 text-xs transition-all">
+      {pendingError && <p role="alert">Sync needs attention: {pendingError}. The draft remains on this device.</p>}
       <div className="max-w-[1680px] mx-auto flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {!isOnline ? (

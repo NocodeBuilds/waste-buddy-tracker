@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { loadTeam, DisplayRequest } from "@/lib/adminData";
+import { errorMessage } from "@/lib/validation";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +22,8 @@ import {
   Check,
   Shield,
   Sparkles,
+  Globe,
+  Building2,
 } from "lucide-react";
 import {
   Dialog,
@@ -28,10 +33,12 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Role, Member } from "@/types";
 import { formatDateDDMMYYYY } from "@/lib/wasteTypes";
+import { useSite } from "@/contexts/SiteContext";
 import EmptyState from "@/components/ui/empty-state";
 
 interface Props {
@@ -78,9 +85,19 @@ function generateRandomPassword() {
 }
 
 export default function UserManagementView({ siteId, siteName, callerId }: Props) {
-  const [members, setMembers] = useState<Member[]>([]);
-  const [requests, setRequests] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { sites } = useSite();
+  const [targetSiteId, setTargetSiteId] = useState(siteId);
+  const [assignAcrossRegion, setAssignAcrossRegion] = useState(false);
+
+  useEffect(() => {
+    setTargetSiteId(siteId);
+  }, [siteId]);
+
+  const team = useQuery({ queryKey: ["members", callerId, siteId], queryFn: () => loadTeam(siteId), enabled: siteId !== "ALL_SITES" });
+  const members = team.data?.members ?? [];
+  const requests = team.data?.requests ?? [];
+  const loading = team.isLoading;
+  const load = async () => { await team.refetch(); };
   const [busy, setBusy] = useState(false);
   const [approveRoles, setApproveRoles] = useState<Record<string, Role>>({});
 
@@ -103,159 +120,18 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
 
   const setReqRole = (reqId: string, r: Role) => setApproveRoles((prev) => ({ ...prev, [reqId]: r }));
 
-  const load = async () => {
-    setLoading(true);
-    const [{ data: ms }, { data: rs }] = await Promise.all([
-      supabase.from("user_sites").select("user_id").eq("site_id", siteId),
-      supabase.from("user_roles").select("user_id, role").eq("site_id", siteId),
-    ]);
-    const userIds = Array.from(
-      new Set([...(ms ?? []).map((m: any) => m.user_id), ...(rs ?? []).map((r: any) => r.user_id)])
-    );
-    let profMap: Record<string, { email: string | null; full_name: string | null }> = {};
-    if (userIds.length) {
-      const { data: ps } = await supabase.from("profiles").select("id, email, full_name").in("id", userIds);
-      (ps ?? []).forEach((p: any) => {
-        profMap[p.id] = { email: p.email, full_name: p.full_name };
-      });
-    }
-    const byUser: Record<string, Role[]> = {};
-    (rs ?? []).forEach((r: any) => {
-      byUser[r.user_id] = [...(byUser[r.user_id] ?? []), r.role];
-    });
-    setMembers(
-      (ms ?? []).map((m: any) => ({
-        user_id: m.user_id,
-        email: profMap[m.user_id]?.email ?? null,
-        full_name: profMap[m.user_id]?.full_name ?? null,
-        roles: byUser[m.user_id] ?? [],
-      }))
-    );
-
-    const { data: reqRows } = await supabase
-      .from("site_access_requests")
-      .select("id, user_id, note, created_at, status")
-      .eq("site_id", siteId)
-      .eq("status", "pending")
-      .order("created_at", { ascending: false });
-    setRequests((reqRows ?? []).map((r: any) => ({ ...r, profile: profMap[r.user_id] })));
-
-    const missing = (reqRows ?? []).map((r: any) => r.user_id).filter((id: string) => !profMap[id]);
-    if (missing.length) {
-      const { data: ps2 } = await supabase.from("profiles").select("id, email, full_name").in("id", missing);
-      const extra: Record<string, any> = {};
-      (ps2 ?? []).forEach((p: any) => {
-        extra[p.id] = { email: p.email, full_name: p.full_name };
-      });
-      setRequests((reqRows ?? []).map((r: any) => ({ ...r, profile: profMap[r.user_id] ?? extra[r.user_id] })));
-    }
-
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    load();
-  }, [siteId]);
-
-  const call = async (body: Record<string, unknown>, success: string) => {
+  const call = async (body: Record<string, unknown>, success: string): Promise<{ ok: boolean; user_id?: string }> => {
     setBusy(true);
-    let error: any = null;
-    let data: any = null;
-
     try {
-      const res = await supabase.functions.invoke("admin-manage-user", { body });
-      data = res.data;
-      error = res.error;
-    } catch (e) {
-      error = e;
-    }
-
-    // If edge function returned successfully without application error
-    if (!error && !(data as any)?.error) {
-      setBusy(false);
-      toast.success(success);
-      await load();
-      return true;
-    }
-
-    // ── Resilient Fallback ──
-    // If edge function fails with network/CORS/undeployed errors ("Failed to send request"),
-    // perform standard database table updates directly via authenticated client using RLS.
-    const action = body.action as string;
-    try {
-      if (action === "assign") {
-        const uId = body.user_id as string;
-        const sId = body.site_id as string;
-        const r = body.role as Role;
-        await supabase.from("user_sites").upsert({ user_id: uId, site_id: sId }, { onConflict: "user_id,site_id" });
-        const { error: rErr } = await supabase.from("user_roles").upsert({ user_id: uId, site_id: sId, role: r }, { onConflict: "user_id,site_id,role" });
-        if (rErr) throw rErr;
-        setBusy(false);
-        toast.success(success);
-        await load();
-        return true;
+      const { data, error } = await supabase.functions.invoke<{ok?: boolean; user_id?: string; error?: string}>("admin-manage-user", { body });
+      if (error && "context" in error && error.context instanceof Response) {
+        const response = await error.context.clone().json().catch(() => null) as {error?: string} | null;
+        if (response?.error) throw new Error(response.error);
       }
-
-      if (action === "revoke_role") {
-        const uId = body.user_id as string;
-        const sId = body.site_id as string;
-        const r = body.role as Role;
-        const { error: delErr } = await supabase
-          .from("user_roles")
-          .delete()
-          .eq("user_id", uId)
-          .eq("site_id", sId)
-          .eq("role", r);
-        if (delErr) throw delErr;
-        setBusy(false);
-        toast.success(success);
-        await load();
-        return true;
-      }
-
-      if (action === "remove_from_site") {
-        const uId = body.user_id as string;
-        const sId = body.site_id as string;
-        await supabase.from("user_roles").delete().eq("user_id", uId).eq("site_id", sId);
-        const { error: rmErr } = await supabase.from("user_sites").delete().eq("user_id", uId).eq("site_id", sId);
-        if (rmErr) throw rmErr;
-        setBusy(false);
-        toast.success(success);
-        await load();
-        return true;
-      }
-
-      if (action === "approve_request") {
-        const reqId = body.request_id as string;
-        const sId = body.site_id as string;
-        const r = (body.role as Role) || "member";
-        const { data: reqRow } = await supabase.from("site_access_requests").select("user_id").eq("id", reqId).single();
-        if (reqRow?.user_id) {
-          await supabase.from("user_sites").upsert({ user_id: reqRow.user_id, site_id: sId }, { onConflict: "user_id,site_id" });
-          await supabase.from("user_roles").upsert({ user_id: reqRow.user_id, site_id: sId, role: r }, { onConflict: "user_id,site_id,role" });
-          await supabase.from("site_access_requests").update({ status: "approved" }).eq("id", reqId);
-          setBusy(false);
-          toast.success(success);
-          await load();
-          return true;
-        }
-      }
-
-      if (action === "reject_request") {
-        const reqId = body.request_id as string;
-        await supabase.from("site_access_requests").update({ status: "rejected" }).eq("id", reqId);
-        setBusy(false);
-        toast.success(success);
-        await load();
-        return true;
-      }
-    } catch (fbErr: any) {
-      console.warn("Direct fallback operation failed:", fbErr);
-    }
-
-    setBusy(false);
-    toast.error((data as any)?.error ?? error?.message ?? "Operation failed");
-    return false;
+      if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Operation failed");
+      toast.success(success); await load(); return { ok: true, user_id: data?.user_id };
+    } catch (error) { toast.error(errorMessage(error)); return { ok: false }; }
+    finally { setBusy(false); }
   };
 
   const handleCreateAccount = async (e: React.FormEvent) => {
@@ -278,29 +154,57 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
       return;
     }
 
-    const ok = await call(
+    const primarySiteId = targetSiteId || siteId;
+    const res = await call(
       {
         action: "create_user",
         email,
         password,
         full_name: fullName.trim() || email,
-        site_id: siteId,
+        site_id: primarySiteId,
         role,
       },
       `Account created for ${email}`
     );
 
-    if (ok) {
+    if (res.ok) {
+      const createdUserId = res.user_id;
+      if (assignAcrossRegion && createdUserId) {
+        const currentSiteObj = sites.find((s) => s.id === primarySiteId);
+        const siblings = sites.filter(
+          (s) =>
+            s.id !== primarySiteId &&
+            ((currentSiteObj?.region_id && s.region_id === currentSiteObj.region_id) ||
+              (currentSiteObj?.state && s.state === currentSiteObj.state))
+        );
+
+        if (siblings.length > 0) {
+          for (const sib of siblings) {
+            await supabase.functions.invoke("admin-manage-user", {
+              body: {
+                action: "assign",
+                user_id: createdUserId,
+                site_id: sib.id,
+                role,
+              },
+            });
+          }
+          toast.success(`Assigned ${email} across ${siblings.length + 1} regional facilities!`);
+          await load();
+        }
+      }
+
       setCreatedCredentials({
         email,
         password,
         name: fullName || email,
-        role,
+        role: assignAcrossRegion ? `Regional ${role}` : role,
       });
       setEmail("");
       setPassword("");
       setFullName("");
       setShowCreateUser(false);
+      setAssignAcrossRegion(false);
     }
   };
 
@@ -320,7 +224,7 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const approveReq = async (r: any) => {
+  const approveReq = async (r: DisplayRequest) => {
     const chosenRole = approveRoles[r.id] ?? "member";
     await call({ action: "approve_request", request_id: r.id, site_id: siteId, role: chosenRole }, "Access approved");
     setApproveRoles((prev) => {
@@ -330,12 +234,57 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
     });
   };
 
-  const rejectReq = async (r: any) => {
+  const rejectReq = async (r: DisplayRequest) => {
     await call({ action: "reject_request", request_id: r.id, site_id: siteId }, "Access rejected");
   };
 
   return (
     <div className="space-y-3">
+      {team.error && <p role="alert" className="text-destructive">{team.error.message}</p>}
+
+      {/* Role & Persona Architecture Overview */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
+        <div className="p-2.5 rounded-lg border border-border/70 bg-card/60 space-y-1">
+          <div className="flex items-center gap-1.5 font-semibold text-foreground">
+            <span className="h-2 w-2 rounded-full bg-slate-400" />
+            <span>Operator</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground leading-snug">
+            Single-plant logging, weighment entries, container tags & disposal requests.
+          </p>
+        </div>
+
+        <div className="p-2.5 rounded-lg border border-border/70 bg-card/60 space-y-1">
+          <div className="flex items-center gap-1.5 font-semibold text-foreground">
+            <span className="h-2 w-2 rounded-full bg-cyan-500" />
+            <span>Facility Manager</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground leading-snug">
+            Plant-level read/write, location tagging & Form 10 disposal approvals.
+          </p>
+        </div>
+
+        <div className="p-2.5 rounded-lg border border-purple-500/30 bg-purple-500/[0.04] space-y-1">
+          <div className="flex items-center gap-1.5 font-semibold text-purple-700 dark:text-purple-300">
+            <Globe className="h-3 w-3" />
+            <span>Regional Coordinator</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground leading-snug">
+            Multi-facility oversight radar, regional metric tons & multi-site disposal authority.
+          </p>
+        </div>
+
+        <div className="p-2.5 rounded-lg border border-primary/30 bg-primary/[0.04] space-y-1">
+          <div className="flex items-center gap-1.5 font-semibold text-primary">
+            <Shield className="h-3 w-3" />
+            <span>Enterprise Admin</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground leading-snug">
+            System governance, multi-state regions, facility setup & credential provisioning.
+          </p>
+        </div>
+      </div>
+
       {/* Pending site access requests banner */}
       {requests.length > 0 && (
         <Card className="border-amber-500/50 bg-amber-500/[0.03] shadow-xs">
@@ -487,19 +436,68 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-[11px] font-semibold">Assigned Role</Label>
-                  <Select value={role} onValueChange={(v) => setRole(v as Role)}>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-[11px] font-semibold">Assigned Persona / Role</Label>
+                  <Select
+                    value={assignAcrossRegion ? "regional_coordinator" : role}
+                    onValueChange={(v) => {
+                      if (v === "regional_coordinator") {
+                        setRole("manager");
+                        setAssignAcrossRegion(true);
+                      } else {
+                        setRole(v as Role);
+                        setAssignAcrossRegion(false);
+                      }
+                    }}
+                  >
                     <SelectTrigger className="h-8 text-xs rounded-lg">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="member">Member (Log & View)</SelectItem>
-                      <SelectItem value="manager">Manager (Approve Disposals)</SelectItem>
+                      <SelectItem value="member">Operator (Log Waste, Scan Barcodes, Single Plant)</SelectItem>
+                      <SelectItem value="manager">Facility Manager (Approve Disposals, Single Plant)</SelectItem>
+                      <SelectItem value="regional_coordinator">
+                        Regional Coordinator (Manager Across Regional Plants & Radar)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+
+                {sites.length > 1 && (
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label className="text-[11px] font-semibold">Primary Facility</Label>
+                    <Select value={targetSiteId} onValueChange={setTargetSiteId}>
+                      <SelectTrigger className="h-8 text-xs rounded-lg">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sites.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.name} {s.state ? `(${s.state})` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
+
+              {sites.length > 1 && (
+                <div className="flex items-center space-x-2 pt-1 pb-1">
+                  <Checkbox
+                    id="assign-region"
+                    checked={assignAcrossRegion}
+                    onCheckedChange={(checked) => setAssignAcrossRegion(!!checked)}
+                  />
+                  <label
+                    htmlFor="assign-region"
+                    className="text-xs font-medium leading-none cursor-pointer text-foreground flex items-center gap-1.5"
+                  >
+                    <Globe className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                    <span>Regional Scope: Grant Manager permissions across all facilities in this Region / State</span>
+                  </label>
+                </div>
+              )}
 
               <div className="pt-1 flex items-center gap-2">
                 <Button
@@ -545,11 +543,21 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
                       {m.email?.charAt(0).toUpperCase() ?? "U"}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-foreground truncate">
-                        {m.email ?? m.full_name ?? m.user_id}
+                      <p className="text-xs font-semibold text-foreground truncate flex items-center gap-1.5">
+                        <span>{m.email ?? m.full_name ?? m.user_id}</span>
+                        {m.is_regional_coordinator && (
+                          <span className="inline-flex items-center gap-1 font-semibold text-purple-700 dark:text-purple-300 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider">
+                            <Globe className="h-2.5 w-2.5" /> Regional Coordinator
+                          </span>
+                        )}
                       </p>
-                      <p className="text-[10px] text-muted-foreground capitalize">
-                        {m.roles.join(", ") || "no role"}
+                      <p className="text-[10px] text-muted-foreground capitalize flex items-center gap-1.5">
+                        <span>{m.roles.join(", ") || "no role"}</span>
+                        {(m.site_count ?? 1) > 1 && (
+                          <span className="text-muted-foreground/80 font-mono text-[9px]">
+                            · {m.site_count} Facilities
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -587,6 +595,50 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
                         </Button>
                       );
                     })}
+
+                    {/* Regional Coordinator Promotion: Grants manager access across all sites in the region */}
+                    {sites.length > 1 && !m.is_regional_coordinator && !m.roles.includes("admin") && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-6 px-1.5 sm:px-2 text-[10px] text-purple-600 dark:text-purple-400 border-purple-500/30 hover:bg-purple-500/10 rounded-md gap-1 font-medium"
+                        disabled={busy}
+                        title="Grant Manager access across all regional facilities"
+                        onClick={async () => {
+                          setBusy(true);
+                          try {
+                            const currentSiteObj = sites.find((s) => s.id === siteId);
+                            const siblings = sites.filter(
+                              (s) =>
+                                s.id !== siteId &&
+                                ((currentSiteObj?.region_id && s.region_id === currentSiteObj.region_id) ||
+                                  (currentSiteObj?.state && s.state === currentSiteObj.state))
+                            );
+                            const targets = siblings.length > 0 ? siblings : sites.filter((s) => s.id !== siteId);
+                            for (const sib of targets) {
+                              await supabase.functions.invoke("admin-manage-user", {
+                                body: { action: "assign", user_id: m.user_id, site_id: sib.id, role: "manager" },
+                              });
+                            }
+                            if (!m.roles.includes("manager")) {
+                              await supabase.functions.invoke("admin-manage-user", {
+                                body: { action: "assign", user_id: m.user_id, site_id: siteId, role: "manager" },
+                              });
+                            }
+                            toast.success(`Promoted ${m.email ?? "user"} to Regional Coordinator across ${targets.length + 1} facilities!`);
+                            await load();
+                          } catch (err: unknown) {
+                            toast.error(errorMessage(err));
+                          } finally {
+                            setBusy(false);
+                          }
+                        }}
+                      >
+                        <Globe className="h-2.5 w-2.5" />
+                        <span className="hidden sm:inline">Make Regional</span>
+                        <span className="sm:hidden">Regional</span>
+                      </Button>
+                    )}
 
                     {m.user_id !== callerId && (
                       <Button

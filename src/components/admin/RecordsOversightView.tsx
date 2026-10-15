@@ -1,3 +1,6 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { readAll } from "@/lib/pagination";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,33 +28,22 @@ interface Props {
 }
 
 export default function RecordsOversightView({ siteId }: Props) {
-  const [rows, setRows] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const records = useQuery({ queryKey: ["waste_entries", "oversight", user?.id, siteId], enabled: !!user && siteId !== "ALL_SITES",
+    queryFn: () => readAll((from,to) => supabase.from("waste_entries").select("*").eq("site_id",siteId).order("created_at", {ascending:false}).order("id").range(from,to)) });
+  const rows = records.data ?? [];
+  const loading = records.isLoading;
   const [pendingDel, setPendingDel] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  const load = async () => {
-    setLoading(true);
-    const { data } = await supabase
-      .from("waste_entries")
-      .select("id, location, waste_type_id, weight_kg, quantity, generated_date, activity_type, disposal_batch_id, created_at")
-      .eq("site_id", siteId)
-      .order("created_at", { ascending: false })
-      .limit(100);
-    setRows(data ?? []);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    load();
-  }, [siteId]);
-
   const del = async (id: string) => {
     setPendingDel(null);
-    const { error } = await supabase.from("waste_entries").delete().eq("id", id);
+    const { error } = await supabase.from("waste_entries").delete().eq("id", id).eq("site_id", siteId).select("id").single();
     if (error) return toast.error(error.message);
     toast.success("Record deleted");
-    setRows((prev) => prev.filter((r) => r.id !== id));
+    await qc.invalidateQueries({queryKey:["waste_entries"]});
+    await qc.invalidateQueries({queryKey:["audit_log"]});
   };
 
   const filtered = rows.filter((r) => {
@@ -68,7 +60,7 @@ export default function RecordsOversightView({ siteId }: Props) {
         <CardContent className="p-3.5 sm:p-4 space-y-2.5 sm:space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <FileText className="h-4 w-4 text-primary" /> Records Oversight (100 Max)
+              <FileText className="h-4 w-4 text-primary" /> Records Oversight
             </h3>
             <div className="relative w-full sm:w-56">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -82,6 +74,7 @@ export default function RecordsOversightView({ siteId }: Props) {
             </div>
           </div>
 
+          {records.error && <p role="alert">{records.error.message}</p>}
           {loading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />

@@ -25,7 +25,20 @@ interface AdminTabProps {
 export default function AdminTab({ initialSubTab = "users" }: AdminTabProps) {
   const { currentSite, sites, isAdmin: siteIsAdmin, refresh } = useSite();
   const { user, isAdmin: isAuthAdmin, loading: authLoading } = useAuth();
-  const isAdmin = siteIsAdmin || isAuthAdmin;
+  const isAdmin = siteIsAdmin;
+
+  const [activeTab, setActiveTab] = useState<"users" | "sites" | "records" | "audit">(initialSubTab);
+  const [selectedSiteId, setSelectedSiteId] = useState<string>("");
+
+  useEffect(() => {
+    if (initialSubTab) {
+      setActiveTab(initialSubTab);
+    }
+  }, [initialSubTab]);
+
+  const activeSite = currentSite?.id !== "ALL_SITES"
+    ? currentSite
+    : (sites.find((s) => s.id === selectedSiteId) ?? sites[0] ?? currentSite);
 
   // Wait for auth session to load before deciding — isAdmin is derived from
   // session metadata or site membership which is loading
@@ -48,22 +61,22 @@ export default function AdminTab({ initialSubTab = "users" }: AdminTabProps) {
       </div>
     );
   }
-  const [activeTab, setActiveTab] = useState<"users" | "sites" | "records" | "audit">(initialSubTab);
 
-  useEffect(() => {
-    if (initialSubTab) {
-      setActiveTab(initialSubTab);
+  if (!activeSite) {
+    if (activeTab === "sites") {
+      return (
+        <div className="w-full space-y-3.5 sm:space-y-4 lg:space-y-5">
+          <FacilitiesManagementView sites={sites} onChanged={refresh} />
+        </div>
+      );
     }
-  }, [initialSubTab]);
-
-  if (!isAdmin || !currentSite) {
     return (
       <Card className="border-border/80 p-8 text-center">
         <CardContent className="p-0 flex flex-col items-center gap-2 text-muted-foreground">
           <AlertCircle className="h-8 w-8 text-amber-500 opacity-60" />
-          <h3 className="text-sm font-semibold text-foreground">Admin Privileges Required</h3>
+          <h3 className="text-sm font-semibold text-foreground">No Facilities Configured</h3>
           <p className="text-xs text-muted-foreground max-w-sm">
-            You need administrator permissions for <strong>{currentSite?.name ?? "this site"}</strong> to access governance settings.
+            Configure your enterprise facilities and regional clusters in the Facilities tab.
           </p>
         </CardContent>
       </Card>
@@ -136,12 +149,30 @@ export default function AdminTab({ initialSubTab = "users" }: AdminTabProps) {
           </button>
         </div>
 
-        <div className="hidden sm:flex items-center gap-2 text-xs">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-card border border-border/70 text-foreground font-semibold shadow-2xs">
-            <Building2 className="h-3.5 w-3.5 text-primary" />
-            <span>{currentSite.name}</span>
-          </div>
-          <Badge variant="outline" className="text-[10px] font-mono text-muted-foreground bg-muted/30">
+        <div className="flex items-center gap-2 text-xs">
+          {currentSite?.id === "ALL_SITES" && sites.length > 0 ? (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-card border border-border/70 text-foreground font-semibold shadow-2xs">
+              <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
+              <select
+                aria-label="Select facility for administration"
+                value={activeSite.id}
+                onChange={(e) => setSelectedSiteId(e.target.value)}
+                className="bg-transparent text-xs font-semibold focus:outline-none cursor-pointer pr-1"
+              >
+                {sites.map((s) => (
+                  <option key={s.id} value={s.id} className="bg-popover text-popover-foreground">
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-card border border-border/70 text-foreground font-semibold shadow-2xs">
+              <Building2 className="h-3.5 w-3.5 text-primary" />
+              <span>{activeSite.name}</span>
+            </div>
+          )}
+          <Badge variant="outline" className="hidden sm:inline-flex text-[10px] font-mono text-muted-foreground bg-muted/30">
             Admin Governance
           </Badge>
         </div>
@@ -149,7 +180,7 @@ export default function AdminTab({ initialSubTab = "users" }: AdminTabProps) {
 
       {/* ────────────────────────── TAB 1: USERS & ACCESS ────────────────────────── */}
       {activeTab === "users" && (
-        <UserManagementView siteId={currentSite.id} siteName={currentSite.name} callerId={user?.id ?? ""} />
+        <UserManagementView siteId={activeSite.id} siteName={activeSite.name} callerId={user?.id ?? ""} />
       )}
 
       {/* ────────────────────────── TAB 2: SITES & LOCATION TAGS ────────────────────────── */}
@@ -159,12 +190,12 @@ export default function AdminTab({ initialSubTab = "users" }: AdminTabProps) {
 
       {/* ────────────────────────── TAB 3: RECORDS OVERSIGHT ────────────────────────── */}
       {activeTab === "records" && (
-        <RecordsOversightView siteId={currentSite.id} />
+        <RecordsOversightView siteId={activeSite.id} />
       )}
 
       {/* ────────────────────────── TAB 4: AUDIT LOG ────────────────────────── */}
       {activeTab === "audit" && (
-        <AuditTrailView />
+        <AuditTrailView siteId={activeSite.id} />
       )}
     </div>
   );

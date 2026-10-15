@@ -21,7 +21,7 @@ Complete reference for configuring Waste Buddy Tracker in any environment.
 | Variable | Description | Example |
 |---|---|---|
 | `VITE_SUPABASE_URL` | Your Supabase project URL | `https://xyz.supabase.co` |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anon/public key | `eyJhbGciOi...` |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase anon/public key | `eyJhbGciOi...` |
 
 ### Optional
 
@@ -57,7 +57,7 @@ Then edit:
 
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOi...
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOi...
 VITE_APP_ENV=development
 ```
 
@@ -114,3 +114,7 @@ Development-only features (debug tools, verbose logging) are automatically hidde
 | RLS errors in dev | Ensure migrations are applied and RLS policies are active. |
 | Offline not working | Check `VITE_OFFLINE_ENABLED=true`. Verify service worker is registered. |
 | Push notifications not working | HTTPS required. Check browser permissions. |
+
+## Edge Functions
+
+Set `ALLOWED_ORIGINS` to exact trusted app origins, comma separated. Set a separate random `PHOTO_CLEANUP_SECRET` for the server-only cleanup scheduler. Supabase supplies `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` to functions; never put the service key in a VITE variable. The browser still accepts legacy `VITE_SUPABASE_ANON_KEY` as a compatibility alias.

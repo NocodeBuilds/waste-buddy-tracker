@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/validation";
 import { useState, useMemo } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -67,14 +68,7 @@ import {
   SlidersHorizontal,
   Building2,
 } from "lucide-react";
-import {
-  exportInventoryToExcel,
-  exportForm3Pdf,
-  exportDisposalBatchPdf,
-  exportForm8ContainerLabelsPdf,
-  exportForm8SummaryLabelsPdf,
-  exportForm4AnnualReturnPdf,
-} from "@/lib/wasteExports";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -119,7 +113,7 @@ interface Props {
   batches: DisposalBatch[];
   onDelete: (id: string) => Promise<void>;
   onEdit: (entry: WasteEntry) => void;
-  onCreateDisposal: (params: { disposed_date: string; notes?: string; entry_ids?: string[] }) => Promise<void>;
+  onCreateDisposal: (params: { siteId: string; operationId?: string; disposed_date: string; notes?: string; entry_ids?: string[] }) => Promise<void>;
   onApproveDisposal?: (batchId: string) => Promise<void>;
   onRejectDisposal?: (batchId: string, reason?: string) => Promise<void>;
 }
@@ -235,6 +229,7 @@ export default function WasteInventoryTable({
   const [exportFormat, setExportFormat] = useState<ExportFormat>("excel");
   const [selectedForDisposal, setSelectedForDisposal] = useState<Set<string>>(new Set());
   const [disposalScope, setDisposalScope] = useState<"all" | "selected">("all");
+  const [disposalSiteId, setDisposalSiteId] = useState<string>("");
   const [byTypeOpen, setByTypeOpen] = useState(true);
 
   const years = useMemo(() => {
@@ -270,6 +265,22 @@ export default function WasteInventoryTable({
     }
     return list;
   }, [periodFiltered, isAllSitesMode, selectedFacilityId]);
+
+  const dialogTargetSite = useMemo(() => {
+    if (!isAllSitesMode) return currentSite;
+    return (
+      sites.find((s) => s.id === disposalSiteId) ??
+      sites.find((s) => s.id === selectedFacilityId) ??
+      sites[0] ??
+      currentSite
+    );
+  }, [isAllSitesMode, currentSite, sites, disposalSiteId, selectedFacilityId]);
+
+  const dialogSiteEntries = useMemo(() => {
+    const sId = dialogTargetSite?.id;
+    if (!sId) return [];
+    return entries.filter((e) => e.site_id === sId && !isDisposed(e) && !e.disposal_batch_id && !e.sync_pending);
+  }, [entries, dialogTargetSite]);
 
   const { data: photoCounts = {} } = useEntryPhotoCounts(entries.map((e) => e.id));
 
@@ -507,13 +518,23 @@ export default function WasteInventoryTable({
   const handleDispose = async () => {
     setDisposing(true);
     try {
-      const chosenIds = disposalScope === "selected" ? Array.from(selectedForDisposal) : undefined;
-      if (disposalScope === "selected" && (!chosenIds || chosenIds.length === 0)) {
+      const targetSite = dialogTargetSite;
+      if (!targetSite) throw new Error("Choose one facility before submitting a disposal");
+      const eligible = dialogSiteEntries;
+      const chosenIds = disposalScope === "selected" ? eligible.filter(e => selectedForDisposal.has(e.id)).map(e => e.id) : eligible.map(e => e.id);
+      if (!chosenIds || chosenIds.length === 0) {
         toast.error("Please select at least one entry to dispose");
         setDisposing(false);
         return;
       }
+      const postDated = eligible.filter(e => chosenIds.includes(e.id) && e.generated_date > disposalDate);
+      if (postDated.length > 0) {
+        toast.error(`Cannot dispose ${postDated.length} record(s) generated after the disposal date (${formatDateDDMMYYYY(disposalDate)}). Adjust the date or deselect them.`);
+        setDisposing(false);
+        return;
+      }
       await onCreateDisposal({
+        siteId: targetSite.id,
         disposed_date: disposalDate,
         notes: disposalNotes || undefined,
         entry_ids: chosenIds,
@@ -522,38 +543,49 @@ export default function WasteInventoryTable({
       setDialogOpen(false);
       setDisposalNotes("");
       setSelectedForDisposal(new Set());
-    } catch (err: any) {
-      toast.error(err.message ?? "Failed to record disposal");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err));
     } finally {
       setDisposing(false);
     }
   };
 
   const openExport = (fmt: ExportFormat) => {
+    if (isAllSitesMode && selectedFacilityId === "all") { toast.error("Choose a facility before exporting its records"); return; }
     setExportFormat(fmt);
     setExportOpen(true);
   };
 
-  const handleExport = (opts: {
+  const exportSite = isAllSitesMode ? sites.find(s => s.id === selectedFacilityId) : currentSite;
+  const exportEntries = entries.filter(e => e.site_id === exportSite?.id);
+  const exportBatches = batches.filter(b => b.site_id === exportSite?.id);
+  const handleExport = async (opts: {
     format: ExportFormat;
     filteredEntries: WasteEntry[];
     chosenBatch: DisposalBatch | null;
     periodLabel: string;
     selectedFy: number;
+    form8Mode?: "summary" | "per_entry";
   }) => {
+    const { exportInventoryToExcel,
+  exportForm3Pdf,
+  exportDisposalBatchPdf,
+  exportForm8ContainerLabelsPdf,
+  exportForm8SummaryLabelsPdf,
+  exportForm4AnnualReturnPdf, } = await import("@/lib/wasteExports");
     if (opts.format === "excel") {
       if (periodFiltered.length === 0 && opts.filteredEntries.length === 0) {
         toast.error("No data in the selected period to export");
         return;
       }
       try {
-        exportInventoryToExcel(opts.filteredEntries, currentSite?.name ?? "Site", {
+        exportInventoryToExcel(opts.filteredEntries, exportSite?.name ?? "Site", {
           label: opts.periodLabel,
           kind: "all",
         });
         toast.success(`Excel exported — ${opts.periodLabel}`);
-      } catch (err: any) {
-        toast.error(err.message ?? "Export failed");
+      } catch (err: unknown) {
+        toast.error(errorMessage(err));
       }
     } else if (opts.format === "pdf") {
       if (opts.filteredEntries.length === 0) {
@@ -561,13 +593,13 @@ export default function WasteInventoryTable({
         return;
       }
       try {
-        exportForm3Pdf(opts.filteredEntries, currentSite?.name ?? "Site", {
+        exportForm3Pdf(opts.filteredEntries, exportSite?.name ?? "Site", {
           label: opts.periodLabel,
           kind: "all",
         });
         toast.success(`Form 3 PDF exported — ${opts.periodLabel}`);
-      } catch (err: any) {
-        toast.error(err.message ?? "Export failed");
+      } catch (err: unknown) {
+        toast.error(errorMessage(err));
       }
     } else if (opts.format === "form8") {
       if (opts.filteredEntries.length === 0) {
@@ -576,23 +608,23 @@ export default function WasteInventoryTable({
       }
       try {
         if (opts.form8Mode === "per_entry") {
-          exportForm8ContainerLabelsPdf(opts.filteredEntries, currentSite?.name ?? "Site");
+          exportForm8ContainerLabelsPdf(opts.filteredEntries, exportSite?.name ?? "Site");
           toast.success(`Form 8 Labels exported (${opts.filteredEntries.length} items)`);
         } else {
-          exportForm8SummaryLabelsPdf(opts.filteredEntries, currentSite?.name ?? "Site");
-          const uniqueTypesCount = new Set(opts.filteredEntries.map((e: any) => e.waste_type_id)).size;
+          exportForm8SummaryLabelsPdf(opts.filteredEntries, exportSite?.name ?? "Site");
+          const uniqueTypesCount = new Set(opts.filteredEntries.map((e) => e.waste_type_id)).size;
           toast.success(`Form 8 Summary Labels exported (${uniqueTypesCount} waste types)`);
         }
-      } catch (err: any) {
-        toast.error(err.message ?? "Export failed");
+      } catch (err: unknown) {
+        toast.error(errorMessage(err));
       }
     } else if (opts.format === "form4") {
       try {
         const fy = opts.selectedFy ?? selectedFy;
-        exportForm4AnnualReturnPdf(entries, batches, currentSite?.name ?? "Site", fy);
+        exportForm4AnnualReturnPdf(exportEntries, exportBatches, exportSite?.name ?? "Site", fy);
         toast.success(`Form 4 Annual Return exported for FY ${fy}-${String(fy + 1).slice(-2)}`);
-      } catch (err: any) {
-        toast.error(err.message ?? "Export failed");
+      } catch (err: unknown) {
+        toast.error(errorMessage(err));
       }
     }
   };
@@ -666,7 +698,16 @@ export default function WasteInventoryTable({
               <Button
                 size="sm"
                 onClick={() => {
-                  setSelectedForDisposal(new Set(activeEntries.map((e) => e.id)));
+                  const initSiteId = isAllSitesMode
+                    ? selectedFacilityId !== "all"
+                      ? selectedFacilityId
+                      : sites[0]?.id ?? ""
+                    : currentSite?.id ?? "";
+                  setDisposalSiteId(initSiteId);
+                  const siteEntries = allActiveEntries.filter(
+                    (e) => e.site_id === initSiteId && !e.disposal_batch_id && !e.sync_pending
+                  );
+                  setSelectedForDisposal(new Set(siteEntries.map((e) => e.id)));
                   setDisposalScope("all");
                   setDialogOpen(true);
                 }}
@@ -685,11 +726,41 @@ export default function WasteInventoryTable({
                     </DialogTitle>
                     <DialogDescription className="text-xs">
                       Create an official disposal batch record and generate Form 10 manifest for site:{" "}
-                      <strong className="text-foreground">{currentSite?.name ?? "Site"}</strong>
+                      <strong className="text-foreground">{dialogTargetSite?.name ?? "Site"}</strong>
                     </DialogDescription>
                   </DialogHeader>
 
                   <div className="p-4 space-y-4 overflow-y-auto flex-1 text-xs">
+                    {/* Facility Selector when in All Facilities / Regional Mode */}
+                    {isAllSitesMode && sites.length > 1 && (
+                      <div className="space-y-1.5 p-2.5 rounded-lg border border-border/80 bg-muted/30">
+                        <Label className="text-xs font-semibold flex items-center gap-1.5">
+                          <Building2 className="h-3.5 w-3.5 text-primary" /> Originating Facility for Manifest
+                        </Label>
+                        <Select
+                          value={dialogTargetSite?.id ?? ""}
+                          onValueChange={(val) => {
+                            setDisposalSiteId(val);
+                            const entriesForSite = entries.filter(
+                              (e) => e.site_id === val && !isDisposed(e) && !e.disposal_batch_id && !e.sync_pending
+                            );
+                            setSelectedForDisposal(new Set(entriesForSite.map((e) => e.id)));
+                          }}
+                        >
+                          <SelectTrigger className="h-8 text-xs rounded-lg bg-background">
+                            <SelectValue placeholder="Select facility" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {sites.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                {s.name} {s.state ? `(${s.state})` : ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
                     {/* Disposal Scope Selector */}
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold">Disposal Scope</Label>
@@ -703,9 +774,9 @@ export default function WasteInventoryTable({
                               : "border-border hover:bg-muted/70 text-muted-foreground"
                           }`}
                         >
-                          <div className="font-semibold text-foreground text-xs">All Active Inventory</div>
+                          <div className="font-semibold text-foreground text-xs">All Active Facility Inventory</div>
                           <div className="text-[10px] text-muted-foreground mt-0.5">
-                            {activeEntries.length} entries · {fmtNum(totals.kg)} kg / {fmtNum(totals.litres)} L
+                            {dialogSiteEntries.length} entries eligible
                           </div>
                         </button>
 
@@ -714,7 +785,7 @@ export default function WasteInventoryTable({
                           onClick={() => {
                             setDisposalScope("selected");
                             if (selectedForDisposal.size === 0) {
-                              setSelectedForDisposal(new Set(activeEntries.map((e) => e.id)));
+                              setSelectedForDisposal(new Set(dialogSiteEntries.map((e) => e.id)));
                             }
                           }}
                           className={`p-2.5 rounded-lg border text-left transition-all ${
@@ -736,7 +807,7 @@ export default function WasteInventoryTable({
                       <div className="space-y-2 border border-border/80 rounded-xl p-3 bg-muted/20">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-semibold text-foreground">
-                            Select Drums / Items to Dispose ({selectedForDisposal.size} of {activeEntries.length})
+                            Select Drums / Items to Dispose ({selectedForDisposal.size} of {dialogSiteEntries.length})
                           </span>
                           <div className="flex items-center gap-1">
                             <Button
@@ -744,7 +815,7 @@ export default function WasteInventoryTable({
                               size="sm"
                               variant="ghost"
                               className="h-6 px-2 text-[11px]"
-                              onClick={() => setSelectedForDisposal(new Set(activeEntries.map((e) => e.id)))}
+                              onClick={() => setSelectedForDisposal(new Set(dialogSiteEntries.map((e) => e.id)))}
                             >
                               All
                             </Button>
@@ -755,7 +826,7 @@ export default function WasteInventoryTable({
                               className="h-6 px-2 text-[11px]"
                               onClick={() =>
                                 setSelectedForDisposal(
-                                  new Set(activeEntries.filter((e) => isEntryOverdue(e)).map((e) => e.id))
+                                  new Set(dialogSiteEntries.filter((e) => isEntryOverdue(e)).map((e) => e.id))
                                 )
                               }
                             >
@@ -774,7 +845,7 @@ export default function WasteInventoryTable({
                         </div>
 
                         <div className="max-h-48 overflow-y-auto divide-y divide-border/60 border border-border/70 rounded-lg bg-card shadow-inner">
-                          {activeEntries.map((e) => {
+                          {dialogSiteEntries.map((e) => {
                             const checked = selectedForDisposal.has(e.id);
                             const wt = WASTE_TYPES.find((w) => w.id === e.waste_type_id);
                             const statCode = getStatutoryCode(e.waste_type_id);
@@ -878,13 +949,16 @@ export default function WasteInventoryTable({
                     </DialogClose>
                     <Button
                       size="sm"
-                      disabled={disposing || (disposalScope === "selected" && selectedForDisposal.size === 0)}
+                      disabled={
+                        disposing ||
+                        (disposalScope === "all" ? dialogSiteEntries.length === 0 : selectedForDisposal.size === 0)
+                      }
                       onClick={handleDispose}
                       className="h-9 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
                     >
                       {disposing && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
                       Confirm Disposal (
-                      {disposalScope === "all" ? activeEntries.length : selectedForDisposal.size} items)
+                      {disposalScope === "all" ? dialogSiteEntries.length : selectedForDisposal.size} items)
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -1386,8 +1460,9 @@ export default function WasteInventoryTable({
                                     size="icon"
                                     variant="ghost"
                                     className="h-8 w-8 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
-                                    onClick={() => {
-                                      exportForm8ContainerLabelsPdf([entry], currentSite?.name ?? "Site");
+                                    onClick={async () => {
+                                      const { exportForm8ContainerLabelsPdf } = await import("@/lib/wasteExports");
+                                      exportForm8ContainerLabelsPdf([entry], sites.find(s => s.id === entry.site_id)?.name ?? "Site");
                                       toast.success("Form 8 Container Label downloaded");
                                     }}
                                     title="Print Form 8 Drum Label"
@@ -1478,7 +1553,7 @@ export default function WasteInventoryTable({
             entries={entries}
             allActiveEntries={allActiveEntries}
             isManagerOrAdmin={isManagerOrAdmin}
-            currentSiteName={currentSite?.name ?? "Site"}
+            currentSiteName={exportSite?.name ?? "Site"}
             onApproveDisposal={onApproveDisposal}
             onRejectDisposal={onRejectDisposal}
           />
@@ -1490,9 +1565,9 @@ export default function WasteInventoryTable({
         open={exportOpen}
         onOpenChange={setExportOpen}
         initialFormat={exportFormat}
-        siteName={currentSite?.name ?? "Site"}
-        entries={entries}
-        batches={batches}
+        siteName={exportSite?.name ?? "Site"}
+        entries={exportEntries}
+        batches={exportBatches}
         onExport={handleExport}
       />
     </div>

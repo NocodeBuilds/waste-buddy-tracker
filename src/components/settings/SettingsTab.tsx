@@ -1,3 +1,4 @@
+import { csvCell as sanitizeCsv } from "@/lib/csv";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,8 +15,13 @@ import {
   Users,
   ChevronRight,
   ShieldCheck,
+  Smartphone,
+  RefreshCw,
 } from "lucide-react";
 import { WasteEntry, WASTE_TYPES, formatDateDDMMYYYY } from "@/lib/wasteTypes";
+import { isStandalone, triggerManualInstall, subscribeInstallState } from "@/components/layout/InstallPrompt";
+import { checkPWAUpdate } from "@/pwa/registerSW";
+import { useOnlineStatus } from "@/lib/offlineSync";
 import {
   Select,
   SelectContent,
@@ -47,26 +53,59 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
   const { user, signOut } = useAuth();
   const { currentSite, isAdmin, sites, setCurrentSite } = useSite();
   const [members, setMembers] = useState<SiteMember[]>([]);
+  const [canInstall, setCanInstall] = useState(false);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const { isOnline, pendingCount } = useOnlineStatus();
+  const standalone = isStandalone();
+
+  useEffect(() => {
+    return subscribeInstallState(setCanInstall);
+  }, []);
+
+  const handleInstallApp = async () => {
+    const outcome = await triggerManualInstall(() => {
+      toast.info("On iOS: Tap Safari Share icon below, then 'Add to Home Screen'");
+    });
+    if (outcome === "accepted") {
+      toast.success("WasteBuddy installed successfully");
+    } else if (outcome === "unavailable") {
+      toast.info("App is already installed or installation is not available in this browser window.");
+    }
+  };
+
+  const handleCheckUpdate = async () => {
+    setCheckingUpdate(true);
+    const checked = await checkPWAUpdate();
+    setCheckingUpdate(false);
+    if (checked) {
+      toast.success("Checked for updates. You are running the latest build.");
+    } else {
+      toast.info("Offline or running latest cached version.");
+    }
+  };
 
   const loadMembers = async () => {
-    if (!currentSite?.id) return;
+    if (!currentSite?.id || currentSite.id === "ALL_SITES") {
+      setMembers([]);
+      return;
+    }
     try {
       const [{ data: ms }, { data: rs }] = await Promise.all([
         supabase.from("user_sites").select("user_id").eq("site_id", currentSite.id),
         supabase.from("user_roles").select("user_id, role").eq("site_id", currentSite.id),
       ]);
       const userIds = Array.from(
-        new Set([...(ms ?? []).map((m: any) => m.user_id), ...(rs ?? []).map((r: any) => r.user_id)])
+        new Set([...(ms ?? []).map((m) => m.user_id), ...(rs ?? []).map((r) => r.user_id)])
       );
-      let profMap: Record<string, { email: string | null; full_name: string | null }> = {};
+      const profMap: Record<string, { email: string | null; full_name: string | null }> = {};
       if (userIds.length > 0) {
         const { data: ps } = await supabase.from("profiles").select("id, email, full_name").in("id", userIds);
-        (ps ?? []).forEach((p: any) => {
+        (ps ?? []).forEach((p) => {
           profMap[p.id] = { email: p.email, full_name: p.full_name };
         });
       }
       const rolesByUser: Record<string, string[]> = {};
-      (rs ?? []).forEach((r: any) => {
+      (rs ?? []).forEach((r) => {
         rolesByUser[r.user_id] = [...(rolesByUser[r.user_id] ?? []), r.role];
       });
       setMembers(
@@ -86,20 +125,15 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
     loadMembers();
   }, [currentSite?.id]);
 
-  const sanitizeCsv = (v: unknown): string => {
-    const s = String(v ?? "");
-    if (/^[=+\-@\t\r]/.test(s)) return `\t${s.replace(/"/g, '""')}`;
-    if (/[,"\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-    return s;
-  };
 
   const handleExport = () => {
     const csv = [
-      "Location,Waste Type,Category,Weight,Unit,Count (pcs),Activity,Generated,Disposed Batch,Notes",
+      "Facility,Location,Waste Type,Category,Weight,Unit,Count (pcs),Activity,Generated,Disposed Batch,Notes",
       ...entries.map((e) => {
         const wt = WASTE_TYPES.find((w) => w.id === e.waste_type_id);
         const unit = wt?.measureUnit === "litres" ? "Ltr" : "kg";
         return [
+          sanitizeCsv(sites.find(s => s.id === e.site_id)?.name ?? e.site_id),
           sanitizeCsv(e.location),
           sanitizeCsv(wt?.name ?? e.waste_type_id),
           sanitizeCsv(e.waste_category),
@@ -349,6 +383,62 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
               >
                 <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
                 <span>Export CSV</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Section: PWA & Offline Runtime */}
+        <Card className="border-border/80 shadow-xs flex flex-col justify-between">
+          <CardContent className="p-3.5 sm:p-4 space-y-2.5 sm:space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Smartphone className="h-4 w-4 text-primary" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  PWA & Offline Runtime
+                </h3>
+              </div>
+              <Badge variant="outline" className={cn("text-[10px] font-mono", standalone ? "text-emerald-700 bg-emerald-500/10 border-emerald-500/30" : "text-muted-foreground")}>
+                {standalone ? "Installed App" : "Browser Tab"}
+              </Badge>
+            </div>
+            <div className="p-3 rounded-lg border border-border/60 bg-muted/20 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Network Mode:</span>
+                <span className="font-medium text-foreground">{isOnline ? "Connected (Online)" : "Offline Mode"}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Offline Outbox:</span>
+                <span className="font-medium text-foreground">
+                  {pendingCount === 0 ? "All records synced" : `${pendingCount} record(s) queued`}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Service Worker:</span>
+                <span className="font-medium text-emerald-600">Active & Offline-Ready</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              {!standalone && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="h-8 text-xs gap-1.5 rounded-lg shadow-2xs font-medium"
+                  onClick={handleInstallApp}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Install App</span>
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs gap-1.5 rounded-lg shadow-2xs"
+                onClick={handleCheckUpdate}
+                disabled={checkingUpdate}
+              >
+                <RefreshCw className={cn("h-3.5 w-3.5 text-primary", checkingUpdate && "animate-spin")} />
+                <span>{checkingUpdate ? "Checking..." : "Check Updates"}</span>
               </Button>
             </div>
           </CardContent>

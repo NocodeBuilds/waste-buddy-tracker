@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import autoTable, { RowInput } from "jspdf-autotable";
 import {
   WasteEntry, WASTE_TYPES, getMeasureUnit, unitLabel, sumByUnit, fmtNum,
   getDaysStored, isDisposed, DisposalBatch,
@@ -192,7 +192,7 @@ export function exportForm3Pdf(entries: WasteEntry[], siteName: string, period?:
     },
   });
 
-  const finalY = (doc as any).lastAutoTable?.finalY ?? 36;
+  const finalY = (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 36;
   if (finalY < doc.internal.pageSize.getHeight() - 30) {
     doc.setFontSize(9);
     doc.text("Signature of authorised person: ____________________________", 10, finalY + 18);
@@ -288,7 +288,7 @@ export function exportDisposalBatchPdf(
     n,
     v.kg > 0 ? `${v.kg.toFixed(2)} kg` : v.litres > 0 ? `${v.litres.toFixed(2)} L` : "—",
   ]);
-  const y1 = (doc as any).lastAutoTable?.finalY ?? 60;
+  const y1 = (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 60;
   autoTable(doc, {
     startY: y1 + 5,
     head: [["Consolidated Waste Classification", "Dispatched Quantity"]],
@@ -299,7 +299,7 @@ export function exportDisposalBatchPdf(
     margin: { left: 10, right: 10 },
   });
 
-  const y2 = (doc as any).lastAutoTable?.finalY ?? y1 + 35;
+  const y2 = (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? y1 + 35;
   const ph = doc.internal.pageSize.getHeight();
   const sigY = Math.min(y2 + 14, ph - 30);
   doc.setFontSize(8);
@@ -375,7 +375,7 @@ export function exportForm8ContainerLabelsPdf(
     const wName = wt?.name ?? entry.waste_type_id;
     const cat = entry.waste_category === "hazardous" ? "Hazardous Waste" : "Regulated Waste";
     const physicalForm = wt?.category ?? "Solid / Liquid";
-    const statCode = (wt as any)?.statutoryCode || "Schedule I - HOWM";
+    const statCode = wt?.statutoryCode || "Schedule I - HOWM";
     const qty = `${fmtNum(Number(entry.weight_kg ?? 0))} ${unitLabel(getMeasureUnit(entry.waste_type_id))}`;
 
     let y = topMargin + 22;
@@ -496,7 +496,7 @@ export function exportForm8SummaryLabelsPdf(
     const wName = group.wt?.name ?? group.typeId;
     const cat = group.items[0]?.waste_category === "hazardous" ? "Hazardous Waste" : "Regulated Waste";
     const physicalForm = group.wt?.category ?? "Solid / Liquid";
-    const statCode = (group.wt as any)?.statutoryCode || "Schedule I - HOWM";
+    const statCode = group.wt?.statutoryCode || "Schedule I - HOWM";
     const unit = unitLabel(getMeasureUnit(group.typeId));
     const qty = `${fmtNum(group.totalQty)} ${unit}`;
     const dateRange = group.earliest === group.latest
@@ -592,11 +592,11 @@ export function exportForm4AnnualReturnPdf(
   doc.setFontSize(8);
   doc.text(`1. Name and address of facility: ${siteName}`, 14, 29);
   doc.text(`2. Financial Year: ${fyLabel} (01-Apr-${financialYear} to 31-Mar-${financialYear + 1})`, 14, 34);
-  doc.text(`3. SPCB Authorization / Registration No.: SPCB/HOWM/${safeName(siteName)}/REG`, pageW - 14, 29, { align: "right" });
+  doc.text(`3. SPCB Authorization / Registration No.: NOT PROVIDED — DRAFT`, pageW - 14, 29, { align: "right" });
   doc.text(`4. Date of Submission: ${formatDateDDMMYYYY(new Date())}`, pageW - 14, 34, { align: "right" });
 
   // Calculation per waste type
-  const tableData: any[] = [];
+  const tableData: RowInput[] = [];
   let totalOpenKg = 0, totalGenKg = 0, totalDispKg = 0, totalCloseKg = 0;
   let totalOpenL = 0, totalGenL = 0, totalDispL = 0, totalCloseL = 0;
 
@@ -610,7 +610,7 @@ export function exportForm4AnnualReturnPdf(
 
     matching.forEach((e) => {
       const genTime = new Date(e.generated_date + "T00:00:00").getTime();
-      const dispDateStr = e.disposal_batch_id ? batchMap.get(e.disposal_batch_id) : null;
+      const dispDateStr = isDisposed(e) && e.disposal_batch_id ? batchMap.get(e.disposal_batch_id) : null;
       const dispTime = dispDateStr ? new Date(dispDateStr + "T00:00:00").getTime() : null;
       const w = Number(e.weight_kg ?? 0);
 
@@ -646,7 +646,7 @@ export function exportForm4AnnualReturnPdf(
         `${fmtNum(generated)} ${u}`,
         `${fmtNum(disposed)} ${u}`,
         `${fmtNum(closing)} ${u}`,
-        disposed > 0 ? "Authorized TSDF / Recycler" : "—",
+        disposed > 0 ? "Recipient not recorded — verify before filing" : "—",
       ]);
 
       if (u === "kg") {
@@ -694,7 +694,7 @@ export function exportForm4AnnualReturnPdf(
     },
   });
 
-  const finalY = (doc as any).lastAutoTable?.finalY ?? 130;
+  const finalY = (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 130;
   const sigY = Math.min(finalY + 12, pageH - 28);
 
   doc.setFontSize(8).setFont("helvetica", "bold");

@@ -1,3 +1,4 @@
+import "fake-indexeddb/auto";
 import { describe, it, expect, beforeEach } from "vitest";
 import {
   getStorageLimitDays,
@@ -111,11 +112,11 @@ describe("Statutory EHS Rules Compliance Engine", () => {
 });
 
 describe("Offline Mutation Sync Queue", () => {
-  beforeEach(() => {
-    clearPendingQueue();
+  beforeEach(async () => {
+    await clearPendingQueue();
   });
 
-  it("enqueues and retrieves offline entries in localStorage", () => {
+  it("enqueues and retrieves offline entries in IndexedDB", async () => {
     const item: PendingEntry = {
       tempId: "temp-entry-1",
       siteId: "test-site-123",
@@ -130,14 +131,14 @@ describe("Offline Mutation Sync Queue", () => {
       },
     };
 
-    saveToPendingQueue(item);
+    await saveToPendingQueue(item);
 
-    const queue = getPendingQueue();
+    const queue = await getPendingQueue();
     expect(queue.length).toBe(1);
     expect(queue[0].data.weight_kg).toBe(25);
 
-    removeFromPendingQueue(item.tempId);
-    expect(getPendingQueue().length).toBe(0);
+    await removeFromPendingQueue(item.tempId);
+    expect((await getPendingQueue()).length).toBe(0);
   });
 });
 

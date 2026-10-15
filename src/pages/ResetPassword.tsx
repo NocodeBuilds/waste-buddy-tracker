@@ -18,14 +18,14 @@ export default function ResetPassword() {
 
   useEffect(() => {
     // Check if recovery session is already established or delivered via URL hash
-    supabase.auth.getSession().then(({ data }: any) => {
+    supabase.auth.getSession().then(({ data }) => {
       if (data?.session) {
         setReady(true);
       }
     });
 
     // Also listen for PASSWORD_RECOVERY or SIGNED_IN event from magic link
-    const { data: sub } = supabase.auth.onAuthStateChange((evt: string, session: any) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((evt, session) => {
       if (evt === "PASSWORD_RECOVERY" || (evt === "SIGNED_IN" && session)) {
         setReady(true);
       }

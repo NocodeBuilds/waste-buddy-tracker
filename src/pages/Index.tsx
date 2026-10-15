@@ -1,20 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useWasteEntries } from "@/hooks/useWasteEntries";
 import { useSite } from "@/contexts/SiteContext";
 import WasteEntryForm from "@/components/inventory/WasteEntryForm";
 import FuturisticDashboard from "@/components/dashboard/FuturisticDashboard";
+import RegionalCoordinatorDashboard from "@/components/dashboard/RegionalCoordinatorDashboard";
 import WasteInventoryTable from "@/components/inventory/WasteInventoryTable";
 import AlertsPanel from "@/components/common/AlertsPanel";
-import AnalyticsTab from "@/components/analytics/AnalyticsTab";
+const AnalyticsTab = lazy(() => import("@/components/analytics/AnalyticsTab"));
 import { useAuth } from "@/contexts/AuthContext";
-import SettingsTab from "@/components/settings/SettingsTab";
-import AdminTab from "@/components/admin/AdminTab";
+const SettingsTab = lazy(() => import("@/components/settings/SettingsTab"));
+const AdminTab = lazy(() => import("@/components/admin/AdminTab"));
 import RequestSiteAccess from "@/components/auth/RequestSiteAccess";
 import BottomNav, { TabId } from "@/components/layout/BottomNav";
 import DesktopSidebar from "@/components/layout/DesktopSidebar";
 import EditWasteDialog from "@/components/inventory/EditWasteDialog";
 import OfflineBanner from "@/components/layout/OfflineBanner";
+import InstallPrompt from "@/components/layout/InstallPrompt";
 import { WasteEntry, isEntryOverdue, isEntryWarning } from "@/lib/wasteTypes";
 
 import SiteSwitcher from "@/components/layout/SiteSwitcher";
@@ -55,10 +57,10 @@ const TAB_CONFIG: Record<TabId, { title: string; subtitle: string; icon: typeof 
 };
 
 const Index = () => {
-  const { currentSite, sites, loading: siteLoading, isAdmin: siteIsAdmin, refresh } = useSite();
+  const { currentSite, sites, loading: siteLoading, isAdmin: siteIsAdmin, refresh, error: siteError, isAllSitesMode } = useSite();
   const { isAdmin: isAuthAdmin } = useAuth();
   const isAdmin = siteIsAdmin || isAuthAdmin;
-  const { entries, batches, isLoading, addEntry, updateEntry, deleteEntry, createDisposalBatch, approveDisposalBatch } = useWasteEntries();
+  const { entries, batches, error: dataError, isLoading, addEntry, updateEntry, deleteEntry, createDisposalBatch, approveDisposalBatch } = useWasteEntries();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const urlTab = searchParams.get("tab") as TabId | null;
@@ -71,6 +73,12 @@ const Index = () => {
 
   const [adminSubTab, setAdminSubTab] = useState<"users" | "sites" | "records" | "audit">("users");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  useEffect(() => {
+    if (searchParams.get("action") === "new") {
+      setDrawerOpen(true);
+      const next = new URLSearchParams(searchParams); next.delete("action"); setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
   const [editEntry, setEditEntry] = useState<WasteEntry | null>(null);
 
   useEffect(() => {
@@ -101,6 +109,7 @@ const Index = () => {
 
   const alertCount = overdueCount + warningCount;
 
+  if (siteError) return <main className="p-8" role="alert">{siteError}<Button onClick={() => void refresh()}>Retry</Button></main>;
   // No site assigned → show request-access flow
   if (!siteLoading && sites.length === 0) {
     return <RequestSiteAccess onApproved={refresh} />;
@@ -161,7 +170,7 @@ const Index = () => {
               {/* Notification Bell */}
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="icon" className="relative h-9 w-9 text-muted-foreground hover:text-foreground">
+                  <Button aria-label="Waste storage alerts" variant="outline" size="icon" className="relative h-9 w-9 text-muted-foreground hover:text-foreground">
                     <Bell className="h-4 w-4" />
                     {alertCount > 0 && (
                       <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-rose-500 text-[10px] font-bold text-white flex items-center justify-center px-1 shadow-xs ring-2 ring-card">
@@ -180,7 +189,9 @@ const Index = () => {
 
         {/* Offline Status & Sync Banner */}
         <OfflineBanner />
+        <InstallPrompt />
 
+        {dataError && <div role="alert" className="p-3 text-destructive">Records could not be loaded: {dataError.message}</div>}
         {/* Main content */}
         <main
           className={cn(
@@ -190,6 +201,7 @@ const Index = () => {
               : "overflow-y-auto py-3 sm:py-6 pb-20 lg:pb-8 space-y-3 sm:space-y-4 overscroll-y-contain"
           )}
         >
+          <Suspense fallback={<p role="status">Loading view…</p>}>
           {isLoading || siteLoading ? (
             <div className="space-y-4">
               {/* Skeleton header */}
@@ -224,12 +236,21 @@ const Index = () => {
           ) : (
             <>
               {activeTab === "home" && (
-                <FuturisticDashboard
-                  entries={entries}
-                  batches={batches}
-                  onLogWaste={() => setDrawerOpen(true)}
-                  onNavigateToInventory={() => handleTabChange("inventory")}
-                />
+                isAllSitesMode ? (
+                  <RegionalCoordinatorDashboard
+                    entries={entries}
+                    batches={batches}
+                    onLogWaste={() => setDrawerOpen(true)}
+                    onNavigateToInventory={() => handleTabChange("inventory")}
+                  />
+                ) : (
+                  <FuturisticDashboard
+                    entries={entries}
+                    batches={batches}
+                    onLogWaste={() => setDrawerOpen(true)}
+                    onNavigateToInventory={() => handleTabChange("inventory")}
+                  />
+                )
               )}
               {activeTab === "inventory" && (
                 <WasteInventoryTable
@@ -241,7 +262,7 @@ const Index = () => {
                     return deleteEntry.mutateAsync({ id, siteId: sId });
                   }}
                   onEdit={(e) => setEditEntry(e)}
-                  onCreateDisposal={(p) => createDisposalBatch.mutateAsync({ ...p, siteId: (p as any).siteId || currentSite?.id || "" })}
+                  onCreateDisposal={async (p) => { await createDisposalBatch.mutateAsync(p); }}
                   onApproveDisposal={(id) => {
                     const batch = batches.find((b) => b.id === id);
                     const sId = batch?.site_id || currentSite?.id || "";
@@ -273,6 +294,7 @@ const Index = () => {
               {activeTab === "admin" && <AdminTab initialSubTab={adminSubTab} />}
             </>
           )}
+          </Suspense>
         </main>
       </div>
 

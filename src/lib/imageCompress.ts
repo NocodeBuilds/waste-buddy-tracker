@@ -1,76 +1,30 @@
-/**
- * Compress an image file using canvas + JPEG re-encode.
- * Reduces file size by ~70-80% while keeping quality good enough for documentation.
- */
-
-const MAX_DIMENSION = 1200;
-const JPEG_QUALITY = 0.7;
-
-/**
- * Compress an image File to JPEG.
- * Returns a new File at the compressed quality, or the original if compression fails.
- */
-export async function compressImage(file: File): Promise<File> {
-  // Only compress images
-  if (!file.type.startsWith("image/")) return file;
-
-  try {
-    const bitmap = await createImageBitmap(file);
-    const { width, height } = bitmap;
-
-    // Skip if already small enough
-    if (width <= MAX_DIMENSION && height <= MAX_DIMENSION && file.size < 300_000) {
-      bitmap.close();
-      return file;
-    }
-
-    // Scale down to fit within MAX_DIMENSION
-    let newWidth = width;
-    let newHeight = height;
-    if (newWidth > MAX_DIMENSION || newHeight > MAX_DIMENSION) {
-      const ratio = Math.min(MAX_DIMENSION / newWidth, MAX_DIMENSION / newHeight);
-      newWidth = Math.round(newWidth * ratio);
-      newHeight = Math.round(newHeight * ratio);
-    }
-
-    // Draw to canvas and export as JPEG
-    const canvas = document.createElement("canvas");
-    canvas.width = newWidth;
-    canvas.height = newHeight;
-    const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(bitmap, 0, 0, newWidth, newHeight);
-    bitmap.close();
-
-    const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob(
-        (b) => resolve(b as Blob),
-        "image/jpeg",
-        JPEG_QUALITY
-      );
-    });
-
-    const compressed = new File(
-      [blob],
-      file.name.replace(/\.[^.]+$/, ".jpg"),
-      { type: "image/jpeg" }
-    );
-
-    console.log(
-      `Compressed ${file.name}: ${(file.size / 1024).toFixed(0)}KB → ${(compressed.size / 1024).toFixed(0)}KB (${((1 - compressed.size / file.size) * 100).toFixed(0)}% reduction)`
-    );
-
-    return compressed;
-  } catch (err) {
-    console.warn("Image compression failed, uploading original:", err);
-    return file;
-  }
+import { validatePhotos } from "./validation";
+const MAX_DIMENSION=1200;
+export async function compressImage(file:File):Promise<File>{
+ validatePhotos([file]);
+ let bitmap:ImageBitmap;
+ try { bitmap=await createImageBitmap(file); }
+ catch {
+  // HEIC is accepted by storage even on devices without a browser decoder.
+  if(["image/heic","image/heif"].includes(file.type)) return file;
+  throw new Error("This photo cannot be decoded. Choose a valid JPEG, PNG or WebP image.");
+ }
+ try {
+  if(!bitmap.width||!bitmap.height||bitmap.width*bitmap.height>100_000_000) throw new Error("Photo dimensions are too large");
+  const ratio=Math.min(1,MAX_DIMENSION/bitmap.width,MAX_DIMENSION/bitmap.height);
+  const canvas=document.createElement("canvas");
+  canvas.width=Math.max(1,Math.round(bitmap.width*ratio));canvas.height=Math.max(1,Math.round(bitmap.height*ratio));
+  const ctx=canvas.getContext("2d");
+  if(!ctx) throw new Error("Photo processing is unavailable");
+  ctx.fillStyle="#fff";ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+  const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("Photo encoding failed")),"image/jpeg",0.7));
+  return new File([blob],file.name.replace(/\.[^.]+$/,"")+".jpg",{type:"image/jpeg"});
+ } finally {bitmap.close();}
 }
-
-/**
- * Compress an array of image files. Returns new File array with compressed versions.
- */
-export async function compressImages(files: File[]): Promise<File[]> {
-  if (!files.length) return files;
-  const compressed = await Promise.all(files.map(compressImage));
-  return compressed;
+export async function compressImages(files:File[]):Promise<File[]>{
+ validatePhotos(files);const output:File[]=[];
+ // Sequential decoding bounds memory on mobile devices.
+ for(const file of files) output.push(await compressImage(file));
+ return output;
 }

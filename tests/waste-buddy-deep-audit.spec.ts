@@ -9,15 +9,9 @@ const STORAGE_STATE_PATH = path.join(__dirname, '../playwright/.auth/user.json')
 
 test.describe('Waste Buddy Tracker — Deep PWA Audit', () => {
   test.beforeAll(async () => {
-    try { mkdirSync(SCREENSHOTS_DIR, { recursive: true }); } catch (e) {}
+    mkdirSync(SCREENSHOTS_DIR, { recursive: true });
   });
 
-  test.beforeEach(async ({ context }) => {
-    // Ensure fresh auth state for each test
-    if (context && 'extendStorageState' in context) {
-      await (context as any).extendStorageState?.(STORAGE_STATE_PATH);
-    }
-  });
 
   test('Phase 1: Application Health — Console & Network', async ({ page }) => {
     const errors: string[] = [];
@@ -184,7 +178,7 @@ test.describe('Waste Buddy Tracker — Deep PWA Audit', () => {
 
     // Analyze form fields via single evaluate to avoid detached-element issues
     const formInfo = await page.evaluate(() => {
-      const fields: any[] = [];
+      const fields: { tag: string; type: string; id: string; placeholder: string; visible: boolean }[] = [];
       document.querySelectorAll('input, select, textarea').forEach((el, i) => {
         if (i >= 12) return;
         fields.push({
@@ -200,7 +194,7 @@ test.describe('Waste Buddy Tracker — Deep PWA Audit', () => {
       return { fields, labels, buttons };
     });
     console.log(`\n  Form fields found: ${formInfo.fields.length}`);
-    formInfo.fields.forEach((f: any, i: number) => {
+    formInfo.fields.forEach((f, i: number) => {
       console.log(`  [${i + 1}] <${f.tag} type="${f.type}" id="${f.id}"> placeholder="${f.placeholder}" visible=${f.visible}`);
     });
     console.log('  Labels:', formInfo.labels);
@@ -468,10 +462,10 @@ test.describe('Waste Buddy Tracker — Deep PWA Audit', () => {
         resources: performance.getEntriesByType('resource').length,
         jsSize: performance.getEntriesByType('resource')
           .filter(e => e.name.endsWith('.js'))
-          .reduce((sum, e) => sum + (e as any).transferSize, 0),
+          .reduce((sum, e) => sum + (e as PerformanceResourceTiming).transferSize, 0),
         cssSize: performance.getEntriesByType('resource')
           .filter(e => e.name.endsWith('.css'))
-          .reduce((sum, e) => sum + (e as any).transferSize, 0),
+          .reduce((sum, e) => sum + (e as PerformanceResourceTiming).transferSize, 0),
       };
     });
 

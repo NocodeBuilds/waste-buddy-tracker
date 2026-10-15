@@ -1,5 +1,5 @@
 -- Photo evidence for waste entries
-CREATE TABLE public.waste_entry_photos (
+CREATE TABLE IF NOT EXISTS public.waste_entry_photos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   waste_entry_id UUID NOT NULL REFERENCES public.waste_entries(id) ON DELETE CASCADE,
   site_id UUID NOT NULL REFERENCES public.sites(id) ON DELETE CASCADE,
@@ -13,24 +13,28 @@ GRANT ALL ON public.waste_entry_photos TO service_role;
 
 ALTER TABLE public.waste_entry_photos ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "site members read photos" ON public.waste_entry_photos;
 CREATE POLICY "site members read photos"
   ON public.waste_entry_photos FOR SELECT
   TO authenticated
   USING (public.has_site_access(auth.uid(), site_id));
 
+DROP POLICY IF EXISTS "site members insert photos" ON public.waste_entry_photos;
 CREATE POLICY "site members insert photos"
   ON public.waste_entry_photos FOR INSERT
   TO authenticated
   WITH CHECK (public.has_site_access(auth.uid(), site_id) AND uploaded_by = auth.uid());
 
+DROP POLICY IF EXISTS "uploader or admin delete photos" ON public.waste_entry_photos;
 CREATE POLICY "uploader or admin delete photos"
   ON public.waste_entry_photos FOR DELETE
   TO authenticated
   USING (uploaded_by = auth.uid() OR public.is_site_admin_or_manager(auth.uid(), site_id));
 
-CREATE INDEX idx_waste_entry_photos_entry ON public.waste_entry_photos(waste_entry_id);
+CREATE INDEX IF NOT EXISTS idx_waste_entry_photos_entry ON public.waste_entry_photos(waste_entry_id);
 
 -- Storage policies: private bucket "waste-photos", path convention: <site_id>/<entry_id>/<uuid>.<ext>
+DROP POLICY IF EXISTS "site members read waste photos" ON storage.objects;
 CREATE POLICY "site members read waste photos"
   ON storage.objects FOR SELECT
   TO authenticated
@@ -39,6 +43,7 @@ CREATE POLICY "site members read waste photos"
     AND public.has_site_access(auth.uid(), (split_part(name, '/', 1))::uuid)
   );
 
+DROP POLICY IF EXISTS "site members upload waste photos" ON storage.objects;
 CREATE POLICY "site members upload waste photos"
   ON storage.objects FOR INSERT
   TO authenticated
@@ -48,6 +53,7 @@ CREATE POLICY "site members upload waste photos"
     AND owner = auth.uid()
   );
 
+DROP POLICY IF EXISTS "uploader or admin delete waste photos" ON storage.objects;
 CREATE POLICY "uploader or admin delete waste photos"
   ON storage.objects FOR DELETE
   TO authenticated

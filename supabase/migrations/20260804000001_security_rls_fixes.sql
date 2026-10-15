@@ -9,6 +9,7 @@ DROP POLICY IF EXISTS "Admins can read audit log" ON audit_log;
 DROP POLICY IF EXISTS "Admins of any site can read audit log" ON audit_log;
 
 -- Create site-scoped read policy
+DROP POLICY IF EXISTS "Site admins and managers can read audit log for their site" ON audit_log;
 CREATE POLICY "Site admins and managers can read audit log for their site"
 ON audit_log
 FOR SELECT
@@ -29,12 +30,14 @@ USING (
 DROP POLICY IF EXISTS "Site admins view requester profiles" ON profiles;
 DROP POLICY IF EXISTS "profiles_select_self_or_admin" ON profiles;
 
+DROP POLICY IF EXISTS "Users see own profile" ON profiles;
 CREATE POLICY "Users see own profile"
 ON profiles
 FOR SELECT
 TO authenticated
 USING (id = auth.uid());
 
+DROP POLICY IF EXISTS "Admins see profiles of current site members" ON profiles;
 CREATE POLICY "Admins see profiles of current site members"
 ON profiles
 FOR SELECT

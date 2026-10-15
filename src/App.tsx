@@ -1,5 +1,6 @@
+import { isSupabaseConfigured } from "@/integrations/supabase/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,9 +19,9 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5,
-      gcTime: 1000 * 60 * 60 * 24 * 7,
+      gcTime: 1000 * 60 * 30,
       networkMode: "offlineFirst",
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
     },
     mutations: {
       networkMode: "offlineFirst",
@@ -28,18 +29,19 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
+function EntryRedirect() { const location = useLocation(); return <Navigate to={"/app" + location.search} replace />; }
+
+const App = () => !isSupabaseConfigured ? <main role="alert" className="p-8">Application configuration is missing. Set the Supabase URL and publishable key, then rebuild.</main> : (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <InstallPrompt />
       <ErrorBoundary>
         <BrowserRouter>
           <AuthProvider>
             <SiteProvider>
               <Routes>
-                <Route path="/" element={<Navigate to="/app" replace />} />
+                <Route path="/" element={<EntryRedirect />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/admin" element={<AdminAuth />} />
                 <Route path="/reset-password" element={<ResetPassword />} />

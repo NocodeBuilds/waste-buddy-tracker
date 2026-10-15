@@ -5,7 +5,7 @@ import {
   isEntryOverdue, isEntryWarning, formatDateDDMMYYYY,
 } from "@/lib/wasteTypes";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Bell, X, EyeOff } from "lucide-react";
+import { AlertTriangle, Bell, X, EyeOff, CheckCircle2 } from "lucide-react";
 
 interface Props {
   entries: WasteEntry[];
@@ -51,7 +51,19 @@ export default function AlertsPanel({ entries }: Props) {
   const overdue = active.filter((e) => isEntryOverdue(e) && !dismissed.has(e.id));
   const warnings = active.filter((e) => isEntryWarning(e) && !dismissed.has(e.id));
 
-  if (overdue.length === 0 && warnings.length === 0) return null;
+  if (overdue.length === 0 && warnings.length === 0) {
+    return (
+      <div className="rounded-xl border border-border/80 bg-card p-5 text-center shadow-lg space-y-1.5">
+        <div className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mx-auto">
+          <CheckCircle2 className="h-5 w-5" />
+        </div>
+        <p className="text-xs font-semibold text-foreground">Compliance Safe</p>
+        <p className="text-[11px] text-muted-foreground leading-relaxed max-w-[220px] mx-auto">
+          No hazardous waste overdue or nearing the 90-day statutory limit.
+        </p>
+      </div>
+    );
+  }
 
   const getWasteName = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.name || id;
   const formatQty = (e: WasteEntry) => `${fmtNum(Number(e.weight_kg ?? 0))} ${unitLabel(getMeasureUnit(e.waste_type_id))}`;

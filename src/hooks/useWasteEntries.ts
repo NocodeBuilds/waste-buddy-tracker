@@ -1,475 +1,127 @@
-import { useRef, useEffect, useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { WasteEntry, DisposalBatch } from "@/lib/wasteTypes";
 import { useSite, ALL_SITES_ID } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { compressImages } from "@/lib/imageCompress";
 import { toast } from "sonner";
-import { saveToPendingQueue, getPendingQueue, syncPendingEntries, createPendingEntry } from "@/lib/offlineSync";
+import { createPendingEntry, getPendingQueue, saveToPendingQueue, uploadPendingEntry } from "@/lib/offlineSync";
+import { entrySchema, errorMessage } from "@/lib/validation";
+import { readAll } from "@/lib/pagination";
 
-// Extend DisposalBatch with status fields from DB
-interface DisposalBatchWithStatus extends DisposalBatch {
-  status: "pending" | "approved" | "rejected";
-  requested_at?: string;
-  approved_by?: string;
-  approved_at?: string;
-  rejection_reason?: string;
+export type NewEntryInput = {
+ operationId?:string;waste_type_id:string;waste_category:WasteEntry["waste_category"];weight_kg:number;
+ piece_count?:number|null;generated_date:string;activity_type:WasteEntry["activity_type"];
+ location?:string|null;notes?:string|null;photos?:File[];siteId?:string;
+};
+type UpdateEntryInput={id:string;siteId:string;updates:Partial<Pick<WasteEntry,"waste_type_id"|"waste_category"|"weight_kg"|"piece_count"|"generated_date"|"activity_type"|"location"|"notes">>};
+type CreateDisposalInput={operationId?:string;disposed_date:string;notes?:string;siteId:string;entry_ids?:string[]};
+
+async function snapshot<T>(key:string,fetch:()=>Promise<T>):Promise<T>{
+ const readSnapshot = () => {
+  const raw = localStorage.getItem(key);
+  if (!raw) throw new Error("No offline snapshot for this facility. Connect to load its records.");
+  return JSON.parse(raw) as T;
+ };
+ if (!navigator.onLine) {
+  return readSnapshot();
+ }
+ try {
+  const data = await fetch();
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch { /* Read snapshots may be omitted when storage is full. */ }
+  return data;
+ } catch (error) {
+  if (typeof window !== "undefined") {
+   window.dispatchEvent(new Event("wastebuddy:network-offline"));
+  }
+  try {
+   return readSnapshot();
+  } catch {
+   throw error;
+  }
+ }
 }
-
-type NewEntryInput = {
-  waste_type_id: string;
-  waste_category: WasteEntry["waste_category"];
-  weight_kg: number;
-  piece_count?: number | null;
-  generated_date: string;
-  activity_type: WasteEntry["activity_type"];
-  location?: string | null;
-  notes?: string | null;
-  photos?: File[];
-  siteId?: string;
-};
-
-type UpdateEntryInput = {
-  id: string;
-  siteId: string;
-  updates: Partial<Pick<WasteEntry, "waste_type_id" | "waste_category" | "weight_kg" | "piece_count" | "generated_date" | "activity_type" | "location" | "notes">>;
-};
-
-type DeleteEntryInput = { id: string; siteId: string };
-type CreateDisposalInput = { disposed_date: string; notes?: string; siteId: string; entry_ids?: string[] };
-type ApproveDisposalInput = { batchId: string; siteId: string; action: "approve" | "reject"; reason?: string };
-
-export function useWasteEntries() {
-  const { currentSite, sites, isAllSitesMode } = useSite();
-  const { user } = useAuth();
-  const qc = useQueryClient();
-  const siteId = currentSite?.id;
-
-  const siteIds = useMemo(
-    () => (isAllSitesMode ? sites.map((s) => s.id) : siteId && siteId !== ALL_SITES_ID ? [siteId] : []),
-    [isAllSitesMode, sites, siteId]
-  );
-
-  // Refs for current site/user so mutations always see the latest values
-  const siteIdRef = useRef(siteId);
-  const userRef = useRef(user);
-  siteIdRef.current = siteId;
-  userRef.current = user;
-
-  // Auto-sync pending offline mutations when coming back online
-  useEffect(() => {
-    const handleOnline = () => {
-      void syncPendingEntries(qc);
-    };
-    window.addEventListener("online", handleOnline);
-    return () => window.removeEventListener("online", handleOnline);
-  }, [qc]);
-
-  const entriesQuery = useQuery({
-    queryKey: isAllSitesMode ? ["waste_entries", "all", siteIds.slice().sort().join(",")] : ["waste_entries", siteId],
-    enabled: isAllSitesMode ? siteIds.length > 0 : !!siteId,
-    placeholderData: (prev) => prev,
-    staleTime: 60 * 1000, // 1 min freshness window
-    initialData: () => {
-      if (typeof window === "undefined" || isAllSitesMode || !siteId) return undefined;
-      const cached = localStorage.getItem(`wastebuddy_entries_${siteId}`);
-      if (cached) {
-        try { return JSON.parse(cached) as WasteEntry[]; } catch {}
-      }
-      return undefined;
-    },
-    queryFn: async (): Promise<WasteEntry[]> => {
-      if (isAllSitesMode) {
-        if (siteIds.length === 0) return [];
-        const { data, error } = await supabase
-          .from("waste_entries")
-          .select("*")
-          .in("site_id", siteIds)
-          .order("generated_date", { ascending: false });
-        if (error) throw new Error(error.message);
-        return (data ?? []) as WasteEntry[];
-      }
-
-      const cacheKey = `wastebuddy_entries_${siteId}`;
-      try {
-        const { data, error } = await supabase
-          .from("waste_entries")
-          .select("*")
-          .eq("site_id", siteId!)
-          .order("generated_date", { ascending: false });
-        if (error) throw new Error(error.message);
-        const entries = (data ?? []) as WasteEntry[];
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.setItem(cacheKey, JSON.stringify(entries));
-          } catch {}
-        }
-        const pending = getPendingQueue()
-          .filter((p) => p.siteId === siteId)
-          .map((p) => ({
-            id: p.tempId,
-            site_id: p.siteId,
-            waste_type_id: p.data.waste_type_id,
-            waste_category: p.data.waste_category,
-            weight_kg: p.data.weight_kg,
-            piece_count: p.data.piece_count ?? null,
-            generated_date: p.data.generated_date,
-            activity_type: p.data.activity_type,
-            location: p.data.location ?? null,
-            notes: p.data.notes ?? null,
-            created_by: p.userId,
-            created_at: new Date(p.timestamp).toISOString(),
-            quantity: p.data.weight_kg,
-          } as WasteEntry));
-
-        return [...pending, ...entries];
-      } catch (err) {
-        if (typeof window !== "undefined") {
-          const cached = localStorage.getItem(cacheKey);
-          if (cached) {
-            try {
-              const parsed = JSON.parse(cached) as WasteEntry[];
-              const pending = getPendingQueue()
-                .filter((p) => p.siteId === siteId)
-                .map((p) => ({
-                  id: p.tempId,
-                  site_id: p.siteId,
-                  waste_type_id: p.data.waste_type_id,
-                  waste_category: p.data.waste_category,
-                  weight_kg: p.data.weight_kg,
-                  piece_count: p.data.piece_count ?? null,
-                  generated_date: p.data.generated_date,
-                  activity_type: p.data.activity_type,
-                  location: p.data.location ?? null,
-                  notes: p.data.notes ?? null,
-                  created_by: p.userId,
-                  created_at: new Date(p.timestamp).toISOString(),
-                  quantity: p.data.weight_kg,
-                } as WasteEntry));
-              return [...pending, ...parsed];
-            } catch {}
-          }
-        }
-        throw err;
-      }
-    },
-  });
-
-  const batchesQuery = useQuery({
-    queryKey: isAllSitesMode ? ["disposal_batches", "all", siteIds.slice().sort().join(",")] : ["disposal_batches", siteId],
-    enabled: isAllSitesMode ? siteIds.length > 0 : !!siteId,
-    placeholderData: (prev) => prev,
-    staleTime: 60 * 1000,
-    initialData: () => {
-      if (typeof window === "undefined" || isAllSitesMode || !siteId) return undefined;
-      const cached = localStorage.getItem(`wastebuddy_batches_${siteId}`);
-      if (cached) {
-        try { return JSON.parse(cached) as DisposalBatchWithStatus[]; } catch {}
-      }
-      return undefined;
-    },
-    queryFn: async (): Promise<DisposalBatchWithStatus[]> => {
-      if (isAllSitesMode) {
-        if (siteIds.length === 0) return [];
-        const { data, error } = await supabase
-          .from("disposal_batches")
-          .select("*")
-          .in("site_id", siteIds)
-          .order("disposed_date", { ascending: false });
-        if (error) throw new Error(error.message);
-        return (data ?? []) as DisposalBatchWithStatus[];
-      }
-
-      const cacheKey = `wastebuddy_batches_${siteId}`;
-      try {
-        const { data, error } = await supabase
-          .from("disposal_batches")
-          .select("*")
-          .eq("site_id", siteId!)
-          .order("disposed_date", { ascending: false });
-        if (error) throw new Error(error.message);
-        const batches = (data ?? []) as DisposalBatchWithStatus[];
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.setItem(cacheKey, JSON.stringify(batches));
-          } catch {}
-        }
-        return batches;
-      } catch (err) {
-        if (typeof window !== "undefined") {
-          const cached = localStorage.getItem(cacheKey);
-          if (cached) {
-            try {
-              return JSON.parse(cached) as DisposalBatchWithStatus[];
-            } catch {}
-          }
-        }
-        throw err;
-      }
-    },
-  });
-
-  // Helper: invalidate caches for a specific site or all sites
-  const invalidateSite = (_targetSiteId?: string) => {
-    qc.invalidateQueries({ queryKey: ["waste_entries"] });
-    qc.invalidateQueries({ queryKey: ["disposal_batches"] });
-    qc.invalidateQueries({ queryKey: ["waste_entry_photos"] });
-    qc.invalidateQueries({ queryKey: ["waste_entry_photo_counts"] });
-  };
-
-  // H1 fix: added onError to all mutations
-  const onMutationError = (label: string) => (err: unknown) => {
-    const message = err instanceof Error ? err.message : JSON.stringify(err);
-    toast.error(message || `${label} failed`);
-    console.error(`[useWasteEntries] ${label}:`, err);
-  };
-
-  const addEntry = useMutation({
-    mutationFn: async (entry: NewEntryInput): Promise<string> => {
-      // C1 fix: read siteId/user from refs (latest values)
-      const currentSiteId = siteIdRef.current;
-      const currentUser = userRef.current;
-      const targetSiteId = entry.siteId || (currentSiteId && currentSiteId !== ALL_SITES_ID ? currentSiteId : undefined);
-      if (!targetSiteId || !currentUser) throw new Error("Please select a specific facility to log waste.");
-
-      const { photos, siteId: _optSiteId, ...entryFields } = entry;
-      const uploadedPaths: string[] = [];
-
-      // Offline check: store in local offline queue
-      if (typeof navigator !== "undefined" && !navigator.onLine) {
-        const entryData = {
-          waste_type_id: entryFields.waste_type_id,
-          waste_category: entryFields.waste_category,
-          weight_kg: entryFields.weight_kg,
-          piece_count: entryFields.piece_count,
-          generated_date: entryFields.generated_date,
-          activity_type: entryFields.activity_type,
-          location: entryFields.location,
-          notes: entryFields.notes,
-        };
-        const pending = await createPendingEntry(targetSiteId, currentUser.id, entryData);
-        if (pending) {
-          saveToPendingQueue(pending);
-        }
-        const tempId = pending?.tempId ?? `offline_${Date.now()}`;
-        qc.setQueryData<WasteEntry[]>(["waste_entries", targetSiteId], (prev = []) => [
-          {
-            id: tempId,
-            site_id: targetSiteId,
-            waste_type_id: entryFields.waste_type_id,
-            waste_category: entryFields.waste_category,
-            weight_kg: entryFields.weight_kg,
-            piece_count: entryFields.piece_count ?? null,
-            generated_date: entryFields.generated_date,
-            activity_type: entryFields.activity_type,
-            location: entryFields.location ?? null,
-            notes: entryFields.notes ?? null,
-            created_by: currentUser.id,
-            created_at: new Date().toISOString(),
-            quantity: entryFields.weight_kg,
-          } as WasteEntry,
-          ...prev,
-        ]);
-        toast.info("Saved offline — will automatically sync when back online");
-        return tempId;
-      }
-
-      try {
-        const { data: inserted, error } = await supabase
-          .from("waste_entries")
-          .insert({
-            ...entryFields,
-            quantity: entryFields.weight_kg,
-            site_id: targetSiteId,
-            created_by: currentUser.id,
-          })
-          .select("id")
-          .single();
-        if (error) throw new Error(error.message);
-        const entryId = inserted.id as string;
-
-        if (photos && photos.length > 0) {
-          const MAX_FILE_MB = 25;
-          const bad = photos.filter((f) => !f.type.startsWith("image/"));
-          if (bad.length > 0) {
-            throw new Error(`Invalid file type: ${bad.map((f) => f.name).join(", ")}. Only images are allowed.`);
-          }
-          const tooBig = photos.filter((f) => f.size > MAX_FILE_MB * 1024 * 1024);
-          if (tooBig.length > 0) {
-            throw new Error(`File too large (max ${MAX_FILE_MB} MB): ${tooBig.map((f) => f.name).join(", ")}`);
-          }
-          const compressed = await compressImages(photos);
-          for (const file of compressed) {
-            const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-            const id = (typeof crypto !== "undefined" && crypto.randomUUID)
-              ? crypto.randomUUID()
-              : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-            const path = `${targetSiteId}/${entryId}/${id}.${ext}`;
-            uploadedPaths.push(path);
-            const { error: upErr } = await supabase.storage
-              .from("waste-photos")
-              .upload(path, file, { contentType: file.type || "image/jpeg", upsert: false });
-            if (upErr) throw new Error(upErr.message);
-            const { error: rowErr } = await supabase.from("waste_entry_photos").insert({
-              waste_entry_id: entryId,
-              site_id: targetSiteId,
-              storage_path: path,
-              uploaded_by: currentUser.id,
-            });
-            if (rowErr) throw new Error(rowErr.message);
-          }
-        }
-        return entryId;
-      } catch (err) {
-        // Fallback to offline queue if network fails
-        if (typeof navigator !== "undefined" && !navigator.onLine) {
-          const entryData = {
-            waste_type_id: entryFields.waste_type_id,
-            waste_category: entryFields.waste_category,
-            weight_kg: entryFields.weight_kg,
-            piece_count: entryFields.piece_count,
-            generated_date: entryFields.generated_date,
-            activity_type: entryFields.activity_type,
-            location: entryFields.location,
-            notes: entryFields.notes,
-          };
-          const pending = await createPendingEntry(targetSiteId, currentUser.id, entryData);
-          if (pending) {
-            saveToPendingQueue(pending);
-          }
-          const tempId = pending?.tempId ?? `offline_${Date.now()}`;
-          qc.setQueryData<WasteEntry[]>(["waste_entries", targetSiteId], (prev = []) => [
-            {
-              id: tempId,
-              site_id: targetSiteId,
-              waste_type_id: entryFields.waste_type_id,
-              waste_category: entryFields.waste_category,
-              weight_kg: entryFields.weight_kg,
-              piece_count: entryFields.piece_count ?? null,
-              generated_date: entryFields.generated_date,
-              activity_type: entryFields.activity_type,
-              location: entryFields.location ?? null,
-              notes: entryFields.notes ?? null,
-              created_by: currentUser.id,
-              created_at: new Date().toISOString(),
-              quantity: entryFields.weight_kg,
-            } as WasteEntry,
-            ...prev,
-          ]);
-          toast.info("Saved offline — will automatically sync when back online");
-          return tempId;
-        }
-
-        // C3 fix: rollback uploaded photos if entry or photo DB row failed
-        if (uploadedPaths.length > 0) {
-          await supabase.storage.from("waste-photos").remove(uploadedPaths).catch(() => {});
-        }
-        throw err;
-      }
-    },
-    onSuccess: (_entryId, _vars) => {
-      // Toast is handled by the form (one toast per log, not per entry)
-      qc.invalidateQueries({ queryKey: ["waste_entries"] });
-    },
-    onError: onMutationError("Add entry"),
-  });
-
-  const updateEntry = useMutation({
-    mutationFn: async ({ id, siteId: targetSiteId, updates }: UpdateEntryInput) => {
-      const payload: typeof updates & { quantity?: number } = { ...updates };
-      if (typeof updates.weight_kg === "number") payload.quantity = updates.weight_kg;
-      const { error } = await supabase.from("waste_entries").update(payload).eq("id", id);
-      if (error) throw new Error(error.message);
-      void targetSiteId;
-    },
-    onSuccess: (_d, vars) => {
-      invalidateSite(vars.siteId);
-      toast.success("Entry updated");
-    },
-    onError: onMutationError("Update entry"),
-  });
-
-  const deleteEntry = useMutation({
-    mutationFn: async ({ id, siteId: targetSiteId }: DeleteEntryInput) => {
-      if (!targetSiteId) throw new Error("No site selected");
-      const { error } = await supabase.from("waste_entries").delete().eq("id", id).eq("site_id", targetSiteId);
-      if (error) throw new Error(error.message);
-    },
-    onSuccess: (_d, vars) => {
-      invalidateSite(vars.siteId);
-      toast.success("Entry deleted");
-    },
-    onError: onMutationError("Delete entry"),
-  });
-
-  const createDisposalBatch = useMutation({
-    mutationFn: async ({ disposed_date, notes, siteId: targetSiteId, entry_ids }: CreateDisposalInput) => {
-      const currentUser = userRef.current;
-      if (!currentUser) throw new Error("No user");
-      const { data: batch, error: bErr } = await supabase
-        .from("disposal_batches")
-        .insert({
-          site_id: targetSiteId,
-          disposed_date,
-          disposed_by: currentUser.id,
-          notes: notes ?? null,
-          status: "pending",
-        })
-        .select("id")
-        .single();
-      if (bErr) throw new Error(bErr.message);
-
-      if (entry_ids && entry_ids.length > 0) {
-        const { error: linkErr } = await supabase
-          .from("waste_entries")
-          .update({ disposal_batch_id: batch.id })
-          .in("id", entry_ids);
-        if (linkErr) {
-          console.error("Failed to link selected entries to batch:", linkErr);
-        }
-      }
-
-      return batch.id;
-    },
-    onSuccess: (_batchId, vars) => {
-      invalidateSite(vars.siteId);
-      toast.success("Disposal request submitted for approval");
-    },
-    onError: onMutationError("Create disposal"),
-  });
-
-  const approveDisposalBatch = useMutation({
-    mutationFn: async ({ batchId, siteId: targetSiteId, action, reason }: ApproveDisposalInput) => {
-      const result = await supabase.functions.invoke("approve-disposal", {
-        body: { batch_id: batchId, site_id: targetSiteId, action, reason },
-      });
-      if (result.error) {
-        const msg = result.error.message || result.error.context?.message || JSON.stringify(result.error);
-        throw new Error(msg);
-      }
-      if (result.data?.error) {
-        throw new Error(result.data.error);
-      }
-    },
-    onSuccess: (_d, vars) => {
-      invalidateSite(vars.siteId);
-      toast.success(`Disposal ${vars.action}d`);
-    },
-    onError: onMutationError("Approval"),
-  });
-
-  return {
-    entries: entriesQuery.data ?? [],
-    batches: batchesQuery.data ?? [],
-    // M1 fix: expose individual loading states
-    isLoading: entriesQuery.isLoading || batchesQuery.isLoading,
-    entriesIsLoading: entriesQuery.isLoading,
-    batchesIsLoading: batchesQuery.isLoading,
-    addEntry,
-    updateEntry,
-    deleteEntry,
-    createDisposalBatch,
-    approveDisposalBatch,
-  };
+export function useWasteEntries(){
+ const {currentSite,sites,isAllSitesMode}=useSite();
+ const {user}=useAuth();
+ const qc=useQueryClient();
+ const siteIds=useMemo(()=>isAllSitesMode?sites.map(s=>s.id).sort():currentSite&&currentSite.id!==ALL_SITES_ID?[currentSite.id]:[],[isAllSitesMode,sites,currentSite]);
+ const scope=siteIds.join(",");
+ const identity=useRef({user,site:currentSite?.id});
+ identity.current={user,site:currentSite?.id};
+ const batchesQuery=useQuery({
+  queryKey:["disposal_batches",user?.id,scope],enabled:!!user&&siteIds.length>0,staleTime:60000,
+  queryFn:()=>snapshot<DisposalBatch[]>("wastebuddy:v2:batches:"+user!.id+":"+scope,()=>readAll((from,to)=>supabase
+   .from("disposal_batches").select("*").in("site_id",siteIds).order("disposed_date",{ascending:false}).order("id").range(from,to))),
+ });
+ const entriesQuery=useQuery({
+  queryKey:["waste_entries",user?.id,scope],enabled:!!user&&siteIds.length>0,staleTime:60000,
+  queryFn:async():Promise<WasteEntry[]>=>{
+   const rows=await snapshot<WasteEntry[]>("wastebuddy:v2:entries:"+user!.id+":"+scope,()=>readAll((from,to)=>supabase
+    .from("waste_entries").select("*").in("site_id",siteIds).order("generated_date",{ascending:false}).order("id").range(from,to)));
+   const pending=(await getPendingQueue(user!.id)).filter(p=>siteIds.includes(p.siteId));
+   const ids=new Set(rows.map(e=>e.id));
+   const pendingIds=new Set(pending.map(p=>p.tempId));
+   return [...pending.filter(p=>!ids.has(p.tempId)).map(p=>({...p.data,id:p.tempId,site_id:p.siteId,created_by:p.userId,created_at:new Date(p.timestamp).toISOString(),sync_pending:true})),...rows.map(row=>({...row,sync_pending:pendingIds.has(row.id)}))];
+  },
+ });
+ const invalidate=()=>{
+  for(const key of ["waste_entries","disposal_batches","waste_entry_photos","waste_entry_photo_counts","audit_log"]) void qc.invalidateQueries({queryKey:[key]});
+ };
+ const onError=(error:unknown)=>toast.error(errorMessage(error));
+ const addEntry=useMutation({
+  mutationFn:async(entry:NewEntryInput)=>{
+   const actor=identity.current.user;
+   const site=entry.siteId ?? identity.current.site;
+   if(!actor||!site||site===ALL_SITES_ID) throw new Error("Select a specific facility");
+   const data=entrySchema.parse(entry);
+   const id=entry.operationId ?? crypto.randomUUID();
+   const existing=(await getPendingQueue(actor.id)).find(p=>p.tempId===id);
+   const pending=existing ?? await createPendingEntry(site,actor.id,data,entry.photos,id);
+   await saveToPendingQueue(pending); // No success until the entire draft, including blobs, is durable.
+   if(navigator.onLine){
+    try{await uploadPendingEntry(pending);}
+    catch(error){await saveToPendingQueue({...pending,error:errorMessage(error)});toast.warning("Saved on this device; sync needs attention. "+errorMessage(error));}
+   }else toast.info("Saved offline, including photos. Keep this device until sync completes.");
+   return id;
+  },onSuccess:invalidate,onError,
+ });
+ const updateEntry=useMutation({
+  mutationFn:async({id,siteId,updates}:UpdateEntryInput)=>{
+   const {data:old,error:readError}=await supabase.from("waste_entries").select("*").eq("id",id).eq("site_id",siteId).single();
+   if(readError) throw new Error(readError.message);
+   const data=entrySchema.parse({...old,...updates});
+   const {data:changed,error}=await supabase.from("waste_entries").update({...data,quantity:data.weight_kg}).eq("id",id).eq("site_id",siteId).select("id").single();
+   if(error||!changed) throw new Error(error?.message ?? "Entry was not updated");
+  },onSuccess:()=>{invalidate();toast.success("Entry updated");},onError,
+ });
+ const deleteEntry=useMutation({
+  mutationFn:async({id,siteId}:{id:string;siteId:string})=>{
+   const {data,error}=await supabase.from("waste_entries").delete().eq("id",id).eq("site_id",siteId).select("id").single();
+   if(error||!data) throw new Error(error?.message ?? "Entry was not deleted");
+  },onSuccess:()=>{invalidate();toast.success("Entry deleted");},onError,
+ });
+ const createDisposalBatch=useMutation({
+  mutationFn:async(input:CreateDisposalInput)=>{
+   if(input.siteId===ALL_SITES_ID || !input.entry_ids?.length) throw new Error("Select entries from one facility");
+   const {data,error}=await supabase.rpc("create_disposal_request",{
+    p_id:input.operationId ?? crypto.randomUUID(),p_site_id:input.siteId,p_date:input.disposed_date,
+    p_notes:input.notes ?? null,p_entry_ids:input.entry_ids,
+   });
+   if(error) throw new Error(error.message);return data;
+  },onSuccess:()=>{invalidate();toast.success("Disposal request submitted for approval");},onError,
+ });
+ const approveDisposalBatch=useMutation({
+  mutationFn:async(input:{batchId:string;siteId:string;action:"approve"|"reject";reason?:string})=>{
+   const {error}=await supabase.rpc("decide_disposal",{p_batch_id:input.batchId,p_site_id:input.siteId,p_action:input.action,p_reason:input.reason ?? null});
+   if(error) throw new Error(error.message);
+  },onSuccess:()=>{invalidate();toast.success("Disposal decision saved");},onError,
+ });
+ const entries=useMemo(()=>{
+  const status=new Map((batchesQuery.data ?? []).map(b=>[b.id,b.status]));
+  return (entriesQuery.data ?? []).map(e=>({...e,disposal_status:e.disposal_batch_id ? status.get(e.disposal_batch_id) ?? "pending" : undefined}));
+ },[entriesQuery.data,batchesQuery.data]);
+ return {entries,batches:batchesQuery.data ?? [],error:entriesQuery.error ?? batchesQuery.error,
+  isLoading:entriesQuery.isLoading||batchesQuery.isLoading,entriesIsLoading:entriesQuery.isLoading,batchesIsLoading:batchesQuery.isLoading,
+  addEntry,updateEntry,deleteEntry,createDisposalBatch,approveDisposalBatch};
 }

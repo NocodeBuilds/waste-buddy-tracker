@@ -38,3 +38,12 @@ dist-ssr
 
 # E2E environment variables (contain credentials)
 .env.e2e
+
+# Secrets and production data must not enter commits
+.env*
+!.env.example
+docs/*Rows*.csv
+scripts/data/*.csv
+
+.private-audit-backup/
+.test-dist/

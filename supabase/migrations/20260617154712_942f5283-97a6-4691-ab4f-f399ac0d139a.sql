@@ -12,7 +12,7 @@ AS $$
 $$;
 
 -- audit log
-CREATE TABLE public.audit_log (
+CREATE TABLE IF NOT EXISTS public.audit_log (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   actor_id uuid,
   table_name text NOT NULL,
@@ -28,6 +28,7 @@ GRANT ALL ON public.audit_log TO service_role;
 
 ALTER TABLE public.audit_log ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins can read audit log" ON public.audit_log;
 CREATE POLICY "Admins can read audit log"
   ON public.audit_log FOR SELECT
   TO authenticated
@@ -63,22 +64,27 @@ END;
 $$;
 
 -- attach triggers
+DROP TRIGGER IF EXISTS audit_sites ON public.sites;
 CREATE TRIGGER audit_sites
   AFTER INSERT OR UPDATE OR DELETE ON public.sites
   FOR EACH ROW EXECUTE FUNCTION public.write_audit_log();
 
+DROP TRIGGER IF EXISTS audit_user_roles ON public.user_roles;
 CREATE TRIGGER audit_user_roles
   AFTER INSERT OR UPDATE OR DELETE ON public.user_roles
   FOR EACH ROW EXECUTE FUNCTION public.write_audit_log();
 
+DROP TRIGGER IF EXISTS audit_user_sites ON public.user_sites;
 CREATE TRIGGER audit_user_sites
   AFTER INSERT OR UPDATE OR DELETE ON public.user_sites
   FOR EACH ROW EXECUTE FUNCTION public.write_audit_log();
 
+DROP TRIGGER IF EXISTS audit_waste_entries ON public.waste_entries;
 CREATE TRIGGER audit_waste_entries
   AFTER INSERT OR UPDATE OR DELETE ON public.waste_entries
   FOR EACH ROW EXECUTE FUNCTION public.write_audit_log();
 
+DROP TRIGGER IF EXISTS audit_disposal_batches ON public.disposal_batches;
 CREATE TRIGGER audit_disposal_batches
   AFTER INSERT OR UPDATE OR DELETE ON public.disposal_batches
   FOR EACH ROW EXECUTE FUNCTION public.write_audit_log();

@@ -34,7 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
-      const isDev = typeof process !== "undefined" && process.env?.NODE_ENV !== "production";
+      const isDev = import.meta.env.DEV;
       return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 text-center gap-3">
           <h1 className="text-2xl font-bold">Something went wrong</h1>

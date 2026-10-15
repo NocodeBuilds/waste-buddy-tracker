@@ -49,6 +49,11 @@ export type Database = {
       }
       disposal_batches: {
         Row: {
+          status: "pending" | "approved" | "rejected"
+          approved_by: string | null
+          approved_at: string | null
+          requested_at: string | null
+          rejection_reason: string | null
           created_at: string
           disposed_by: string | null
           disposed_date: string
@@ -57,6 +62,11 @@ export type Database = {
           site_id: string
         }
         Insert: {
+          status?: "pending" | "approved" | "rejected"
+          approved_by?: string | null
+          approved_at?: string | null
+          requested_at?: string | null
+          rejection_reason?: string | null
           created_at?: string
           disposed_by?: string | null
           disposed_date: string
@@ -65,6 +75,11 @@ export type Database = {
           site_id: string
         }
         Update: {
+          status?: "pending" | "approved" | "rejected"
+          approved_by?: string | null
+          approved_at?: string | null
+          requested_at?: string | null
+          rejection_reason?: string | null
           created_at?: string
           disposed_by?: string | null
           disposed_date?: string
@@ -193,6 +208,7 @@ export type Database = {
       }
       sites: {
         Row: {
+          archived_at: string | null
           created_at: string
           id: string
           location: string | null
@@ -200,6 +216,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           id?: string
           location?: string | null
@@ -207,6 +224,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           id?: string
           location?: string | null
@@ -278,6 +296,7 @@ export type Database = {
       }
       waste_entries: {
         Row: {
+          expected_photo_count: number
           activity_type: Database["public"]["Enums"]["activity_type"]
           created_at: string
           created_by: string | null
@@ -295,6 +314,7 @@ export type Database = {
           weight_kg: number
         }
         Insert: {
+          expected_photo_count?: number
           activity_type: Database["public"]["Enums"]["activity_type"]
           created_at?: string
           created_by?: string | null
@@ -312,6 +332,7 @@ export type Database = {
           weight_kg?: number
         }
         Update: {
+          expected_photo_count?: number
           activity_type?: Database["public"]["Enums"]["activity_type"]
           created_at?: string
           created_by?: string | null
@@ -392,6 +413,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_disposal_request: { Args: { p_id: string; p_site_id: string; p_date: string; p_entry_ids: string[]; p_notes?: string | null }; Returns: string }
+      decide_disposal: { Args: { p_batch_id: string; p_site_id: string; p_action: string; p_reason?: string | null }; Returns: undefined }
+      manage_site_access: { Args: { p_action: string; p_site_id: string; p_user_id?: string | null; p_role?: "admin" | "manager" | "member"; p_request_id?: string | null; p_note?: string | null }; Returns: undefined }
       admin_exists: { Args: never; Returns: boolean }
       has_site_access: {
         Args: { _site_id: string; _user_id: string }

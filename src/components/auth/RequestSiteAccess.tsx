@@ -35,7 +35,7 @@ export default function RequestSiteAccess({ onApproved }: { onApproved: () => vo
     if (!user) return;
     setLoading(true);
     const [{ data: s }, { data: r }] = await Promise.all([
-      supabase.from("sites").select("id, name, location").order("name"),
+      supabase.from("sites").select("id, name, location").is("archived_at", null).order("name"),
       supabase
         .from("site_access_requests")
         .select("id, site_id, status, note, created_at")
@@ -47,7 +47,7 @@ export default function RequestSiteAccess({ onApproved }: { onApproved: () => vo
     setLoading(false);
 
     // If approved, hand off
-    if ((r ?? []).some((x: any) => x.status === "approved")) {
+    if ((r ?? []).some((x) => x.status === "approved")) {
       onApproved();
     }
   };
@@ -71,14 +71,14 @@ export default function RequestSiteAccess({ onApproved }: { onApproved: () => vo
       else toast.error(error.message);
       return;
     }
-    toast.success("Access request submitted — site admin will be notified");
+    toast.success("Access request submitted — it is available in the site administrator’s request list");
     setSiteId("");
     setNote("");
     load();
   };
 
   const cancel = async (id: string) => {
-    const { error } = await supabase.from("site_access_requests").delete().eq("id", id);
+    const { error } = await supabase.from("site_access_requests").delete().eq("id", id).select("id").single();
     if (error) return toast.error(error.message);
     toast.success("Request cancelled");
     load();

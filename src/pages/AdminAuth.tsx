@@ -49,6 +49,11 @@ export default function AdminAuth() {
   const [checkingAdmin, setCheckingAdmin] = useState(false);
   const [resetCooldown, setResetCooldown] = useState(0);
 
+  useEffect(() => {
+    if (resetCooldown <= 0) return;
+    const timer = window.setTimeout(() => setResetCooldown(c => Math.max(0, c - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [resetCooldown]);
   // Lazily check admin_exists only when bootstrap mode is requested
   const checkAdminExists = async () => {
     if (adminExists !== null) return;
@@ -76,42 +81,7 @@ export default function AdminAuth() {
   };
 
   const handleBootstrap = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const parsed = bootstrapSchema.safeParse({ email, password });
-    if (!parsed.success) return toast.error(parsed.error.errors[0].message);
-    setSubmitting(true);
-
-    // Gate: only allow bootstrap if truly no admin exists
-    if (adminExists) {
-      setSubmitting(false);
-      return toast.error("An administrator already exists. Contact them for access.");
-    }
-
-    const { error: suErr } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: `${window.location.origin}/app` },
-    });
-    if (suErr && !suErr.message.toLowerCase().includes("already")) {
-      setSubmitting(false);
-      return toast.error(suErr.message);
-    }
-    const { error: siErr } = await supabase.auth.signInWithPassword({ email, password });
-    if (siErr) {
-      setSubmitting(false);
-      return toast.error(
-        suErr
-          ? "This email already has an account but the password doesn't match."
-          : siErr.message
-      );
-    }
-    const { error: bErr, data } = await supabase.functions.invoke("bootstrap-admin", {});
-    setSubmitting(false);
-    if (bErr || (data as any)?.error) {
-      return toast.error((data as any)?.error ?? bErr?.message ?? "Bootstrap failed — admin already exists.");
-    }
-    toast.success("Primary Administrator configured successfully!");
-    navigate("/app?tab=admin");
+    e.preventDefault(); toast.info("Administrator setup requires the deployment operator.");
   };
 
   const handleReset = async (e: React.FormEvent) => {
@@ -119,12 +89,12 @@ export default function AdminAuth() {
     if (!z.string().email().safeParse(email).success) return toast.error("Please enter a valid email address");
     setSubmitting(true);
     setResetCooldown(60);
-    const timer = setInterval(() => setResetCooldown(c => c - 1), 1000);
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: getSafeRedirect("/reset-password"),
     });
     setSubmitting(false);
-    clearInterval(timer);
+
     if (error) { toast.error(error.message); return; }
     toast.success("Password reset instructions sent to your email");
     setMode("login");
@@ -137,8 +107,7 @@ export default function AdminAuth() {
     mode === "login" ? "Admin Sign In" : mode === "bootstrap" ? "Claim Primary Admin" : "Reset Password";
 
   const handleRequestBootstrap = async () => {
-    await checkAdminExists();
-    setMode("bootstrap");
+    toast.info("First administrator setup requires the deployment operator. Existing administrators can sign in above.");
   };
 
   return (

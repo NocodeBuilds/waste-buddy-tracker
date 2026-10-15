@@ -1,12 +1,15 @@
+import { errorMessage } from "@/lib/validation";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSite } from "@/contexts/SiteContext";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { History, CheckCircle, X, Download, Search, Filter } from "lucide-react";
+import { History, CheckCircle, X, Download, Search, Filter, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { DisposalBatch, WasteEntry, formatDateDDMMYYYY } from "@/lib/wasteTypes";
-import { exportDisposalBatchPdf } from "@/lib/wasteExports";
+
 import EmptyState from "@/components/ui/empty-state";
 
 interface Props {
@@ -28,13 +31,15 @@ export default function DisposalHistoryView({
   onApproveDisposal,
   onRejectDisposal,
 }: Props) {
+  const { user } = useAuth();
+  const { sites, rolesBySite, isAdmin, isRegionalCoordinator } = useSite();
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "approved" | "pending" | "rejected">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredBatches = batches.filter((b) => {
-    const status = (b as any).status ?? "approved";
+    const status = b.status ?? "approved";
     if (statusFilter !== "all" && status !== statusFilter) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -108,8 +113,11 @@ export default function DisposalHistoryView({
       ) : (
         <div className="space-y-2.5">
           {filteredBatches.map((b) => {
+            const batchSiteName = sites.find(s => s.id === b.site_id)?.name ?? currentSiteName;
+            const isAuthorized = isAdmin || isRegionalCoordinator || (rolesBySite[b.site_id] ?? []).some(role => role === "admin" || role === "manager");
+            const mayDecide = isAuthorized && b.disposed_by !== user?.id;
             const inBatch = entries.filter((e) => e.disposal_batch_id === b.id);
-            const status = (b as any).status ?? "approved";
+            const status = b.status ?? "approved";
             const isPending = status === "pending";
             const isRejected = status === "rejected";
             return (
@@ -128,6 +136,12 @@ export default function DisposalHistoryView({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-semibold text-foreground">{formatDateDDMMYYYY(b.disposed_date)}</p>
+                        {batchSiteName && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded border border-border/60">
+                            <Building2 className="h-3 w-3 text-primary" />
+                            <span>{batchSiteName}</span>
+                          </span>
+                        )}
                         {isPending && <Badge variant="warning">Pending Approval</Badge>}
                         {isRejected && <Badge variant="destructive">Rejected</Badge>}
                         {!isPending && !isRejected && <Badge variant="success">Approved</Badge>}
@@ -135,19 +149,26 @@ export default function DisposalHistoryView({
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {inBatch.length > 0
                           ? `${inBatch.length} entries in batch`
-                          : `All active entries (${allActiveEntries.length}) pending approval`}
+                          : "No entries selected — this batch cannot be approved"}
                       </p>
                       {b.notes && (
                         <p className="text-xs text-muted-foreground mt-1.5 italic break-words bg-muted/40 p-2 rounded-lg">
                           {b.notes}
                         </p>
                       )}
-                      {isRejected && (b as any).rejection_reason && (
+                      {isRejected && b.rejection_reason && (
                         <p className="text-xs text-destructive mt-1.5 font-medium break-words">
-                          Reason: {(b as any).rejection_reason}
+                          Reason: {b.rejection_reason}
                         </p>
                       )}
-                      {isPending && isManagerOrAdmin && onApproveDisposal && (
+                      {isPending && !mayDecide && (
+                        <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-2 italic flex items-center gap-1 font-medium bg-amber-500/10 px-2 py-1 rounded">
+                          {b.disposed_by === user?.id
+                            ? "Awaiting approval by another Facility Manager or Regional Coordinator (Segregation of Duties: Submitter cannot self-approve)."
+                            : "Awaiting approval from an authorized Facility Manager or Regional Coordinator."}
+                        </p>
+                      )}
+                      {isPending && mayDecide && onApproveDisposal && (
                         <div className="mt-3 flex flex-wrap gap-2">
                           <Button
                             size="sm"
@@ -157,8 +178,8 @@ export default function DisposalHistoryView({
                               try {
                                 await onApproveDisposal(b.id);
                                 toast.success("Disposal approved — entries marked as disposed");
-                              } catch (err: any) {
-                                toast.error(err.message ?? "Failed to approve");
+                              } catch (err: unknown) {
+                                toast.error(errorMessage(err));
                               }
                             }}
                           >
@@ -183,8 +204,8 @@ export default function DisposalHistoryView({
                                     toast.success("Disposal rejected");
                                     setRejectingId(null);
                                     setRejectReason("");
-                                  } catch (err: any) {
-                                    toast.error(err.message ?? "Failed to reject");
+                                  } catch (err: unknown) {
+                                    toast.error(errorMessage(err));
                                   }
                                 }}
                               >
@@ -223,7 +244,7 @@ export default function DisposalHistoryView({
                           size="sm"
                           variant="outline"
                           className="h-8 text-xs gap-1 sm:gap-1.5 shadow-xs rounded-lg px-2 sm:px-3"
-                          onClick={() => exportDisposalBatchPdf(b, inBatch, currentSiteName)}
+                          onClick={async () => { const { exportDisposalBatchPdf } = await import("@/lib/wasteExports"); exportDisposalBatchPdf(b, inBatch, batchSiteName); }}
                         >
                           <Download className="h-3.5 w-3.5 text-primary" />
                           <span className="sm:hidden">Form 10</span>
