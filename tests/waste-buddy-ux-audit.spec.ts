@@ -9,16 +9,11 @@ const STORAGE_STATE_PATH = path.join(__dirname, '../playwright/.auth/user.json')
 
 test.describe('Waste Buddy Tracker — UX/UI Quality Audit', () => {
   test.beforeAll(async () => {
-    try { mkdirSync(SCREENSHOTS_DIR, { recursive: true }); } catch (e) {}
+    mkdirSync(SCREENSHOTS_DIR, { recursive: true });
   });
 
-  test.beforeEach(async ({ context }) => {
-    if (context && 'extendStorageState' in context) {
-      await (context as any).extendStorageState?.(STORAGE_STATE_PATH);
-    }
-  });
 
-  const takeScreenshot = async (page: any, name: string) => {
+  const takeScreenshot = async (page: import("@playwright/test").Page, name: string) => {
     const filePath = path.join(SCREENSHOTS_DIR, name);
     await page.screenshot({ path: filePath, fullPage: true });
     console.log(`  📸 ${name}`);
@@ -471,7 +466,7 @@ test.describe('Waste Buddy Tracker — UX/UI Quality Audit', () => {
 
     // Verify service worker and cache
     const pwaInfo = await page.evaluate(async () => {
-      const info: any = {};
+      const info: Record<string, unknown> = {};
 
       // Check service worker
       if ('serviceWorker' in navigator) {
@@ -516,8 +511,8 @@ test.describe('Waste Buddy Tracker — UX/UI Quality Audit', () => {
     let navigationResult: 'success' | 'expected-offline-error' | 'unexpected-error' = 'success';
     try {
       await page.goto('/app', { timeout: 8000 });
-    } catch (e: any) {
-      if (e?.message?.includes('ERR_INTERNET_DISCONNECTED') || e?.message?.includes('net::')) {
+    } catch (e: unknown) {
+      if ((e instanceof Error ? e.message : "").includes('ERR_INTERNET_DISCONNECTED') || (e instanceof Error ? e.message : "").includes('net::')) {
         navigationResult = 'expected-offline-error';
       } else {
         navigationResult = 'unexpected-error';

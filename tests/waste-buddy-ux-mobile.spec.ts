@@ -9,14 +9,9 @@ const STORAGE_STATE_PATH = path.join(__dirname, '../playwright/.auth/user.json')
 
 test.describe('UX Audit — Missing Mobile/Tablet Screenshots', () => {
   test.beforeAll(async () => {
-    try { mkdirSync(SCREENSHOTS_DIR, { recursive: true }); } catch (e) {}
+    mkdirSync(SCREENSHOTS_DIR, { recursive: true });
   });
 
-  test.beforeEach(async ({ context }) => {
-    if (context && 'extendStorageState' in context) {
-      await (context as any).extendStorageState?.(STORAGE_STATE_PATH);
-    }
-  });
 
   test('Mobile 375x812 — Inventory, Filters, Export', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
@@ -107,8 +102,8 @@ test.describe('UX Audit — Missing Mobile/Tablet Screenshots', () => {
     let reloadResult: 'success' | 'expected-offline-error' | 'unexpected-error' = 'success';
     try {
       await page.reload({ timeout: 8000 });
-    } catch (e: any) {
-      if (e?.message?.includes('ERR_INTERNET_DISCONNECTED') || e?.message?.includes('net::')) {
+    } catch (e: unknown) {
+      if ((e instanceof Error ? e.message : "").includes('ERR_INTERNET_DISCONNECTED') || (e instanceof Error ? e.message : "").includes('net::')) {
         reloadResult = 'expected-offline-error';
       } else {
         reloadResult = 'unexpected-error';

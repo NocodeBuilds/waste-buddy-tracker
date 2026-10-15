@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/validation";
 import { useState, useMemo } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -67,14 +68,7 @@ import {
   SlidersHorizontal,
   Building2,
 } from "lucide-react";
-import {
-  exportInventoryToExcel,
-  exportForm3Pdf,
-  exportDisposalBatchPdf,
-  exportForm8ContainerLabelsPdf,
-  exportForm8SummaryLabelsPdf,
-  exportForm4AnnualReturnPdf,
-} from "@/lib/wasteExports";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -119,7 +113,7 @@ interface Props {
   batches: DisposalBatch[];
   onDelete: (id: string) => Promise<void>;
   onEdit: (entry: WasteEntry) => void;
-  onCreateDisposal: (params: { disposed_date: string; notes?: string; entry_ids?: string[] }) => Promise<void>;
+  onCreateDisposal: (params: { siteId: string; operationId?: string; disposed_date: string; notes?: string; entry_ids?: string[] }) => Promise<void>;
   onApproveDisposal?: (batchId: string) => Promise<void>;
   onRejectDisposal?: (batchId: string, reason?: string) => Promise<void>;
 }
@@ -507,13 +501,17 @@ export default function WasteInventoryTable({
   const handleDispose = async () => {
     setDisposing(true);
     try {
-      const chosenIds = disposalScope === "selected" ? Array.from(selectedForDisposal) : undefined;
+      const targetSite = isAllSitesMode ? sites.find(s => s.id === selectedFacilityId) : currentSite;
+      if (!targetSite) throw new Error("Choose one facility before submitting a disposal");
+      const eligible = allActiveEntries.filter(e => e.site_id === targetSite.id && !e.disposal_batch_id && !e.sync_pending);
+      const chosenIds = disposalScope === "selected" ? eligible.filter(e => selectedForDisposal.has(e.id)).map(e => e.id) : eligible.map(e => e.id);
       if (disposalScope === "selected" && (!chosenIds || chosenIds.length === 0)) {
         toast.error("Please select at least one entry to dispose");
         setDisposing(false);
         return;
       }
       await onCreateDisposal({
+        siteId: targetSite.id,
         disposed_date: disposalDate,
         notes: disposalNotes || undefined,
         entry_ids: chosenIds,
@@ -522,38 +520,49 @@ export default function WasteInventoryTable({
       setDialogOpen(false);
       setDisposalNotes("");
       setSelectedForDisposal(new Set());
-    } catch (err: any) {
-      toast.error(err.message ?? "Failed to record disposal");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err));
     } finally {
       setDisposing(false);
     }
   };
 
   const openExport = (fmt: ExportFormat) => {
+    if (isAllSitesMode && selectedFacilityId === "all") { toast.error("Choose a facility before exporting its records"); return; }
     setExportFormat(fmt);
     setExportOpen(true);
   };
 
-  const handleExport = (opts: {
+  const exportSite = isAllSitesMode ? sites.find(s => s.id === selectedFacilityId) : currentSite;
+  const exportEntries = entries.filter(e => e.site_id === exportSite?.id);
+  const exportBatches = batches.filter(b => b.site_id === exportSite?.id);
+  const handleExport = async (opts: {
     format: ExportFormat;
     filteredEntries: WasteEntry[];
     chosenBatch: DisposalBatch | null;
     periodLabel: string;
     selectedFy: number;
+    form8Mode?: "summary" | "per_entry";
   }) => {
+    const { exportInventoryToExcel,
+  exportForm3Pdf,
+  exportDisposalBatchPdf,
+  exportForm8ContainerLabelsPdf,
+  exportForm8SummaryLabelsPdf,
+  exportForm4AnnualReturnPdf, } = await import("@/lib/wasteExports");
     if (opts.format === "excel") {
       if (periodFiltered.length === 0 && opts.filteredEntries.length === 0) {
         toast.error("No data in the selected period to export");
         return;
       }
       try {
-        exportInventoryToExcel(opts.filteredEntries, currentSite?.name ?? "Site", {
+        exportInventoryToExcel(opts.filteredEntries, exportSite?.name ?? "Site", {
           label: opts.periodLabel,
           kind: "all",
         });
         toast.success(`Excel exported — ${opts.periodLabel}`);
-      } catch (err: any) {
-        toast.error(err.message ?? "Export failed");
+      } catch (err: unknown) {
+        toast.error(errorMessage(err));
       }
     } else if (opts.format === "pdf") {
       if (opts.filteredEntries.length === 0) {
@@ -561,13 +570,13 @@ export default function WasteInventoryTable({
         return;
       }
       try {
-        exportForm3Pdf(opts.filteredEntries, currentSite?.name ?? "Site", {
+        exportForm3Pdf(opts.filteredEntries, exportSite?.name ?? "Site", {
           label: opts.periodLabel,
           kind: "all",
         });
         toast.success(`Form 3 PDF exported — ${opts.periodLabel}`);
-      } catch (err: any) {
-        toast.error(err.message ?? "Export failed");
+      } catch (err: unknown) {
+        toast.error(errorMessage(err));
       }
     } else if (opts.format === "form8") {
       if (opts.filteredEntries.length === 0) {
@@ -576,23 +585,23 @@ export default function WasteInventoryTable({
       }
       try {
         if (opts.form8Mode === "per_entry") {
-          exportForm8ContainerLabelsPdf(opts.filteredEntries, currentSite?.name ?? "Site");
+          exportForm8ContainerLabelsPdf(opts.filteredEntries, exportSite?.name ?? "Site");
           toast.success(`Form 8 Labels exported (${opts.filteredEntries.length} items)`);
         } else {
-          exportForm8SummaryLabelsPdf(opts.filteredEntries, currentSite?.name ?? "Site");
-          const uniqueTypesCount = new Set(opts.filteredEntries.map((e: any) => e.waste_type_id)).size;
+          exportForm8SummaryLabelsPdf(opts.filteredEntries, exportSite?.name ?? "Site");
+          const uniqueTypesCount = new Set(opts.filteredEntries.map((e) => e.waste_type_id)).size;
           toast.success(`Form 8 Summary Labels exported (${uniqueTypesCount} waste types)`);
         }
-      } catch (err: any) {
-        toast.error(err.message ?? "Export failed");
+      } catch (err: unknown) {
+        toast.error(errorMessage(err));
       }
     } else if (opts.format === "form4") {
       try {
         const fy = opts.selectedFy ?? selectedFy;
-        exportForm4AnnualReturnPdf(entries, batches, currentSite?.name ?? "Site", fy);
+        exportForm4AnnualReturnPdf(exportEntries, exportBatches, exportSite?.name ?? "Site", fy);
         toast.success(`Form 4 Annual Return exported for FY ${fy}-${String(fy + 1).slice(-2)}`);
-      } catch (err: any) {
-        toast.error(err.message ?? "Export failed");
+      } catch (err: unknown) {
+        toast.error(errorMessage(err));
       }
     }
   };
@@ -685,7 +694,7 @@ export default function WasteInventoryTable({
                     </DialogTitle>
                     <DialogDescription className="text-xs">
                       Create an official disposal batch record and generate Form 10 manifest for site:{" "}
-                      <strong className="text-foreground">{currentSite?.name ?? "Site"}</strong>
+                      <strong className="text-foreground">{exportSite?.name ?? "Site"}</strong>
                     </DialogDescription>
                   </DialogHeader>
 
@@ -1386,8 +1395,9 @@ export default function WasteInventoryTable({
                                     size="icon"
                                     variant="ghost"
                                     className="h-8 w-8 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
-                                    onClick={() => {
-                                      exportForm8ContainerLabelsPdf([entry], currentSite?.name ?? "Site");
+                                    onClick={async () => {
+                                      const { exportForm8ContainerLabelsPdf } = await import("@/lib/wasteExports");
+                                      exportForm8ContainerLabelsPdf([entry], sites.find(s => s.id === entry.site_id)?.name ?? "Site");
                                       toast.success("Form 8 Container Label downloaded");
                                     }}
                                     title="Print Form 8 Drum Label"
@@ -1478,7 +1488,7 @@ export default function WasteInventoryTable({
             entries={entries}
             allActiveEntries={allActiveEntries}
             isManagerOrAdmin={isManagerOrAdmin}
-            currentSiteName={currentSite?.name ?? "Site"}
+            currentSiteName={exportSite?.name ?? "Site"}
             onApproveDisposal={onApproveDisposal}
             onRejectDisposal={onRejectDisposal}
           />
@@ -1490,9 +1500,9 @@ export default function WasteInventoryTable({
         open={exportOpen}
         onOpenChange={setExportOpen}
         initialFormat={exportFormat}
-        siteName={currentSite?.name ?? "Site"}
-        entries={entries}
-        batches={batches}
+        siteName={exportSite?.name ?? "Site"}
+        entries={exportEntries}
+        batches={exportBatches}
         onExport={handleExport}
       />
     </div>

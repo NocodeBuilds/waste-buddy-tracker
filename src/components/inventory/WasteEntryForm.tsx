@@ -1,3 +1,4 @@
+import { validatePhotos, errorMessage } from "@/lib/validation";
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import {
   Dialog,
@@ -39,6 +40,7 @@ interface EntryLineData {
 }
 
 interface NewEntry {
+  operationId?: string;
   waste_type_id: string;
   waste_category: WasteCategory;
   weight_kg: number;
@@ -192,11 +194,12 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
     return sites[0]?.id || "";
   });
 
-  const { data: locations = [], isLoading: locLoading } = useSiteLocations();
+  const { data: locations = [], isLoading: locLoading } = useSiteLocations(targetSiteId);
 
   const [generatedDate, setGeneratedDate] = useState(getLocalDate());
   const [location, setLocation] = useState("");
   const [customLocation, setCustomLocation] = useState("");
+  useEffect(() => { setLocation(""); setCustomLocation(""); }, [targetSiteId]);
   const [activityType, setActivityType] = useState<ActivityType>("preventive");
   const [notes, setNotes] = useState("");
   const [photos, setPhotos] = useState<File[]>([]);
@@ -214,9 +217,11 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  // Revoke blob URLs
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  // Revoke the exact preview URLs rendered by the form.
   useEffect(() => {
     const urls = photos.map((f) => URL.createObjectURL(f));
+    setPhotoUrls(urls);
     return () => {
       urls.forEach((u) => URL.revokeObjectURL(u));
     };
@@ -224,7 +229,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-    if (files.length) setPhotos((prev) => [...prev, ...files]);
+    try { validatePhotos([...photos, ...files]); if (files.length) setPhotos((prev) => [...prev, ...files]); } catch (error) { toast.error(errorMessage(error)); }
     e.target.value = "";
   };
 
@@ -249,8 +254,9 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
     for (const line of lines) {
       if (!line.waste_type_id) return "Select a waste type for each line";
       const w = Number(line.weight_kg);
-      if (!line.weight_kg || w <= 0) return "Enter a valid weight for each line";
+      if (!line.weight_kg || !Number.isFinite(w) || w <= 0 || w > 1e9) return "Enter a valid weight for each line";
     }
+    if (lines.some(line => line.piece_count && (!Number.isInteger(Number(line.piece_count)) || Number(line.piece_count) < 0))) return "Piece count must be a non-negative integer";
     return null;
   }, [isAllSitesMode, targetSiteId, effectiveLocation, lines]);
 
@@ -266,6 +272,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
     const entries: NewEntry[] = lines.map((line) => {
       const selectedWaste = WASTE_TYPES.find((w) => w.id === line.waste_type_id);
       return {
+        operationId: crypto.randomUUID(),
         waste_type_id: line.waste_type_id,
         waste_category: line.waste_category,
         weight_kg: Number(line.weight_kg),
@@ -298,7 +305,9 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
           .map((r) => (r as PromiseRejectedResult).reason?.message || "Unknown")
           .join("; ");
         toast.error(`${succeeded} saved, ${failed.length} failed: ${errMsgs}`);
-        if (succeeded === 0) throw new Error(failed[0].reason?.message || "All entries failed");
+        setPendingEntries(pendingEntries.filter((_, index) => results[index].status === "rejected"));
+        setConfirmOpen(true);
+        return;
       }
       if (succeeded > 0) {
         toast.success(`${succeeded} waste ${succeeded === 1 ? "entry" : "entries"} recorded`);
@@ -547,7 +556,7 @@ export default function WasteEntryForm({ onAdd, onClose }: Props) {
           <div className="grid grid-cols-4 gap-2 pt-1">
             {photos.map((f, idx) => (
               <div key={idx} className="relative rounded-lg overflow-hidden border border-border aspect-square">
-                <img src={URL.createObjectURL(f)} alt="" className="w-full h-full object-cover" />
+                <img src={photoUrls[idx]} alt="" className="w-full h-full object-cover" />
                 <button
                   type="button"
                   onClick={() => setPhotos((prev) => prev.filter((_, i) => i !== idx))}

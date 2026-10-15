@@ -21,7 +21,7 @@
     { "src": "/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "shortcuts": [
-    { "name": "Add New Record", "short_name": "New Entry", "url": "/?action=new", "description": "Log a new waste record" }
+    { "name": "Add New Record", "short_name": "New Entry", "url": "/app?action=new", "description": "Log a new waste record" }
   ],
   "screenshots": []
 }

@@ -368,7 +368,7 @@ export default function AnalyticsTab({ entries, batches, onNavigateToInventory }
     padding: "8px 12px",
   };
 
-  const TrendTooltip = ({ active, payload }: { active?: boolean; payload?: any[] }) => {
+  const TrendTooltip = ({ active, payload }: { active?: boolean; payload?: { payload?: { fullRange: string; isCurrentWeek?: boolean; isToday?: boolean; kg: number; litres: number; eventCount: number; retroactiveCount: number; topTypes: string[] } }[] }) => {
     if (!active || !payload || !payload.length) return null;
     const data = payload[0]?.payload;
     if (!data) return null;
@@ -1040,7 +1040,7 @@ export default function AnalyticsTab({ entries, batches, onNavigateToInventory }
                     {batches.slice(0, 10).map((b) => {
                       const inBatch = entries.filter((e) => e.disposal_batch_id === b.id);
                       const t = sumByUnit(inBatch);
-                      const status = (b as any).status ?? "approved";
+                      const status = b.status ?? "approved";
                       return (
                         <div key={b.id} className="flex items-center justify-between py-2.5 text-xs first:pt-1 last:pb-1">
                           <div>

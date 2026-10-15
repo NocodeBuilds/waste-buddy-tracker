@@ -1,4 +1,5 @@
 -- Allow authenticated users to create sites; creator becomes admin + member
+DROP POLICY IF EXISTS "Authenticated users can create sites" ON public.sites;
 CREATE POLICY "Authenticated users can create sites"
 ON public.sites
 FOR INSERT
@@ -25,6 +26,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS on_site_created ON public.sites;
 DROP TRIGGER IF EXISTS on_site_created ON public.sites;
 CREATE TRIGGER on_site_created
 AFTER INSERT ON public.sites

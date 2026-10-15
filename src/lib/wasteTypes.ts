@@ -80,11 +80,18 @@ export interface WasteEntry {
   location?: string | null;
   notes?: string | null;
   disposal_batch_id?: string | null;
+  disposal_status?: "pending" | "approved" | "rejected";
+  sync_pending?: boolean;
   created_by?: string | null;
   created_at?: string;
 }
 
 export interface DisposalBatch {
+  status?: "pending" | "approved" | "rejected";
+  requested_at?: string | null;
+  approved_at?: string | null;
+  approved_by?: string | null;
+  rejection_reason?: string | null;
   id: string;
   site_id: string;
   disposed_date: string;
@@ -130,14 +137,14 @@ export function getStatutoryCode(wasteTypeId: string): string {
 }
 
 export function getStatus(entry: WasteEntry): "safe" | "warning" | "overdue" {
-  if (entry.disposal_batch_id) return "safe";
+  if (isDisposed(entry)) return "safe";
   if (isEntryOverdue(entry)) return "overdue";
   if (isEntryWarning(entry)) return "warning";
   return "safe";
 }
 
 export function isDisposed(entry: WasteEntry): boolean {
-  return !!entry.disposal_batch_id;
+  return !!entry.disposal_batch_id && (entry.disposal_status === undefined || entry.disposal_status === "approved");
 }
 
 /** Look up the measurement unit (kg/litres) for a waste type id. Defaults to kg. */

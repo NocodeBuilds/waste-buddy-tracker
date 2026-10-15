@@ -20,6 +20,7 @@ GRANT ALL ON public.site_locations TO service_role;
 
 ALTER TABLE public.site_locations ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "View site or common locations" ON public.site_locations;
 CREATE POLICY "View site or common locations"
 ON public.site_locations FOR SELECT TO authenticated
 USING (
@@ -27,18 +28,21 @@ USING (
   OR (site_id IS NOT NULL AND public.has_site_access(auth.uid(), site_id))
 );
 
+DROP POLICY IF EXISTS "Admins insert locations" ON public.site_locations;
 CREATE POLICY "Admins insert locations"
 ON public.site_locations FOR INSERT TO authenticated
 WITH CHECK (
   (site_id IS NOT NULL AND public.has_site_role(auth.uid(), site_id, 'admin'))
   OR (is_common = true AND public.is_any_admin(auth.uid()))
 );
+DROP POLICY IF EXISTS "Admins update locations" ON public.site_locations;
 CREATE POLICY "Admins update locations"
 ON public.site_locations FOR UPDATE TO authenticated
 USING (
   (site_id IS NOT NULL AND public.has_site_role(auth.uid(), site_id, 'admin'))
   OR (is_common = true AND public.is_any_admin(auth.uid()))
 );
+DROP POLICY IF EXISTS "Admins delete locations" ON public.site_locations;
 CREATE POLICY "Admins delete locations"
 ON public.site_locations FOR DELETE TO authenticated
 USING (
@@ -46,6 +50,7 @@ USING (
   OR (is_common = true AND public.is_any_admin(auth.uid()))
 );
 
+DROP TRIGGER IF EXISTS trg_site_locations_updated ON public.site_locations;
 CREATE TRIGGER trg_site_locations_updated
 BEFORE UPDATE ON public.site_locations
 FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();

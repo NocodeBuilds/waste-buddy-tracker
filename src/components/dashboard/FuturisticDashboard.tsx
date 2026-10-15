@@ -24,16 +24,6 @@ export default function FuturisticDashboard({
 }: Props) {
   const { isAllSitesMode } = useSite();
 
-  if (isAllSitesMode) {
-    return (
-      <RegionalCoordinatorDashboard
-        entries={entries}
-        batches={batches}
-        onLogWaste={onLogWaste}
-        onNavigateToInventory={onNavigateToInventory}
-      />
-    );
-  }
   // Latest 5 entries irrespective of date/week, sorted newest first
   const recentEntries = useMemo(() => {
     return [...entries]
@@ -44,6 +34,17 @@ export default function FuturisticDashboard({
       })
       .slice(0, 5);
   }, [entries]);
+
+  if (isAllSitesMode) {
+    return (
+      <RegionalCoordinatorDashboard
+        entries={entries}
+        batches={batches}
+        onLogWaste={onLogWaste}
+        onNavigateToInventory={onNavigateToInventory}
+      />
+    );
+  }
 
   const getWasteName = (id: string) => WASTE_TYPES.find((w) => w.id === id)?.name || id;
 

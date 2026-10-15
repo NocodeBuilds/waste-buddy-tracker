@@ -66,7 +66,7 @@ export default function FacilitiesManagementView({ sites, onChanged }: Props) {
       setRenameTarget(null);
       return;
     }
-    const { error } = await supabase.from("sites").update({ name: v }).eq("id", renameTarget.id);
+    const { error } = await supabase.from("sites").update({ name: v }).eq("id", renameTarget.id).select("id").single();
     if (error) return toast.error(error.message);
     toast.success("Site renamed");
     setRenameTarget(null);
@@ -75,9 +75,9 @@ export default function FacilitiesManagementView({ sites, onChanged }: Props) {
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
-    const { error } = await supabase.from("sites").delete().eq("id", deleteTarget.id);
+    const { error } = await supabase.from("sites").update({ archived_at: new Date().toISOString() }).eq("id", deleteTarget.id).select("id").single();
     if (error) return toast.error(error.message);
-    toast.success("Site deleted");
+    toast.success("Site archived");
     setDeleteTarget(null);
     onChanged();
   };
@@ -207,10 +207,10 @@ export default function FacilitiesManagementView({ sites, onChanged }: Props) {
         <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-base text-destructive">
-              Delete facility "{deleteTarget?.name}"?
+              Archive facility "{deleteTarget?.name}"?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs">
-              This permanently removes all members, entries, and disposal records associated with this site.
+              This hides the facility from active lists. Its members, roles, entries, and disposal records are preserved.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
@@ -222,7 +222,7 @@ export default function FacilitiesManagementView({ sites, onChanged }: Props) {
               }}
               className="h-9 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete Facility
+              Archive Facility
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

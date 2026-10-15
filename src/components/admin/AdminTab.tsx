@@ -25,7 +25,15 @@ interface AdminTabProps {
 export default function AdminTab({ initialSubTab = "users" }: AdminTabProps) {
   const { currentSite, sites, isAdmin: siteIsAdmin, refresh } = useSite();
   const { user, isAdmin: isAuthAdmin, loading: authLoading } = useAuth();
-  const isAdmin = siteIsAdmin || isAuthAdmin;
+  const isAdmin = siteIsAdmin;
+
+  const [activeTab, setActiveTab] = useState<"users" | "sites" | "records" | "audit">(initialSubTab);
+
+  useEffect(() => {
+    if (initialSubTab) {
+      setActiveTab(initialSubTab);
+    }
+  }, [initialSubTab]);
 
   // Wait for auth session to load before deciding — isAdmin is derived from
   // session metadata or site membership which is loading
@@ -48,15 +56,8 @@ export default function AdminTab({ initialSubTab = "users" }: AdminTabProps) {
       </div>
     );
   }
-  const [activeTab, setActiveTab] = useState<"users" | "sites" | "records" | "audit">(initialSubTab);
 
-  useEffect(() => {
-    if (initialSubTab) {
-      setActiveTab(initialSubTab);
-    }
-  }, [initialSubTab]);
-
-  if (!isAdmin || !currentSite) {
+  if (!isAdmin || !currentSite || currentSite.id === "ALL_SITES") {
     return (
       <Card className="border-border/80 p-8 text-center">
         <CardContent className="p-0 flex flex-col items-center gap-2 text-muted-foreground">
@@ -164,7 +165,7 @@ export default function AdminTab({ initialSubTab = "users" }: AdminTabProps) {
 
       {/* ────────────────────────── TAB 4: AUDIT LOG ────────────────────────── */}
       {activeTab === "audit" && (
-        <AuditTrailView />
+        <AuditTrailView siteId={currentSite.id} />
       )}
     </div>
   );

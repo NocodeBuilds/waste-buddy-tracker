@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { loadTeam, DisplayRequest } from "@/lib/adminData";
+import { errorMessage } from "@/lib/validation";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,9 +81,11 @@ function generateRandomPassword() {
 }
 
 export default function UserManagementView({ siteId, siteName, callerId }: Props) {
-  const [members, setMembers] = useState<Member[]>([]);
-  const [requests, setRequests] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const team = useQuery({ queryKey: ["members", callerId, siteId], queryFn: () => loadTeam(siteId), enabled: siteId !== "ALL_SITES" });
+  const members = team.data?.members ?? [];
+  const requests = team.data?.requests ?? [];
+  const loading = team.isLoading;
+  const load = async () => { await team.refetch(); };
   const [busy, setBusy] = useState(false);
   const [approveRoles, setApproveRoles] = useState<Record<string, Role>>({});
 
@@ -103,159 +108,18 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
 
   const setReqRole = (reqId: string, r: Role) => setApproveRoles((prev) => ({ ...prev, [reqId]: r }));
 
-  const load = async () => {
-    setLoading(true);
-    const [{ data: ms }, { data: rs }] = await Promise.all([
-      supabase.from("user_sites").select("user_id").eq("site_id", siteId),
-      supabase.from("user_roles").select("user_id, role").eq("site_id", siteId),
-    ]);
-    const userIds = Array.from(
-      new Set([...(ms ?? []).map((m: any) => m.user_id), ...(rs ?? []).map((r: any) => r.user_id)])
-    );
-    let profMap: Record<string, { email: string | null; full_name: string | null }> = {};
-    if (userIds.length) {
-      const { data: ps } = await supabase.from("profiles").select("id, email, full_name").in("id", userIds);
-      (ps ?? []).forEach((p: any) => {
-        profMap[p.id] = { email: p.email, full_name: p.full_name };
-      });
-    }
-    const byUser: Record<string, Role[]> = {};
-    (rs ?? []).forEach((r: any) => {
-      byUser[r.user_id] = [...(byUser[r.user_id] ?? []), r.role];
-    });
-    setMembers(
-      (ms ?? []).map((m: any) => ({
-        user_id: m.user_id,
-        email: profMap[m.user_id]?.email ?? null,
-        full_name: profMap[m.user_id]?.full_name ?? null,
-        roles: byUser[m.user_id] ?? [],
-      }))
-    );
-
-    const { data: reqRows } = await supabase
-      .from("site_access_requests")
-      .select("id, user_id, note, created_at, status")
-      .eq("site_id", siteId)
-      .eq("status", "pending")
-      .order("created_at", { ascending: false });
-    setRequests((reqRows ?? []).map((r: any) => ({ ...r, profile: profMap[r.user_id] })));
-
-    const missing = (reqRows ?? []).map((r: any) => r.user_id).filter((id: string) => !profMap[id]);
-    if (missing.length) {
-      const { data: ps2 } = await supabase.from("profiles").select("id, email, full_name").in("id", missing);
-      const extra: Record<string, any> = {};
-      (ps2 ?? []).forEach((p: any) => {
-        extra[p.id] = { email: p.email, full_name: p.full_name };
-      });
-      setRequests((reqRows ?? []).map((r: any) => ({ ...r, profile: profMap[r.user_id] ?? extra[r.user_id] })));
-    }
-
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    load();
-  }, [siteId]);
-
   const call = async (body: Record<string, unknown>, success: string) => {
     setBusy(true);
-    let error: any = null;
-    let data: any = null;
-
     try {
-      const res = await supabase.functions.invoke("admin-manage-user", { body });
-      data = res.data;
-      error = res.error;
-    } catch (e) {
-      error = e;
-    }
-
-    // If edge function returned successfully without application error
-    if (!error && !(data as any)?.error) {
-      setBusy(false);
-      toast.success(success);
-      await load();
-      return true;
-    }
-
-    // ── Resilient Fallback ──
-    // If edge function fails with network/CORS/undeployed errors ("Failed to send request"),
-    // perform standard database table updates directly via authenticated client using RLS.
-    const action = body.action as string;
-    try {
-      if (action === "assign") {
-        const uId = body.user_id as string;
-        const sId = body.site_id as string;
-        const r = body.role as Role;
-        await supabase.from("user_sites").upsert({ user_id: uId, site_id: sId }, { onConflict: "user_id,site_id" });
-        const { error: rErr } = await supabase.from("user_roles").upsert({ user_id: uId, site_id: sId, role: r }, { onConflict: "user_id,site_id,role" });
-        if (rErr) throw rErr;
-        setBusy(false);
-        toast.success(success);
-        await load();
-        return true;
+      const { data, error } = await supabase.functions.invoke<{ok?: boolean; error?: string}>("admin-manage-user", { body });
+      if (error && "context" in error && error.context instanceof Response) {
+        const response = await error.context.clone().json().catch(() => null) as {error?: string} | null;
+        if (response?.error) throw new Error(response.error);
       }
-
-      if (action === "revoke_role") {
-        const uId = body.user_id as string;
-        const sId = body.site_id as string;
-        const r = body.role as Role;
-        const { error: delErr } = await supabase
-          .from("user_roles")
-          .delete()
-          .eq("user_id", uId)
-          .eq("site_id", sId)
-          .eq("role", r);
-        if (delErr) throw delErr;
-        setBusy(false);
-        toast.success(success);
-        await load();
-        return true;
-      }
-
-      if (action === "remove_from_site") {
-        const uId = body.user_id as string;
-        const sId = body.site_id as string;
-        await supabase.from("user_roles").delete().eq("user_id", uId).eq("site_id", sId);
-        const { error: rmErr } = await supabase.from("user_sites").delete().eq("user_id", uId).eq("site_id", sId);
-        if (rmErr) throw rmErr;
-        setBusy(false);
-        toast.success(success);
-        await load();
-        return true;
-      }
-
-      if (action === "approve_request") {
-        const reqId = body.request_id as string;
-        const sId = body.site_id as string;
-        const r = (body.role as Role) || "member";
-        const { data: reqRow } = await supabase.from("site_access_requests").select("user_id").eq("id", reqId).single();
-        if (reqRow?.user_id) {
-          await supabase.from("user_sites").upsert({ user_id: reqRow.user_id, site_id: sId }, { onConflict: "user_id,site_id" });
-          await supabase.from("user_roles").upsert({ user_id: reqRow.user_id, site_id: sId, role: r }, { onConflict: "user_id,site_id,role" });
-          await supabase.from("site_access_requests").update({ status: "approved" }).eq("id", reqId);
-          setBusy(false);
-          toast.success(success);
-          await load();
-          return true;
-        }
-      }
-
-      if (action === "reject_request") {
-        const reqId = body.request_id as string;
-        await supabase.from("site_access_requests").update({ status: "rejected" }).eq("id", reqId);
-        setBusy(false);
-        toast.success(success);
-        await load();
-        return true;
-      }
-    } catch (fbErr: any) {
-      console.warn("Direct fallback operation failed:", fbErr);
-    }
-
-    setBusy(false);
-    toast.error((data as any)?.error ?? error?.message ?? "Operation failed");
-    return false;
+      if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Operation failed");
+      toast.success(success); await load(); return true;
+    } catch (error) { toast.error(errorMessage(error)); return false; }
+    finally { setBusy(false); }
   };
 
   const handleCreateAccount = async (e: React.FormEvent) => {
@@ -320,7 +184,7 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const approveReq = async (r: any) => {
+  const approveReq = async (r: DisplayRequest) => {
     const chosenRole = approveRoles[r.id] ?? "member";
     await call({ action: "approve_request", request_id: r.id, site_id: siteId, role: chosenRole }, "Access approved");
     setApproveRoles((prev) => {
@@ -330,12 +194,13 @@ export default function UserManagementView({ siteId, siteName, callerId }: Props
     });
   };
 
-  const rejectReq = async (r: any) => {
+  const rejectReq = async (r: DisplayRequest) => {
     await call({ action: "reject_request", request_id: r.id, site_id: siteId }, "Access rejected");
   };
 
   return (
     <div className="space-y-3">
+      {team.error && <p role="alert" className="text-destructive">{team.error.message}</p>}
       {/* Pending site access requests banner */}
       {requests.length > 0 && (
         <Card className="border-amber-500/50 bg-amber-500/[0.03] shadow-xs">

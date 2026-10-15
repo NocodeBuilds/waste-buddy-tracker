@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollText, Loader2 } from "lucide-react";
@@ -8,32 +11,18 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import EmptyState from "@/components/ui/empty-state";
 
-export default function AuditTrailView() {
-  const [rows, setRows] = useState<AuditRow[]>([]);
-  const [profiles, setProfiles] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const { data } = await supabase
-        .from("audit_log")
-        .select("id, actor_id, table_name, action, row_id, site_id, created_at")
-        .order("created_at", { ascending: false })
-        .limit(100);
-      setRows((data ?? []) as AuditRow[]);
-      const ids = Array.from(new Set(((data ?? []) as any[]).map((r: any) => r.actor_id).filter(Boolean) as string[]));
-      if (ids.length) {
-        const { data: ps } = await supabase.from("profiles").select("id, email").in("id", ids);
-        const map: Record<string, string> = {};
-        (ps ?? []).forEach((p: any) => {
-          map[p.id] = p.email;
-        });
-        setProfiles(map);
-      }
-      setLoading(false);
-    })();
-  }, []);
+export default function AuditTrailView({ siteId }: { siteId: string }) {
+  const { user } = useAuth();
+  const [page, setPage] = useState(0);
+  useEffect(() => setPage(0), [siteId]);
+  const query = useQuery({queryKey:["audit_log",user?.id,siteId,page],enabled:!!user && siteId !== "ALL_SITES",queryFn:async()=>{
+    const {data,error}=await supabase.from("audit_log").select("*").eq("site_id",siteId).order("created_at",{ascending:false}).order("id").range(page*100,page*100+99);
+    if(error) throw new Error(error.message);
+    return data;
+  }});
+  const rows = query.data ?? [];
+  const loading = query.isLoading;
+  const profiles: Record<string,string> = {};
 
   return (
     <Card className="border-border/80 shadow-xs">
@@ -44,6 +33,8 @@ export default function AuditTrailView() {
           </h3>
           <span className="text-[11px] font-mono text-muted-foreground">{rows.length} events</span>
         </div>
+        {query.error && <p role="alert">{query.error.message}</p>}
+        <div className="flex gap-2"><Button disabled={page === 0} onClick={() => setPage(p => p - 1)}>Previous</Button><span>Page {page + 1}</span><Button disabled={rows.length < 100} onClick={() => setPage(p => p + 1)}>Next</Button></div>
         {loading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -85,7 +76,7 @@ export default function AuditTrailView() {
                           {formatDateTimeDDMMYYYY(r.created_at)}
                         </td>
                         <td className="py-2.5 px-3 text-center">
-                          <Badge variant={actionBadge as any} className="text-[10px] uppercase font-mono px-1.5 py-0">
+                          <Badge variant={actionBadge} className="text-[10px] uppercase font-mono px-1.5 py-0">
                             {r.action}
                           </Badge>
                         </td>

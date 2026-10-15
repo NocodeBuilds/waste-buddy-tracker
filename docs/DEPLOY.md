@@ -2,6 +2,8 @@
 
 Production deployment guide for Waste Buddy Tracker.
 
+For the October 2026 security release, follow [the staged migration and rollback checklist](REMEDIATION.md) before deploying. Never reset the production database.
+
 ---
 
 ## Table of Contents
@@ -36,7 +38,7 @@ Production deployment guide for Waste Buddy Tracker.
    | Key | Value | Environment |
    |---|---|---|
    | `VITE_SUPABASE_URL` | Your Supabase URL | Production, Preview |
-   | `VITE_SUPABASE_ANON_KEY` | Your Supabase anon key | Production, Preview |
+   | `VITE_SUPABASE_PUBLISHABLE_KEY` | Your Supabase anon key | Production, Preview |
    | `VITE_APP_ENV` | `production` | Production |
    | `VITE_APP_URL` | `https://your-app.vercel.app` | Production |
 
@@ -64,7 +66,7 @@ The project includes `vercel.json`:
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "X-XSS-Protection", "value": "1; mode=block" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Permissions-Policy", "value": "camera=(self), microphone=(), geolocation=()" },
         { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" }
       ]
     },
@@ -110,7 +112,7 @@ The project includes `vercel.json`:
     X-Content-Type-Options = "nosniff"
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Permissions-Policy = "camera=(self), microphone=(), geolocation=()"
 
 [[headers]]
   for = "/sw.js"
@@ -135,7 +137,7 @@ netlify deploy --prod
 2. Build settings:
    - Build command: `npm run build`
    - Build output: `dist`
-   - Node version: `20`
+   - Node version: `22.13` or newer
 3. Add environment variables in Dashboard → Settings → Environment Variables
 
 ### `_redirects` (placed in `public/`)

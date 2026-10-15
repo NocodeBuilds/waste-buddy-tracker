@@ -230,7 +230,7 @@ export default function RegionalCoordinatorDashboard({
 
   // Pending batches across all sites
   const pendingBatchesCount = useMemo(() => {
-    return batches.filter((b) => (b as any).status === "pending").length;
+    return batches.filter((b) => b.status === "pending").length;
   }, [batches]);
 
   // Filtered Site List for the Scorecard Table

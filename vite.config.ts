@@ -18,13 +18,14 @@ export default defineConfig(() => ({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       injectRegister: null,
       filename: "sw.js",
       devOptions: { enabled: false },
       includeAssets: ["icon-192.png", "icon-512.png", "apple-touch-icon.png"],
       manifest: false, // we ship our own manifest.webmanifest
       workbox: {
+        clientsClaim: true,
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//],
@@ -49,17 +50,7 @@ export default defineConfig(() => ({
               expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
           },
-          {
-            urlPattern: ({ url }) => /supabase\.co\/storage\/v1\/object\/sign\//.test(url.href),
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "signed-photos-v4",
-              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 7 },
-              // Never serve cached signed URLs after the network is back —
-              // stale tokens may still work but cache-first leaks credentials offline
-              networkTimeoutSeconds: 5,
-            },
-          },
+
         ],
       },
     }),

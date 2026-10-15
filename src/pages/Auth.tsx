@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,6 +42,8 @@ type Mode = "login" | "reset";
 export default function Auth() {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const destination = "/app" + location.search;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -66,7 +68,7 @@ export default function Auth() {
     );
   }
 
-  if (!loading && session) return <Navigate to="/app" replace />;
+  if (!loading && session) return <Navigate to={destination} replace />;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +79,7 @@ export default function Auth() {
     setSubmitting(false);
     if (error) return toast.error(error.message);
     toast.success("Welcome back");
-    navigate("/app");
+    navigate(destination);
   };
 
   const handleReset = async (e: React.FormEvent) => {

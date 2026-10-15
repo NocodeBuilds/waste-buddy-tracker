@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/validation";
 import { useState, useMemo, useEffect } from "react";
 import * as XLSX from "xlsx";
 import {
@@ -450,11 +451,11 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
 
     // Detailed waste stream matrix mapping
     const fallbackStreams = [
-      { id: "used-oil", name: "Waste Lubricant Oil", share: 0.35, unit: "L", category: "hazardous" as WasteCategory, statutoryCode: "HOWM Sch-I (Cat 5.1)", currentStorage: 80 },
-      { id: "cotton-rags", name: "Oily Cotton Rags", share: 0.25, unit: "kg", category: "hazardous" as WasteCategory, statutoryCode: "HOWM Sch-I (Cat 5.2)", currentStorage: 45 },
-      { id: "waste-oil-filters", name: "Used Oil Filters", share: 0.15, unit: "kg", category: "hazardous" as WasteCategory, statutoryCode: "HOWM Sch-I (Cat 35.1)", currentStorage: 18 },
-      { id: "ms-scrap", name: "Mild Steel Scrap", share: 0.15, unit: "kg", category: "other_wastes" as WasteCategory, statutoryCode: "Scrap (MS)", currentStorage: 120 },
-      { id: "waste-grease", name: "Waste Grease", share: 0.1, unit: "kg", category: "hazardous" as WasteCategory, statutoryCode: "HOWM Sch-I (Cat 5.2)", currentStorage: 12 },
+      { id: "used-oil", name: "Waste Lubricant Oil", share: 0.35, unit: "L", category: "hazardous" as WasteCategory, statutoryCode: "HOWM Sch-I (Cat 5.1)", currentStorage: 0 },
+      { id: "cotton-rags", name: "Oily Cotton Rags", share: 0.25, unit: "kg", category: "hazardous" as WasteCategory, statutoryCode: "HOWM Sch-I (Cat 5.2)", currentStorage: 0 },
+      { id: "waste-oil-filters", name: "Used Oil Filters", share: 0.15, unit: "kg", category: "hazardous" as WasteCategory, statutoryCode: "HOWM Sch-I (Cat 35.1)", currentStorage: 0 },
+      { id: "ms-scrap", name: "Mild Steel Scrap", share: 0.15, unit: "kg", category: "other_wastes" as WasteCategory, statutoryCode: "Scrap (MS)", currentStorage: 0 },
+      { id: "waste-grease", name: "Waste Grease", share: 0.1, unit: "kg", category: "hazardous" as WasteCategory, statutoryCode: "HOWM Sch-I (Cat 5.2)", currentStorage: 0 },
     ];
 
     const streamsSource = typeDistribution.length > 0 ? typeDistribution : fallbackStreams;
@@ -490,9 +491,9 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
       };
     });
 
-    // Statutory capacity advisory
+    // Operational planning heuristic; not a permit or legal threshold.
     const projectedTotalHazKg = activeHazKg + hazardousKg;
-    const isApproachingStatutoryDisposal =
+    const isApproachingPlanningCapacity =
       projectedTotalHazKg > 350 || (horizonDays >= 60 && activeHazKg > 150) || projectedTotalHazKg >= 1000;
 
     return {
@@ -511,7 +512,7 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
       hazardBags25kg,
       streamMatrix,
       projectedTotalHazKg,
-      isApproachingStatutoryDisposal,
+      isApproachingPlanningCapacity,
     };
   }, [
     historyStats,
@@ -628,7 +629,7 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
         { Parameter: "Estimated Countable Pieces (nos)", Value: forecast.estimatedPieces },
         { Parameter: "Current Active In-Storage (kg)", Value: Math.round(activeHazKg) },
         { Parameter: "Projected In-Storage at Horizon End (kg)", Value: Math.round(forecast.projectedTotalHazKg) },
-        { Parameter: "HOWM Rule 8 Statutory Status", Value: forecast.isApproachingStatutoryDisposal ? "ACTION REQUIRED: TSDF Manifest Booking Advised" : "Compliant (Within Safe Storage Thresholds)" },
+        { Parameter: "Operational planning alert (not a compliance determination)", Value: forecast.isApproachingPlanningCapacity ? "Review storage capacity and disposal scheduling" : "No planning alert; verify actual permit and age limits separately" },
       ];
 
       const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
@@ -662,8 +663,8 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
       const filename = `${safeSite}_Waste_Forecast_${horizonDays}d_${format(new Date(), "yyyyMMdd")}.xlsx`;
       XLSX.writeFile(wb, filename);
       toast.success(`Forecast spreadsheet exported: ${filename}`);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to export forecast report");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err));
     }
   };
 
@@ -706,7 +707,7 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
                 </Badge>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Statistical projection based on {baselineEntries.length} log entries & scheduled maintenance scenarios
+                Planning estimate based on {baselineEntries.length} log entries and maintenance assumptions. Capacity alerts are operational heuristics, not statutory limits; confirm routes and permit limits with your EHS lead.
               </p>
             </div>
           </div>
@@ -1305,7 +1306,7 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
                   />
                   <Tooltip
                     contentStyle={tooltipStyle}
-                    formatter={(val: any, name: string) => [
+                    formatter={(val, name: string) => [
                       `${fmtNum(Number(val))} ${name.includes("Solids") ? "kg" : "L"}`,
                       name,
                     ]}
@@ -1394,7 +1395,7 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
                       <th className="py-2 px-3 text-right">Projected Addition</th>
                       <th className="py-2 px-3 text-right font-bold text-foreground">Total At End</th>
                       <th className="py-2 px-3">Primary Packaging</th>
-                      <th className="py-2 px-3">Authorized TSDF / Recycling Route</th>
+                      <th className="py-2 px-3">Suggested disposal route — verify authorization</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
@@ -1506,7 +1507,7 @@ export default function PredictiveWasteForecast({ entries, onNavigateToInventory
         )}
 
         {/* ── Statutory Capacity Warning & Form 10 Manifest Advisory ── */}
-        {forecast.isApproachingStatutoryDisposal && (
+        {forecast.isApproachingPlanningCapacity && (
           <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-2.5">
               <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />

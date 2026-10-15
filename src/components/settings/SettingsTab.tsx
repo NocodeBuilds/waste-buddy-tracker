@@ -1,3 +1,4 @@
+import { csvCell as sanitizeCsv } from "@/lib/csv";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,17 +57,17 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
         supabase.from("user_roles").select("user_id, role").eq("site_id", currentSite.id),
       ]);
       const userIds = Array.from(
-        new Set([...(ms ?? []).map((m: any) => m.user_id), ...(rs ?? []).map((r: any) => r.user_id)])
+        new Set([...(ms ?? []).map((m) => m.user_id), ...(rs ?? []).map((r) => r.user_id)])
       );
-      let profMap: Record<string, { email: string | null; full_name: string | null }> = {};
+      const profMap: Record<string, { email: string | null; full_name: string | null }> = {};
       if (userIds.length > 0) {
         const { data: ps } = await supabase.from("profiles").select("id, email, full_name").in("id", userIds);
-        (ps ?? []).forEach((p: any) => {
+        (ps ?? []).forEach((p) => {
           profMap[p.id] = { email: p.email, full_name: p.full_name };
         });
       }
       const rolesByUser: Record<string, string[]> = {};
-      (rs ?? []).forEach((r: any) => {
+      (rs ?? []).forEach((r) => {
         rolesByUser[r.user_id] = [...(rolesByUser[r.user_id] ?? []), r.role];
       });
       setMembers(
@@ -86,20 +87,15 @@ export default function SettingsTab({ entries, onNavigateToAdmin }: Props) {
     loadMembers();
   }, [currentSite?.id]);
 
-  const sanitizeCsv = (v: unknown): string => {
-    const s = String(v ?? "");
-    if (/^[=+\-@\t\r]/.test(s)) return `\t${s.replace(/"/g, '""')}`;
-    if (/[,"\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-    return s;
-  };
 
   const handleExport = () => {
     const csv = [
-      "Location,Waste Type,Category,Weight,Unit,Count (pcs),Activity,Generated,Disposed Batch,Notes",
+      "Facility,Location,Waste Type,Category,Weight,Unit,Count (pcs),Activity,Generated,Disposed Batch,Notes",
       ...entries.map((e) => {
         const wt = WASTE_TYPES.find((w) => w.id === e.waste_type_id);
         const unit = wt?.measureUnit === "litres" ? "Ltr" : "kg";
         return [
+          sanitizeCsv(sites.find(s => s.id === e.site_id)?.name ?? e.site_id),
           sanitizeCsv(e.location),
           sanitizeCsv(wt?.name ?? e.waste_type_id),
           sanitizeCsv(e.waste_category),

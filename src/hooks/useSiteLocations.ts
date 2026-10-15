@@ -1,3 +1,4 @@
+import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSite } from "@/contexts/SiteContext";
@@ -14,13 +15,14 @@ export interface SiteLocation {
  * Locations the current user can pick from for the current site:
  * site-specific codes + common (Hazardous Shed / PSS / HT Yard).
  */
-export function useSiteLocations() {
+export function useSiteLocations(targetSiteId?: string) {
   const { currentSite } = useSite();
-  const siteId = currentSite?.id;
+  const { user } = useAuth();
+  const siteId = targetSiteId ?? currentSite?.id;
 
   return useQuery({
-    queryKey: ["site_locations", siteId],
-    enabled: !!siteId,
+    queryKey: ["site_locations", user?.id, siteId],
+    enabled: !!user && !!siteId && siteId !== "ALL_SITES",
     queryFn: async (): Promise<SiteLocation[]> => {
       const { data, error } = await supabase
         .from("site_locations")

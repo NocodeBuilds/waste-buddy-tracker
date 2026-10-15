@@ -20,7 +20,7 @@ const SCREENSHOTS_DIR = path.join(__dirname, '../playwright/.auth/screenshots');
 test.describe('Waste Buddy Tracker — Visual Tour', () => {
   test.beforeAll(async () => {
     // Ensure screenshots directory exists
-    try { mkdirSync(SCREENSHOTS_DIR, { recursive: true }); } catch (e) {}
+    mkdirSync(SCREENSHOTS_DIR, { recursive: true });
   });
 
   test('complete visual tour of the PWA', async ({ page, context }) => {

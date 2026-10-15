@@ -1,0 +1,40 @@
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'node:fs';
+function edit(path,fn){const old=readFileSync(path,'utf8').replace(/\r\n/g,'\n');const next=fn(old);if(next===old) throw new Error('No edit: '+path);writeFileSync(path,next);}
+edit('src/integrations/supabase/types.ts',s=>{
+ const start=s.indexOf('      disposal_batches: {'),end=s.indexOf('      profiles:',start);
+ let block=s.slice(start,end);
+ block=block.replace('Row: {','Row: {\n          status: "pending" | "approved" | "rejected"\n          approved_by: string | null\n          approved_at: string | null\n          requested_at: string | null\n          rejection_reason: string | null');
+ for(const key of ['Insert','Update']) block=block.replace(key+': {',key+': {\n          status?: "pending" | "approved" | "rejected"\n          approved_by?: string | null\n          approved_at?: string | null\n          requested_at?: string | null\n          rejection_reason?: string | null');
+ s=s.slice(0,start)+block+s.slice(end);
+ const a=s.indexOf('      sites: {'),b=s.indexOf('      user_roles:',a);
+ s=s.slice(0,a)+s.slice(a,b).replace('Row: {','Row: {\n          archived_at: string | null').replaceAll('Insert: {','Insert: {\n          archived_at?: string | null').replaceAll('Update: {','Update: {\n          archived_at?: string | null')+s.slice(b);
+ return s.replace('    Functions: {','    Functions: {\n      create_disposal_request: { Args: { p_id: string; p_site_id: string; p_date: string; p_entry_ids: string[]; p_notes?: string | null }; Returns: string }\n      decide_disposal: { Args: { p_batch_id: string; p_site_id: string; p_action: string; p_reason?: string | null }; Returns: undefined }\n      manage_site_access: { Args: { p_action: string; p_site_id: string; p_user_id?: string | null; p_role?: "admin" | "manager" | "member"; p_request_id?: string | null; p_note?: string | null }; Returns: undefined }');
+});
+edit('src/lib/wasteTypes.ts',s=>s.replace('  disposal_batch_id?: string | null;','  disposal_batch_id?: string | null;\n  disposal_status?: "pending" | "approved" | "rejected";\n  sync_pending?: boolean;').replace('export interface DisposalBatch {','export interface DisposalBatch {\n  status?: "pending" | "approved" | "rejected";\n  requested_at?: string | null;\n  approved_at?: string | null;\n  approved_by?: string | null;\n  rejection_reason?: string | null;').replace('return !!entry.disposal_batch_id;','return !!entry.disposal_batch_id && (entry.disposal_status === undefined || entry.disposal_status === "approved");').replace('if (entry.disposal_batch_id) return "disposed";','if (isDisposed(entry)) return "disposed";'));
+edit('src/components/admin/UserManagementView.tsx',s=>{
+ const start=s.indexOf('    // ── Resilient Fallback'),end=s.indexOf('    setBusy(false);\n    toast.error',start);
+ return s.slice(0,start)+s.slice(end);
+});
+edit('src/components/admin/AdminTab.tsx',s=>{
+ const a=s.indexOf('  const [activeTab'),b=s.indexOf('\n  if (!isAdmin || !currentSite)',a);const hooks=s.slice(a,b);
+ s=s.slice(0,a)+s.slice(b);return s.replace('  // Wait for auth session',hooks+'\n  // Wait for auth session');
+});
+edit('src/components/dashboard/FuturisticDashboard.tsx',s=>{
+ const a=s.indexOf('  if (isAllSitesMode)'),b=s.indexOf('  // Latest',a);const guard=s.slice(a,b);
+ s=s.slice(0,a)+s.slice(b);return s.replace('  const getWasteName',guard+'\n  const getWasteName');
+});
+edit('src/main.tsx',s=>s.slice(0,s.indexOf('// Protect against'))+'createRoot(document.getElementById("root")!).render(<App />);\nregisterAppServiceWorker();\n');
+edit('vite.config.ts',s=>{
+ s=s.replace('registerType: "autoUpdate"','registerType: "prompt"');
+ const a=s.indexOf('          {\n            urlPattern: ({ url }) => /supabase'),b=s.indexOf('\n        ],',a);
+ if(a<0||b<0)throw new Error('runtime pattern');return s.slice(0,a)+s.slice(b);
+});
+if(existsSync('public/sw.js')) unlinkSync('public/sw.js');
+edit('src/vite-env.d.ts',s=>s+'\n/// <reference types="vite-plugin-pwa/client" />\n');
+edit('src/App.tsx',s=>s.replace('import { QueryClient,','import { isSupabaseConfigured } from "@/integrations/supabase/client";\nimport { QueryClient,').replace('const App = () => (','const App = () => !isSupabaseConfigured ? <main role="alert" className="p-8">Application configuration is missing. Set the Supabase URL and publishable key, then rebuild.</main> : (').replace('gcTime: 1000 * 60 * 60 * 24 * 7','gcTime: 1000 * 60 * 30').replace('refetchOnWindowFocus: false','refetchOnWindowFocus: true'));
+edit('src/pages/Index.tsx',s=>s.replace('isAdmin: siteIsAdmin, refresh','isAdmin: siteIsAdmin, refresh, error: siteError').replace('const { entries, batches, isLoading,','const { entries, batches, error: dataError, isLoading,').replace('  // No site assigned',`  if (siteError) return <main className="p-8" role="alert">{siteError}<Button onClick={() => void refresh()}>Retry</Button></main>;
+  // No site assigned`).replace('        {/* Main content */}',`        {dataError && <div role="alert" className="p-3 text-destructive">Records could not be loaded: {dataError.message}</div>}
+        {/* Main content */}`).replace('<Button variant="outline" size="icon" className="relative','<Button aria-label="Waste storage alerts" variant="outline" size="icon" className="relative'));
+edit('src/components/layout/OfflineBanner.tsx',s=>s.replace('pendingCount, syncNow','pendingCount, pendingError, syncNow').replace('isOnline && pendingCount === 0','isOnline && pendingCount === 0 && !pendingError').replace('      <div className=', '      {pendingError && <p role="alert">Sync needs attention: {pendingError}. The draft remains on this device.</p>}\n      <div className='));
+edit('src/components/inventory/WasteEntryForm.tsx',s=>s.replace('interface NewEntry {','interface NewEntry {\n  operationId?: string;').replace('import { useState,','import { validatePhotos, errorMessage } from "@/lib/validation";\nimport { useState,').replace('useSiteLocations();','useSiteLocations(targetSiteId);').replace('  // Revoke blob URLs','  const [photoUrls, setPhotoUrls] = useState<string[]>([]);\n  // Revoke the exact preview URLs rendered by the form.').replace('    return () => {\n      urls.forEach','    setPhotoUrls(urls);\n    return () => {\n      urls.forEach').replace('if (files.length) setPhotos((prev) => [...prev, ...files]);','try { validatePhotos([...photos, ...files]); if (files.length) setPhotos((prev) => [...prev, ...files]); } catch (error) { toast.error(errorMessage(error)); }').replace('!line.weight_kg || w <= 0','!line.weight_kg || !Number.isFinite(w) || w <= 0 || w > 1e9').replace('    return null;\n  }, [isAllSitesMode','    if (lines.some(line => line.piece_count && (!Number.isInteger(Number(line.piece_count)) || Number(line.piece_count) < 0))) return "Piece count must be a non-negative integer";\n    return null;\n  }, [isAllSitesMode').replace('        waste_type_id: line.waste_type_id,','        operationId: crypto.randomUUID(),\n        waste_type_id: line.waste_type_id,').replace('        if (succeeded === 0) throw new Error(failed[0].reason?.message || "All entries failed");','        setPendingEntries(pendingEntries.filter((_, index) => results[index].status === "rejected"));\n        setConfirmOpen(true);\n        return;').replace('URL.createObjectURL(f)}','photoUrls[i]}'));
+edit('src/test/compliance.test.ts',s=>s.replace('import { describe,','import "fake-indexeddb/auto";\nimport { describe,').replace('beforeEach(() => {\n    clearPendingQueue();','beforeEach(async () => {\n    await clearPendingQueue();').replace('localStorage", () => {','IndexedDB", async () => {').replace('    saveToPendingQueue(item);','    await saveToPendingQueue(item);').replace('const queue = getPendingQueue();','const queue = await getPendingQueue();').replace('    removeFromPendingQueue(item.tempId);','    await removeFromPendingQueue(item.tempId);').replace('expect(getPendingQueue().length)','expect((await getPendingQueue()).length)'));

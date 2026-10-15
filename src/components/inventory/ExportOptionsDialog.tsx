@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DisposalBatch, fmtNum, WASTE_TYPES, formatDateDDMMYYYY, getMeasureUnit } from "@/lib/wasteTypes";
+import { WasteEntry, DisposalBatch, fmtNum, WASTE_TYPES, formatDateDDMMYYYY, getMeasureUnit } from "@/lib/wasteTypes";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import MultiSelect from "./MultiSelect";
@@ -41,11 +41,11 @@ interface Props {
   /** "excel", "pdf" or "form8" — pre-selected based on which button was clicked */
   initialFormat: ExportFormat;
   siteName: string;
-  entries: any[];
+  entries: WasteEntry[];
   batches: DisposalBatch[];
   onExport: (opts: {
     format: ExportFormat;
-    filteredEntries: any[];
+    filteredEntries: WasteEntry[];
     chosenBatch: DisposalBatch | null;
     periodLabel: string;
     selectedFy: number;
@@ -201,7 +201,7 @@ export default function ExportOptionsDialog({
       count = 0;
     for (const e of filteredEntries) {
       const w = Number(e.weight_kg ?? 0);
-      const u = e.measureUnit ?? getMeasureUnit(e.waste_type_id);
+      const u = getMeasureUnit(e.waste_type_id);
       if (u === "litres") litres += w;
       else kg += w;
       count += 1;
@@ -209,7 +209,7 @@ export default function ExportOptionsDialog({
     return { kg, litres, count };
   }, [filteredEntries]);
 
-  const approvedBatches = batches.filter((b) => (b as any).status === "approved" || !(b as any).status);
+  const approvedBatches = batches.filter((b) => b.status === "approved" || !b.status);
 
   const handleExport = () => {
     onExport({ format: formatType, filteredEntries, chosenBatch, periodLabel, selectedFy, form8Mode });

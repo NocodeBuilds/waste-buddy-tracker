@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/validation";
 import { useEffect, useState } from "react";
 import { WASTE_TYPES, WasteCategory, WasteEntry, ActivityType, unitLabel, clampDateNotFuture, formatDateDDMMYYYY } from "@/lib/wasteTypes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -46,7 +47,7 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
     setTypeId(entry.waste_type_id);
     setWeight(String(entry.weight_kg ?? entry.quantity ?? ""));
     setPieceCount(entry.piece_count != null ? String(entry.piece_count) : "");
-    setDate(clampDateNotFuture(entry.generated_date));
+    setDate(entry.generated_date);
     setActivity(entry.activity_type);
     setLocation(entry.location ?? "");
     setNotes(entry.notes ?? "");
@@ -66,15 +67,16 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
 
   const submit = async () => {
     if (!entry) return;
-    const w = parseFloat(weight);
-    if (!typeId || !w || w <= 0 || !date) {
+    const w = Number(weight);
+    if (!typeId || !Number.isFinite(w) || w <= 0 || w > 1e9 || !date) {
       toast.error("Please fill all required fields");
       return;
     }
     const safeDate = clampDateNotFuture(date);
     if (safeDate !== date) {
-      setDate(safeDate);
+      toast.error("Generation date cannot be in the future"); return;
     }
+    if (pieceCount && (!Number.isInteger(Number(pieceCount)) || Number(pieceCount) < 0)) { toast.error("Piece count must be a non-negative integer"); return; }
     setSaving(true);
     try {
       await onSave({
@@ -90,8 +92,8 @@ export default function EditWasteDialog({ entry, onClose, onSave }: Props) {
       });
       toast.success("Waste record updated successfully");
       onClose();
-    } catch (e: any) {
-      toast.error(e.message ?? "Update failed");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e));
     } finally {
       setSaving(false);
     }

@@ -15,7 +15,7 @@ function isStandalone(): boolean {
   if (typeof window === "undefined") return false;
   return (
     window.matchMedia?.("(display-mode: standalone)").matches ||
-    (window.navigator as any).standalone === true
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
   );
 }
 
@@ -53,8 +53,8 @@ export default function InstallPrompt() {
     const onPrompt = (e: Event) => {
       e.preventDefault();
       deferred = e as BeforeInstallPromptEvent;
+      setDeferred(deferred);
       if (!visibleSet) {
-        setDeferred(deferred);
         setVisible(true);
         visibleSet = true;
         if (isAndroid()) setPlatform("android");

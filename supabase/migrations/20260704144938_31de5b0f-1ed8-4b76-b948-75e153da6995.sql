@@ -4,6 +4,7 @@ ALTER TYPE public.activity_type ADD VALUE IF NOT EXISTS '5s';
 
 -- Allow site admins/managers to view profiles of users who have pending
 -- site access requests to their site (so requests list shows names, not UUIDs).
+DROP POLICY IF EXISTS "Site admins view requester profiles" ON public.profiles;
 CREATE POLICY "Site admins view requester profiles"
 ON public.profiles
 FOR SELECT

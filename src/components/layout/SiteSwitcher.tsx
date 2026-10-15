@@ -48,7 +48,7 @@ export default function SiteSwitcher() {
         .in("status", ["pending", "approved"]),
     ]);
     setAllSites(s ?? []);
-    setMyPending(new Set((r ?? []).map((x: any) => x.site_id)));
+    setMyPending(new Set((r ?? []).map((x) => x.site_id)));
     setLoadingSites(false);
   };
 

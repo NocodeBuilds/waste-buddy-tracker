@@ -541,9 +541,9 @@ test.describe('UX Audit — Offline / PWA', () => {
     try {
       await page.goto('/app', { timeout: 8000 });
       navigationOfflineResult = 'served-from-cache';
-    } catch (e: any) {
+    } catch (e: unknown) {
       // ERR_INTERNET_DISCONNECTED is expected when offline
-      if (e?.message?.includes('ERR_INTERNET_DISCONNECTED')) {
+      if ((e instanceof Error ? e.message : "").includes('ERR_INTERNET_DISCONNECTED')) {
         navigationOfflineResult = 'expected-offline-error';
       } else {
         navigationOfflineResult = 'unexpected-error: ' + (e?.message?.slice(0, 60) || '');
@@ -685,7 +685,7 @@ test.describe('UX Audit — 768px Navigation Deep-Dive', () => {
     await snap(page, 'nav-768-initial.png');
 
     const navDetail = await page.evaluate(() => {
-      const result: any = {
+      const result: {viewport: {w:number;h:number};header: {top:number;h:number;w:number;visible:boolean}|null;tabBar: {top:number;h:number;w:number;visible:boolean}|null;bottomNav: {top:number;h:number;w:number;visible:boolean}|null;allFixed: Record<string,unknown>[];overlapped: Record<string,unknown>[];visibleHeader:boolean;visibleTabBar:boolean;visibleBottomNav:boolean} = {
         viewport: { w: window.innerWidth, h: window.innerHeight },
         header: null,
         tabBar: null,
@@ -784,7 +784,7 @@ test.describe('UX Audit — 768px Navigation Deep-Dive', () => {
 
     // Also test tab switching at 768px
     const tabSwitchResult = await page.evaluate(async () => {
-      const results: any[] = [];
+      const results: Record<string, unknown>[] = [];
       const tabs = document.querySelectorAll('nav button, [class*="tab-bar"] button');
       for (const tab of tabs) {
         const text = (tab as HTMLElement).textContent?.trim().slice(0, 20);
@@ -812,7 +812,7 @@ test.describe('UX Audit — Full App Metrics', () => {
     await page.waitForTimeout(500);
 
     const metrics = await page.evaluate(() => {
-      const result: any = {};
+      const result: Record<string, unknown> = {};
 
       // 1. Color system
       const allElements = document.querySelectorAll('*');
