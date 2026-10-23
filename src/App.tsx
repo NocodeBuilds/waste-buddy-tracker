@@ -2,7 +2,6 @@ import { isSupabaseConfigured } from "@/integrations/supabase/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SiteProvider } from "@/contexts/SiteContext";
@@ -34,7 +33,6 @@ function EntryRedirect() { const location = useLocation(); return <Navigate to={
 const App = () => !isSupabaseConfigured ? <main role="alert" className="p-8">Application configuration is missing. Set the Supabase URL and publishable key, then rebuild.</main> : (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
       <Sonner />
       <ErrorBoundary>
         <BrowserRouter>

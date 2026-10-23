@@ -11,7 +11,9 @@ interface Props {
   entries: WasteEntry[];
 }
 
-const STORAGE_KEY = "hazwaste-dismissed-alerts";
+import { STORAGE_KEYS } from "@/lib/storageKeys";
+
+const STORAGE_KEY = STORAGE_KEYS.dismissedAlerts;
 
 function loadDismissed(): Set<string> {
   try {

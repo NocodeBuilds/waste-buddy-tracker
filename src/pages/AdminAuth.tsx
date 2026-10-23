@@ -9,22 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Shield, Loader2, Eye, EyeOff, Lock } from "lucide-react";
 import { toast } from "sonner";
-
-// Whitelist of allowed origins for auth redirects (prevents open redirect)
-const ALLOWED_REDIRECT_ORIGINS = [window.location.origin];
-
-const getSafeRedirect = (path: string) => {
-  const origin = window.location.origin;
-  if (ALLOWED_REDIRECT_ORIGINS.includes(origin)) {
-    return `${origin}${path}`;
-  }
-  return `${ALLOWED_REDIRECT_ORIGINS[0]}${path}`;
-};
-
-const loginSchema = z.object({
-  email: z.string().trim().email("Please enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
-});
+import { loginSchema, getSafeRedirect } from "@/lib/auth";
 
 const bootstrapSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address"),
@@ -157,7 +142,7 @@ export default function AdminAuth() {
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@windpower.com"
+                  placeholder="admin@yourcompany.com"
                   className="h-10 text-xs rounded-lg"
                   required
                 />

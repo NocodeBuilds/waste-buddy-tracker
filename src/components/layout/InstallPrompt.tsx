@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Download, X, Share2, PlusSquare } from "lucide-react";
+import { STORAGE_KEYS } from "@/lib/storageKeys";
 
 export interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-const DISMISS_KEY = "hazwaste_install_dismissed_at";
+const DISMISS_KEY = STORAGE_KEYS.installPromptDismissed;
 const DISMISS_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
 export function isStandalone(): boolean {

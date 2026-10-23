@@ -121,6 +121,33 @@ export type Database = {
         }
         Relationships: []
       }
+      regions: {
+        Row: {
+          code: string | null
+          created_at: string
+          id: string
+          name: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          state: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       site_access_requests: {
         Row: {
           created_at: string
@@ -213,6 +240,8 @@ export type Database = {
           id: string
           location: string | null
           name: string
+          region_id: string | null
+          state: string | null
           updated_at: string
         }
         Insert: {
@@ -221,6 +250,8 @@ export type Database = {
           id?: string
           location?: string | null
           name: string
+          region_id?: string | null
+          state?: string | null
           updated_at?: string
         }
         Update: {
@@ -229,6 +260,8 @@ export type Database = {
           id?: string
           location?: string | null
           name?: string
+          region_id?: string | null
+          state?: string | null
           updated_at?: string
         }
         Relationships: []
