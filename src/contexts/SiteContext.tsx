@@ -4,6 +4,7 @@ import { useAuth } from "./AuthContext";
 import { Site, Role, Region } from "@/types";
 import { errorMessage } from "@/lib/validation";
 import { readAll } from "@/lib/pagination";
+import { STORAGE_KEYS } from "@/lib/storageKeys";
 
 export const ALL_SITES_ID = "ALL_SITES";
 export const ALL_SITES_OBJECT: Site = {
@@ -76,7 +77,8 @@ export function SiteProvider({ children }: { children: ReactNode }) {
         return (JSON.parse(snapshot) as { sites: Site[]; regions?: Region[] });
       };
 
-      if (!navigator.onLine) {
+      const wasOnline = navigator.onLine;
+      if (!wasOnline) {
         const snap = readOffline();
         sites = snap.sites;
         regions = snap.regions ?? [];
@@ -100,8 +102,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
 
           // Optional: Fetch regions with graceful fallback if table not yet created
           try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data: regionsData } = await (supabase.from as any)("regions").select("*").order("name");
+            const { data: regionsData } = await supabase.from("regions").select("*").order("name");
             if (regionsData && Array.isArray(regionsData)) {
               regions = regionsData as unknown as Region[];
             }
@@ -134,12 +135,23 @@ export function SiteProvider({ children }: { children: ReactNode }) {
             /* Snapshot write failure non-fatal */
           }
         } catch (fetchErr) {
-          if (typeof window !== "undefined") window.dispatchEvent(new Event("wastebuddy:network-offline"));
-          try {
-            const snap = readOffline();
-            sites = snap.sites;
-            regions = snap.regions ?? [];
-          } catch {
+          // Only a network drop that happened during this request (OS-reported offline state
+          // flipping between the fetch start and now) warrants falling back to the stale
+          // localStorage snapshot and flagging the app offline. Any real API error
+          // (401/403/409/5xx, schema mismatch, etc.) must surface as-is — statutory
+          // facility data must never silently fall back to cached state.
+          if (wasOnline && navigator.onLine === false && typeof window !== "undefined") {
+            window.dispatchEvent(new Event("wastebuddy:network-offline"));
+          }
+          if (wasOnline && navigator.onLine === false) {
+            try {
+              const snap = readOffline();
+              sites = snap.sites;
+              regions = snap.regions ?? [];
+            } catch {
+              throw fetchErr;
+            }
+          } else {
             throw fetchErr;
           }
         }
@@ -147,7 +159,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
 
       if (revision !== generation.current) return;
 
-      const selected = localStorage.getItem("hazwaste-current-site:" + owner) ?? localStorage.getItem("hazwaste-current-site");
+      const selected = localStorage.getItem(`${STORAGE_KEYS.currentSite}:${owner}`);
       setState({
         owner,
         sites,
@@ -182,7 +194,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
     if (site.id !== ALL_SITES_ID && !visible.sites.some((s) => s.id === site.id)) return;
     setState((prev) => ({ ...prev, selected: site }));
     try {
-      localStorage.setItem("hazwaste-current-site:" + owner, site.id);
+      localStorage.setItem(`${STORAGE_KEYS.currentSite}:${owner}`, site.id);
     } catch {
       /* in-memory */
     }

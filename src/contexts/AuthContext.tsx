@@ -37,9 +37,11 @@ export function AuthProvider({children}:{children:ReactNode}){
   const {error}=await supabase.auth.signOut();
   if(error) throw error;
   void qc.cancelQueries();qc.clear();
-  // Preserve the owner-scoped outbox, including photos. Remove obsolete unscoped snapshots only.
+  // Preserve the owner-scoped outbox (IndexedDB, including photos). Remove owner-scoped
+  // snapshots and per-user UI state so a user signing in on a shared device does not
+  // silently inherit the previous user's selected facility or dismissed alerts.
   for(const key of Object.keys(localStorage)){
-   if(key.startsWith("wastebuddy:v2:")||key.startsWith("wastebuddy_entries_")||key.startsWith("wastebuddy_batches_")) localStorage.removeItem(key);
+   if(key.startsWith("wastebuddy:v2:")||key.startsWith("wastebuddy_entries_")||key.startsWith("wastebuddy_batches_")||key.startsWith("hazwaste-")) localStorage.removeItem(key);
   }
   for(const key of Object.keys(sessionStorage)) if(key.startsWith("wb_roles_")) sessionStorage.removeItem(key);
   // Never delete the app shell/precache: a signed-out installation must still start offline.

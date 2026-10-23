@@ -92,6 +92,10 @@ The project includes `vercel.json`:
 
 ## Netlify
 
+> Reference template only — this repository does not currently ship a `netlify.toml`. Create the
+> file below in the repo root if you deploy to Netlify; `public/_headers` and `public/_redirects`
+> already contain Netlify/Cloudflare-compatible static configuration.
+
 ### `netlify.toml`
 
 ```toml
@@ -151,13 +155,18 @@ netlify deploy --prod
 
 ## Docker
 
+> Reference template only — this repository does not currently ship a `Dockerfile` or `nginx.conf`.
+> The corrected multi-stage build below installs dev dependencies for the build step (the earlier
+> `npm ci --only=production` broke the build because `vite`/`typescript` are dev deps) and sets
+> `Service-Worker-Allowed` on the root location, not just `/sw.js`.
+
 ### `Dockerfile`
 
 ```dockerfile
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 COPY . .
 RUN npm run build
 
@@ -180,6 +189,7 @@ server {
   # SPA routing
   location / {
     try_files $uri $uri/ /index.html;
+    add_header Service-Worker-Allowed "/" always;
   }
 
   # Service Worker

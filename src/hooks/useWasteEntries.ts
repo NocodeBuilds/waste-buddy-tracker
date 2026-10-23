@@ -31,9 +31,13 @@ async function snapshot<T>(key:string,fetch:()=>Promise<T>):Promise<T>{
   try { localStorage.setItem(key, JSON.stringify(data)); } catch { /* Read snapshots may be omitted when storage is full. */ }
   return data;
  } catch (error) {
-  if (typeof window !== "undefined") {
-   window.dispatchEvent(new Event("wastebuddy:network-offline"));
-  }
+  // Only the browser's own online/offline transition is trustworthy here: the OS knows
+  // the network dropped, so fall back to the last good snapshot and flag the app offline.
+  // A request that threw while navigator.onLine is still true is a real API failure
+  // (401/403/409/5xx, schema mismatch, transient server error) — surface it instead of
+  // silently serving stale data for statutory waste records.
+  if (navigator.onLine) throw error;
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("wastebuddy:network-offline"));
   try {
    return readSnapshot();
   } catch {

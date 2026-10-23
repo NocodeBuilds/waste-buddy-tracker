@@ -2,6 +2,35 @@ import { registerSW } from "virtual:pwa-register";
 import { toast } from "sonner";
 
 let swRegistration: ServiceWorkerRegistration | undefined;
+let updateCheckInterval: ReturnType<typeof setInterval> | undefined;
+let visibilityHandler: (() => void) | undefined;
+let focusHandler: (() => void) | undefined;
+
+function attachUpdateWatchers(registration: ServiceWorkerRegistration) {
+  // onRegisteredSW can fire more than once (every time registration.update() resolves a
+  // re-registration). Guard so we never stack up a new setInterval / event listener on top
+  // of the previous ones and leak them unboundedly over a long-lived SPA session.
+  if (updateCheckInterval) clearInterval(updateCheckInterval);
+  if (visibilityHandler) {
+    document.removeEventListener("visibilitychange", visibilityHandler);
+    window.removeEventListener("focus", visibilityHandler);
+  }
+
+  updateCheckInterval = setInterval(() => {
+    void registration.update().catch(() => {});
+  }, 60 * 60 * 1000);
+
+  visibilityHandler = () => {
+    if (document.visibilityState === "visible") {
+      void registration.update().catch(() => {});
+    }
+  };
+  document.addEventListener("visibilitychange", visibilityHandler);
+  focusHandler = () => {
+    void registration.update().catch(() => {});
+  };
+  window.addEventListener("focus", focusHandler);
+}
 
 export function registerAppServiceWorker() {
   if (!import.meta.env.PROD || !("serviceWorker" in navigator) || window.self !== window.top) return;
@@ -22,22 +51,7 @@ export function registerAppServiceWorker() {
     },
     onRegisteredSW(_swScriptUrl, registration) {
       swRegistration = registration;
-      if (registration) {
-        // Periodically check for service worker updates every 60 minutes
-        setInterval(() => {
-          void registration.update().catch(() => {});
-        }, 60 * 60 * 1000);
-
-        // Check for updates whenever the tab becomes visible or gains focus
-        document.addEventListener("visibilitychange", () => {
-          if (document.visibilityState === "visible") {
-            void registration.update().catch(() => {});
-          }
-        });
-        window.addEventListener("focus", () => {
-          void registration.update().catch(() => {});
-        });
-      }
+      if (registration) attachUpdateWatchers(registration);
     },
     onRegisterError() {
       console.warn("Offline installation failed. Online access remains available.");
@@ -53,4 +67,15 @@ export async function checkPWAUpdate(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export function disposeServiceWorkerWatchers() {
+  if (updateCheckInterval) clearInterval(updateCheckInterval);
+  if (visibilityHandler) {
+    document.removeEventListener("visibilitychange", visibilityHandler);
+    window.removeEventListener("focus", focusHandler!);
+  }
+  updateCheckInterval = undefined;
+  visibilityHandler = undefined;
+  focusHandler = undefined;
 }

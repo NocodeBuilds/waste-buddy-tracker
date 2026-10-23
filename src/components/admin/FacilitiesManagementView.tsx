@@ -18,6 +18,7 @@ import {
 import { useSite } from "@/contexts/SiteContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { TablesInsert } from "@/integrations/supabase/types";
 import { Site, Region } from "@/types";
 import LocationMasterView from "./LocationMasterView";
 
@@ -67,8 +68,9 @@ export default function FacilitiesManagementView({ sites, onChanged }: Props) {
     const reg = regions.find((r) => r.id === selectedRegionId);
     const locationString = loc.trim() || (reg ? `${reg.name}, ${reg.state}` : `${selectedState} Region`);
 
-    // Primary insert payload with fallback
-    let insertPayload: Record<string, unknown> = {
+    // Primary insert payload with fallback; on installs that haven't run the regions
+    // migration these columns don't exist yet, which the retry path below recovers from.
+    let insertPayload: TablesInsert<"sites"> = {
       name: n,
       location: locationString,
     };
@@ -82,8 +84,7 @@ export default function FacilitiesManagementView({ sites, onChanged }: Props) {
       insertPayload.state = selectedState;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let { data, error } = await supabase.from("sites").insert(insertPayload as any).select().single();
+    let { data, error } = await supabase.from("sites").insert(insertPayload).select().single();
 
     // If region_id or state column not yet present on remote DB, retry with core schema
     if (error && (error.message.includes("column") || error.code === "42703")) {
@@ -109,8 +110,7 @@ export default function FacilitiesManagementView({ sites, onChanged }: Props) {
     if (!rName) return toast.error("Region name is required");
     setRegionBusy(true);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from as any)("regions").insert({
+    const { error } = await supabase.from("regions").insert({
       name: rName,
       state: regionState,
       code: regionCode.trim().toUpperCase() || rName.slice(0, 4).toUpperCase(),

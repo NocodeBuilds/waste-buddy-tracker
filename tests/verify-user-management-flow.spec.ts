@@ -5,9 +5,11 @@ import { createClient } from '@supabase/supabase-js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const SUPABASE_URL = 'https://oakjtbkxjhxoeyaapibo.supabase.co';
-const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ha2p0Ymt4amh4b2V5YWFwaWJvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTgzOTQzMywiZXhwIjoyMTAxNDE1NDMzfQ.kKxV2UidOb8-4IeZJO2W3FCWqAHm0DNGx-t9rkzfHAU';
-const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+// Never commit credentials to source control. Load from env vars at test-run time;
+// see .env.example / docs/ENV.md for the expected variable names.
+const SUPABASE_URL = process.env.SUPABASE_URL ?? 'https://oakjtbkxjhxoeyaapibo.supabase.co';
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+const supabaseAdmin = SERVICE_ROLE_KEY ? createClient(SUPABASE_URL, SERVICE_ROLE_KEY) : null;
 
 const TEST_USER = {
   name: 'Automated Test Operator',
@@ -19,7 +21,8 @@ test.describe('Admin User Provisioning, Role Assignment, and User Login Flow', (
   let createdUserId: string | null = null;
 
   test.afterAll(async () => {
-    if (createdUserId) {
+    if (!supabaseAdmin || !createdUserId) return;
+    {
       console.log(`[CLEANUP] Removing test user ${TEST_USER.email} (${createdUserId})...`);
       await supabaseAdmin.from('user_roles').delete().eq('user_id', createdUserId);
       await supabaseAdmin.from('user_sites').delete().eq('user_id', createdUserId);
@@ -31,6 +34,11 @@ test.describe('Admin User Provisioning, Role Assignment, and User Login Flow', (
 
   test('E2E Complete Flow: Admin creates user -> assigns roles -> user logs in -> permissions verified', async ({ page, browser }) => {
     test.setTimeout(120000);
+
+    if (!supabaseAdmin) {
+      test.skip(true, 'SUPABASE_SERVICE_ROLE_KEY is not set; this spec requires a live admin key (never committed to source control).');
+      return;
+    }
 
     console.log(`[STEP 1] Admin opens app and navigates to Admin Portal`);
     await page.goto('/app');

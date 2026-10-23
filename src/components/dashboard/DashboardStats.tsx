@@ -489,6 +489,30 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
                   >
                     {earliestDue.date}
                   </strong>
+                  {" · "}
+                  <span
+                    role="status"
+                    aria-label={
+                      earliestDue.daysLeft < 0
+                        ? `${-earliestDue.daysLeft} days past statutory disposal limit`
+                        : earliestDue.daysLeft === 0
+                        ? "Disposal due today"
+                        : `${earliestDue.daysLeft} days to next statutory disposal deadline`
+                    }
+                    className={cn(
+                      earliestDue.daysLeft < 0
+                        ? "text-rose-500/90 dark:text-rose-400/90"
+                        : earliestDue.daysLeft < 20
+                        ? "text-amber-600/80 dark:text-amber-400/80"
+                        : "text-muted-foreground/80"
+                    )}
+                  >
+                    {earliestDue.daysLeft < 0
+                      ? `${-earliestDue.daysLeft}d overdue`
+                      : earliestDue.daysLeft === 0
+                      ? "due today"
+                      : `${earliestDue.daysLeft}d to due`}
+                  </span>
                 </span>
               )}
             </div>
@@ -553,6 +577,31 @@ export default function DashboardStats({ entries, onLogWaste }: Props) {
                     )}
                   >
                     {earliestDue.date}
+                  </span>
+                  {/* Subtle days-to-go hint under the due date */}
+                  <span
+                    role="status"
+                    aria-label={
+                      earliestDue.daysLeft < 0
+                        ? `${-earliestDue.daysLeft} days past statutory disposal limit`
+                        : earliestDue.daysLeft === 0
+                        ? "Disposal due today"
+                        : `${earliestDue.daysLeft} days to next statutory disposal deadline`
+                    }
+                    className={cn(
+                      "text-[10px] font-mono mt-0.5 block leading-none",
+                      earliestDue.daysLeft < 0
+                        ? "text-rose-500/90 dark:text-rose-400/90"
+                        : earliestDue.daysLeft < 20
+                        ? "text-amber-600/80 dark:text-amber-400/80"
+                        : "text-muted-foreground/80"
+                    )}
+                  >
+                    {earliestDue.daysLeft < 0
+                      ? `${-earliestDue.daysLeft}d overdue`
+                      : earliestDue.daysLeft === 0
+                      ? "due today"
+                      : `${earliestDue.daysLeft}d to due`}
                   </span>
                 </div>
               )}

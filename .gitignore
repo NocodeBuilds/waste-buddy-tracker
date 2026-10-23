@@ -42,8 +42,12 @@ dist-ssr
 # Secrets and production data must not enter commits
 .env*
 !.env.example
-docs/*Rows*.csv
+docs/*.csv
 scripts/data/*.csv
+supabase/.temp/
+
+# Committed build artifacts / test output that should never enter history
+lint-results.json
 
 .private-audit-backup/
 .test-dist/
